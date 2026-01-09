@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Kenza Companion</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-card: rgba(40, 40, 40, 0.6);
+            --accent: #4dd9ff;
+            --accent-glow: rgba(77, 217, 255, 0.4);
+            --pink: #ff66aa;
+            --green: #66ff66;
+            --orange: #ffaa00;
+            --text: #ffffff;
+            --text-dim: rgba(255, 255, 255, 0.5);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(180deg, #1a1a1a 0%, var(--bg-dark) 100%);
+            min-height: 100vh;
+            color: var(--text);
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        /* ===== GESTURE CURSOR ===== */
+        #gesture-cursor {
+            position: fixed;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(77, 217, 255, 0.3);
+            border: 3px solid var(--accent);
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 10000;
+            opacity: 0;
+            transition: all 0.08s ease-out;
+        }
+
+        #gesture-cursor.visible {
+            opacity: 1;
+        }
+
+        #gesture-cursor.clicking {
+            background: rgba(102, 255, 102, 0.6);
+            border-color: var(--green);
+            transform: translate(-50%, -50%) scale(1.4);
+        }
+
+        #gesture-cursor.dragging {
+            background: rgba(255, 170, 0, 0.6);
+            border-color: var(--orange);
+        }
+
+        /* ===== HEADER ===== */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            background: rgba(30, 30, 30, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent), var(--pink));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #666;
+        }
+
+        .status-dot.connected {
+            background: var(--green);
+            box-shadow: 0 0 10px var(--green);
+        }
+
+        /* ===== PAGE NAVIGATION ===== */
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: rgba(30, 30, 30, 0.9);
+            position: fixed;
+            top: 73px;
+            left: 0;
+            right: 0;
+            z-index: 99;
+        }
+
+        .nav-tab {
+            padding: 10px 20px;
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .nav-tab.active {
+            background: rgba(77, 217, 255, 0.2);
+            color: var(--accent);
+        }
+
+        .nav-tab:hover:not(.active) {
+            color: var(--text);
+        }
+
+        /* ===== PAGE CONTAINER ===== */
+        .pages-container {
+            display: flex;
+            transition: transform 0.4s ease-out;
+            padding-top: 130px;
+            height: 100vh;
+        }
+
+        .page {
+            min-width: 100vw;
+            padding: 20px 24px;
+            overflow-y: auto;
+        }
+
+        /* ===== CARDS ===== */
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* ===== ONBOARDING PAGE ===== */
+        .onboarding-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(100vh - 180px);
+            text-align: center;
+        }
+
+        .qr-container {
+            width: 240px;
+            height: 240px;
+            background: #fff;
+            border-radius: 20px;
+            padding: 20px;
+            margin: 30px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #qr-code {
+            width: 100%;
+            height: 100%;
+        }
+
+        .onboarding-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .onboarding-subtitle {
+            color: var(--text-dim);
+            max-width: 300px;
+            line-height: 1.6;
+        }
+
+        .scan-status {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 24px;
+            background: var(--bg-card);
+            border-radius: 30px;
+            margin-top: 20px;
+        }
+
+        .pulse-dot {
+            width: 12px;
+            height: 12px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.3);
+                opacity: 0.5;
+            }
+        }
+
+        /* ===== DASHBOARD PAGE ===== */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .dashboard-grid .card.full-width {
+            grid-column: 1 / -1;
+        }
+
+        /* Mode Toggle */
+        .mode-toggle {
+            display: flex;
+            background: rgba(60, 60, 60, 0.5);
+            border-radius: 12px;
+            padding: 4px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            background: transparent;
+            color: var(--text-dim);
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, var(--accent), #00a8cc);
+            color: #000;
+        }
+
+        /* Stats */
+        .stats-row {
+            display: flex;
+            gap: 16px;
+        }
+
+        .stat-item {
+            flex: 1;
+            text-align: center;
+            padding: 16px;
+            background: rgba(60, 60, 60, 0.4);
+            border-radius: 12px;
+        }
+
+        .stat-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+
+        /* Quick Actions */
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        .action-btn {
+            aspect-ratio: 1;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .action-btn span {
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .action-btn.hovered {
+            box-shadow: 0 0 20px currentColor;
+        }
+
+        .action-btn.clicked {
+            transform: scale(0.95);
+        }
+
+        .btn-wave {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+            color: #fff;
+        }
+
+        .btn-dance {
+            background: linear-gradient(135deg, #feca57, #ff9f43);
+            color: #fff;
+        }
+
+        .btn-follow {
+            background: linear-gradient(135deg, #48dbfb, #0abde3);
+            color: #fff;
+        }
+
+        .btn-speak {
+            background: linear-gradient(135deg, #ff9ff3, #f368e0);
+            color: #fff;
+        }
+
+        /* ===== REMOTE HUD PAGE ===== */
+        .hud-container {
+            position: relative;
+            height: calc(100vh - 160px);
+            background: #000;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        #video-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+        }
+
+        .hud-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .hud-overlay>* {
+            pointer-events: auto;
+        }
+
+        .telemetry-bar {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 16px;
+            padding: 12px 20px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+        }
+
+        .telemetry-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .joystick-zone {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            width: 140px;
+            height: 140px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+        }
+
+        .joystick-thumb {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: var(--accent);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .hud-actions {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .hud-btn {
+            width: 56px;
+            height: 56px;
+            border: none;
+            border-radius: 50%;
+            font-size: 1.4rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            color: #fff;
+        }
+
+        .hud-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .hud-btn.muted {
+            background: #e74c3c;
+        }
+
+        /* ===== SETTINGS PAGE ===== */
+        .settings-section {
+            margin-bottom: 24px;
+        }
+
+        .settings-section h2 {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .setting-row:last-child {
+            border-bottom: none;
+        }
+
+        .setting-label h3 {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .setting-label p {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        /* Toggle */
+        .toggle {
+            width: 52px;
+            height: 28px;
+            background: rgba(60, 60, 60, 0.8);
+            border-radius: 14px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle.active {
+            background: linear-gradient(90deg, #00c9ff, var(--accent));
+        }
+
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: #fff;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+            transition: transform 0.3s;
+        }
+
+        .toggle.active::after {
+            transform: translateX(24px);
+        }
+
+        /* Slider */
+        .slider-container {
+            width: 150px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .slider-track {
+            flex: 1;
+            height: 6px;
+            background: rgba(60, 60, 60, 0.8);
+            border-radius: 3px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .slider-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00c9ff, var(--accent));
+            border-radius: 3px;
+            transition: width 0.1s;
+        }
+
+        .slider-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+            min-width: 36px;
+            text-align: right;
+        }
+
+        /* Color Grid */
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+        }
+
+        .color-option {
+            aspect-ratio: 1;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 3px solid transparent;
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+
+        .color-option.selected {
+            border-color: #fff;
+        }
+
+        .color-cyan {
+            background: linear-gradient(135deg, #4dd9ff, #00a8cc);
+        }
+
+        .color-pink {
+            background: linear-gradient(135deg, #ff66aa, #ff3388);
+        }
+
+        .color-purple {
+            background: linear-gradient(135deg, #aa66ff, #8833ff);
+        }
+
+        .color-orange {
+            background: linear-gradient(135deg, #ffaa00, #ff8800);
+        }
+
+        .color-green {
+            background: linear-gradient(135deg, #66ff66, #44dd44);
+        }
+
+        .color-red {
+            background: linear-gradient(135deg, #ff6666, #ff3333);
+        }
+
+        /* ===== CONNECTION PANEL ===== */
+        .connection-panel {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            padding: 12px 16px;
+            background: rgba(30, 30, 30, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            z-index: 100;
+        }
+
+        .connection-panel input {
+            padding: 10px 14px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(60, 60, 60, 0.8);
+            color: #fff;
+            font-size: 0.9rem;
+            width: 180px;
+        }
+
+        .connection-panel button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-connect {
+            background: linear-gradient(90deg, #00c9ff, var(--accent));
+            color: #000;
+        }
+
+        .btn-simulate {
+            background: rgba(255, 170, 0, 0.2);
+            color: var(--orange);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 600px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .action-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .color-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Gesture Cursor -->
+    <div id="gesture-cursor"></div>
+
+    <!-- Header -->
+    <header>
+        <div class="logo">
+            <div class="logo-icon">🤖</div>
+            <span>Kenza</span>
+        </div>
+        <div class="status-badge">
+            <div class="status-dot" id="status-dot"></div>
+            <span id="status-text">Disconnected</span>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+        <button class="nav-tab active" data-page="0">🔗 Pair</button>
+        <button class="nav-tab" data-page="1">🏠 Dashboard</button>
+        <button class="nav-tab" data-page="2">🎮 Remote</button>
+        <button class="nav-tab" data-page="3">⚙️ Settings</button>
+    </nav>
+
+    <!-- Pages Container -->
+    <div class="pages-container" id="pages-container">
+
+        <!-- Page 0: Onboarding -->
+        <div class="page" id="page-onboarding">
+            <div class="onboarding-content">
+                <h1 class="onboarding-title">Pair with Kenza</h1>
+                <p class="onboarding-subtitle">Hold this QR code in front of Kenza's camera to connect and configure
+                    WiFi</p>
+                <div class="qr-container">
+                    <canvas id="qr-code"></canvas>
+                </div>
+                <div class="scan-status">
+                    <div class="pulse-dot"></div>
+                    <span>Waiting for Kenza to scan...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page 1: Dashboard -->
+        <div class="page" id="page-dashboard">
+            <div class="dashboard-grid">
+                <!-- Mode Switcher -->
+                <div class="card full-width">
+                    <div class="card-title">🎯 Operation Mode</div>
+                    <div class="mode-toggle">
+                        <button class="mode-btn active" data-mode="autonomous">🧠 Autonomous</button>
+                        <button class="mode-btn" data-mode="remote">🎮 Remote</button>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="card full-width">
+                    <div class="card-title">📊 Status</div>
+                    <div class="stats-row">
+                        <div class="stat-item">
+                            <div class="stat-value" id="stat-battery">95%</div>
+                            <div class="stat-label">Battery</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="stat-wifi">-45dB</div>
+                            <div class="stat-label">WiFi</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="stat-temp">38°C</div>
+                            <div class="stat-label">Temp</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card full-width">
+                    <div class="card-title">⚡ Quick Actions</div>
+                    <div class="action-grid">
+                        <button class="action-btn btn-wave" data-action="wave">👋<span>Wave</span></button>
+                        <button class="action-btn btn-dance" data-action="dance">💃<span>Dance</span></button>
+                        <button class="action-btn btn-follow" data-action="follow">🚶<span>Follow</span></button>
+                        <button class="action-btn btn-speak" data-action="speak">🗣️<span>Talk</span></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page 2: Remote HUD -->
+        <div class="page" id="page-remote">
+            <div class="hud-container">
+                <video id="video-feed" autoplay playsinline muted></video>
+                <div class="hud-overlay">
+                    <div class="telemetry-bar">
+                        <div class="telemetry-item">🔋 <span id="hud-battery">95%</span></div>
+                        <div class="telemetry-item">📶 <span id="hud-wifi">-45dBm</span></div>
+                        <div class="telemetry-item">🌡️ <span id="hud-temp">38°C</span></div>
+                    </div>
+                    <div class="joystick-zone" id="joystick">
+                        <div class="joystick-thumb" id="joystick-thumb"></div>
+                    </div>
+                    <div class="hud-actions">
+                        <button class="hud-btn" id="btn-mic" title="Toggle Mic">🎤</button>
+                        <button class="hud-btn" id="btn-snapshot" title="Snapshot">📷</button>
+                        <button class="hud-btn" id="btn-sound" title="Fun Sound">🐱</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page 3: Settings -->
+        <div class="page" id="page-settings">
+            <div class="settings-section">
+                <h2>👁️ Eye Customization</h2>
+                <div class="card">
+                    <div class="setting-row">
+                        <div class="setting-label">
+                            <h3>Eye Color</h3>
+                            <p>Choose Kenza's iris color</p>
+                        </div>
+                    </div>
+                    <div class="color-grid">
+                        <div class="color-option color-cyan selected" data-color="cyan"></div>
+                        <div class="color-option color-pink" data-color="pink"></div>
+                        <div class="color-option color-purple" data-color="purple"></div>
+                        <div class="color-option color-orange" data-color="orange"></div>
+                        <div class="color-option color-green" data-color="green"></div>
+                        <div class="color-option color-red" data-color="red"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h2>🔊 Voice Settings</h2>
+                <div class="card">
+                    <div class="setting-row">
+                        <div class="setting-label">
+                            <h3>Voice Volume</h3>
+                        </div>
+                        <div class="slider-container">
+                            <div class="slider-track" id="volume-slider">
+                                <div class="slider-fill" style="width: 80%"></div>
+                            </div>
+                            <span class="slider-value">80%</span>
+                        </div>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-label">
+                            <h3>Voice Pitch</h3>
+                        </div>
+                        <div class="slider-container">
+                            <div class="slider-track" id="pitch-slider">
+                                <div class="slider-fill" style="width: 50%"></div>
+                            </div>
+                            <span class="slider-value">50%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h2>🚗 Movement</h2>
+                <div class="card">
+                    <div class="setting-row">
+                        <div class="setting-label">
+                            <h3>Max Speed</h3>
+                            <p>Limit robot movement speed</p>
+                        </div>
+                        <div class="slider-container">
+                            <div class="slider-track" id="speed-slider">
+                                <div class="slider-fill" style="width: 70%"></div>
+                            </div>
+                            <span class="slider-value">70%</span>
+                        </div>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-label">
+                            <h3>Obstacle Avoidance</h3>
+                            <p>Auto-stop when obstacles detected</p>
+                        </div>
+                        <div class="toggle active" id="toggle-obstacle"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Connection Panel -->
+    <div class="connection-panel">
+        <input type="text" id="pi-ip" placeholder="Pi IP (192.168.x.x)">
+        <button class="btn-connect" onclick="connectWebSocket()">Connect</button>
+        <button class="btn-simulate" onclick="enableSimulation()">Simulate</button>
+    </div>
+
+    <!-- QR Code Library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
+    <script>
+        // ===== STATE =====
+        let currentPage = 0;
+        let ws = null;
+        let simulationMode = false;
+        let cursorX = window.innerWidth / 2;
+        let cursorY = window.innerHeight / 2;
+        let settings = {
+            mode: 'autonomous',
+            eyeColor: 'cyan',
+            volume: 80,
+            pitch: 50,
+            speed: 70,
+            obstacleAvoidance: true
+        };
+
+        // ===== DOM ELEMENTS =====
+        const cursor = document.getElementById('gesture-cursor');
+        const pagesContainer = document.getElementById('pages-container');
+        const navTabs = document.querySelectorAll('.nav-tab');
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+
+        // ===== QR CODE GENERATION =====
+        function generateQRCode() {
+            const payload = {
+                auth_token: 'kenza_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                wifi_ssid: 'YourNetwork',
+                wifi_pass: 'YourPassword',
+                timestamp: Date.now()
+            };
+
+            const canvas = document.getElementById('qr-code');
+            QRCode.toCanvas(canvas, JSON.stringify(payload), {
+                width: 200,
+                margin: 0,
+                color: { dark: '#000000', light: '#ffffff' }
+            });
+        }
+
+        // ===== PAGE NAVIGATION =====
+        function navigateToPage(pageIndex) {
+            currentPage = pageIndex;
+            pagesContainer.style.transform = `translateX(-${pageIndex * 100}vw)`;
+            navTabs.forEach((tab, i) => {
+                tab.classList.toggle('active', i === pageIndex);
+            });
+        }
+
+        navTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                navigateToPage(parseInt(tab.dataset.page));
+            });
+        });
+
+        // ===== GESTURE HANDLING =====
+        function updateCursor(x, y, gesture, action) {
+            cursorX = x * window.innerWidth;
+            cursorY = y * window.innerHeight;
+
+            cursor.style.left = cursorX + 'px';
+            cursor.style.top = cursorY + 'px';
+            cursor.classList.add('visible');
+
+            cursor.classList.remove('clicking', 'dragging');
+            if (action === 'click') cursor.classList.add('clicking');
+            else if (action === 'dragging' || action === 'drag_start') cursor.classList.add('dragging');
+
+            // Handle interactions
+            handleGestureInteraction(cursorX, cursorY, action, gesture);
+
+            // Page navigation with pointing gestures
+            if (gesture === 'Point Left' && action !== 'click') {
+                if (currentPage < 3) navigateToPage(currentPage + 1);
+            } else if (gesture === 'Point Right' && action !== 'click') {
+                if (currentPage > 0) navigateToPage(currentPage - 1);
+            }
+        }
+
+        function handleGestureInteraction(x, y, action, gesture) {
+            // Find element under cursor
+            const elements = document.elementsFromPoint(x, y);
+
+            // Handle buttons and interactive elements
+            document.querySelectorAll('.action-btn, .nav-tab, .mode-btn, .color-option, .toggle, .hud-btn').forEach(el => {
+                el.classList.remove('hovered', 'clicked');
+            });
+
+            for (const el of elements) {
+                if (el.matches('.action-btn, .nav-tab, .mode-btn, .color-option, .toggle, .hud-btn')) {
+                    el.classList.add('hovered');
+
+                    if (action === 'click') {
+                        el.classList.add('clicked');
+                        el.click();
+
+                        // Haptic feedback visual
+                        setTimeout(() => el.classList.remove('clicked'), 200);
+                    }
+                    break;
+                }
+
+                // Handle sliders with drag
+                if (el.matches('.slider-track') && (action === 'dragging' || action === 'drag_start')) {
+                    const rect = el.getBoundingClientRect();
+                    const percent = Math.max(0, Math.min(100, ((x - rect.left) / rect.width) * 100));
+                    el.querySelector('.slider-fill').style.width = percent + '%';
+                    el.parentElement.querySelector('.slider-value').textContent = Math.round(percent) + '%';
+
+                    // Send settings update
+                    sendSettingsUpdate();
+                }
+            }
+        }
+
+        // ===== WEBSOCKET =====
+        function connectWebSocket() {
+            const ip = document.getElementById('pi-ip').value.trim();
+            if (!ip) { alert('Enter Pi IP address'); return; }
+
+            try {
+                ws = new WebSocket(`ws://${ip}:8765`);
+
+                ws.onopen = () => {
+                    statusDot.classList.add('connected');
+                    statusText.textContent = 'Connected';
+                    simulationMode = false;
+                };
+
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    updateCursor(data.x, data.y, data.gesture, data.action);
+                };
+
+                ws.onclose = () => {
+                    statusDot.classList.remove('connected');
+                    statusText.textContent = 'Disconnected';
+                };
+
+                ws.onerror = () => console.error('WebSocket error');
+            } catch (e) {
+                console.error('Connection failed:', e);
+            }
+        }
+
+        function sendCommand(type, data) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type, data }));
+            }
+        }
+
+        function sendSettingsUpdate() {
+            sendCommand('update_settings', settings);
+        }
+
+        // ===== SIMULATION MODE =====
+        function enableSimulation() {
+            simulationMode = true;
+            statusDot.classList.add('connected');
+            statusText.textContent = 'Simulation';
+
+            document.addEventListener('mousemove', (e) => {
+                if (simulationMode) {
+                    updateCursor(e.clientX / window.innerWidth, e.clientY / window.innerHeight, 'Open Palm', 'hover');
+                }
+            });
+
+            document.addEventListener('mousedown', (e) => {
+                if (simulationMode && e.button === 0) {
+                    updateCursor(e.clientX / window.innerWidth, e.clientY / window.innerHeight, 'Pinch', 'click');
+                }
+            });
+        }
+
+        // ===== EVENT HANDLERS =====
+        // Mode buttons
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                settings.mode = btn.dataset.mode;
+                sendCommand('switch_mode', { mode: settings.mode });
+            });
+        });
+
+        // Action buttons
+        document.querySelectorAll('.action-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                sendCommand('robot_action', { action: btn.dataset.action });
+            });
+        });
+
+        // Color options
+        document.querySelectorAll('.color-option').forEach(opt => {
+            opt.addEventListener('click', () => {
+                document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
+                opt.classList.add('selected');
+                settings.eyeColor = opt.dataset.color;
+                sendCommand('update_settings', { eyes: { color: settings.eyeColor } });
+            });
+        });
+
+        // Toggles
+        document.querySelectorAll('.toggle').forEach(toggle => {
+            toggle.addEventListener('click', () => {
+                toggle.classList.toggle('active');
+                sendSettingsUpdate();
+            });
+        });
+
+        // HUD buttons
+        document.getElementById('btn-mic').addEventListener('click', function () {
+            this.classList.toggle('muted');
+            sendCommand('toggle_mic', { muted: this.classList.contains('muted') });
+        });
+
+        document.getElementById('btn-sound').addEventListener('click', () => {
+            sendCommand('play_sound', { sound: 'meow.wav' });
+        });
+
+        // ===== INIT =====
+        generateQRCode();
+    </script>
+</body>
+
+</html>

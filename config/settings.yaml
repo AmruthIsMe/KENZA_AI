@@ -1,0 +1,48 @@
+# Kenza AI Configuration
+# ========================
+
+# Primary AI Provider (gemini or offline)
+primary_provider: "gemini"
+
+# API Keys (can also use environment variables: GEMINI_API_KEY)
+api_keys:
+  gemini: ""  # Get from https://aistudio.google.com/
+
+# Model Configuration
+models:
+  gemini: "gemini-2.0-flash"
+  # Llama model for offline mode (download from HuggingFace)
+  llama_path: "models/llama-3.2-3b-instruct.Q4_K_M.gguf"
+  llama_context: 2048
+  llama_threads: 4
+
+# Voice Settings (Edge-TTS)
+voice:
+  # Available voices: https://github.com/rany2/edge-tts
+  # Popular options:
+  #   en-US-AriaNeural (female, natural)
+  #   en-US-GuyNeural (male)
+  #   en-GB-SoniaNeural (British female)
+  edge_tts_voice: "en-US-AriaNeural"
+  wake_word: "kenza"
+
+# Audio Settings
+audio:
+  energy_threshold: 1000    # Higher for noisy environments
+  listen_timeout: 10        # Seconds to wait for speech
+  phrase_time_limit: 8      # Max phrase length in seconds
+
+# GPIO Settings (Raspberry Pi LEDs)
+gpio:
+  enabled: true
+  led_listening: 24   # Green LED - BCM pin
+  led_thinking: 25    # Red LED - BCM pin
+
+# Sleep Commands (phrases that put Kenza back to sleep)
+sleep_commands:
+  - "that's all"
+  - "go to sleep"
+  - "stop"
+  - "goodbye"
+  - "bye"
+  - "thank you that's all"

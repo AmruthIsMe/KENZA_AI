@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Kenza Telepresence Controller</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0a0a0f;
+            min-height: 100vh;
+            overflow: hidden;
+            color: #fff;
+        }
+
+        /* Full-screen Video Background */
+        #videoContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+            z-index: 0;
+        }
+
+        #cameraFeed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.9;
+        }
+
+        /* HUD Overlay */
+        .hud-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .hud-overlay>* {
+            pointer-events: auto;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7) 0%, transparent 100%);
+        }
+
+        .title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            background: linear-gradient(90deg, #4fc3f7, #00e5ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .status-badges {
+            display: flex;
+            gap: 12px;
+        }
+
+        .badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            backdrop-filter: blur(5px);
+        }
+
+        .badge-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #666;
+        }
+
+        .badge-dot.connected {
+            background: #4caf50;
+            box-shadow: 0 0 8px rgba(76, 175, 80, 0.8);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* Connection Panel */
+        .connection-panel {
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .connection-panel input {
+            padding: 8px 12px;
+            border: 1px solid rgba(79, 195, 247, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 0.85rem;
+            width: 120px;
+        }
+
+        .connection-panel input:focus {
+            outline: none;
+            border-color: #4fc3f7;
+        }
+
+        .btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-connect {
+            background: linear-gradient(135deg, #4caf50, #388e3c);
+            color: #fff;
+        }
+
+        .btn-stream {
+            background: linear-gradient(135deg, #2196f3, #1976d2);
+            color: #fff;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Direction Display (Center Top) */
+        .direction-hud {
+            position: absolute;
+            top: 130px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            padding: 10px 25px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+        }
+
+        .direction-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #4fc3f7;
+            text-shadow: 0 0 20px rgba(79, 195, 247, 0.5);
+        }
+
+        .speed-text {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 4px;
+        }
+
+        /* Joystick Container */
+        .joystick-container {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            width: min(200px, 40vmin);
+            height: min(200px, 40vmin);
+        }
+
+        .joystick-base {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: rgba(30, 30, 48, 0.8);
+            box-shadow:
+                inset 0 0 40px rgba(0, 0, 0, 0.5),
+                0 0 0 2px rgba(79, 195, 247, 0.3);
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+
+        .joystick-handle {
+            position: absolute;
+            width: 70px;
+            height: 70px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: linear-gradient(145deg, rgba(79, 195, 247, 0.8), rgba(0, 150, 200, 0.8));
+            box-shadow:
+                0 4px 20px rgba(0, 0, 0, 0.4),
+                0 0 0 3px rgba(255, 255, 255, 0.1);
+            cursor: grab;
+            transition: box-shadow 0.2s;
+        }
+
+        .joystick-handle.active {
+            cursor: grabbing;
+            box-shadow:
+                0 4px 20px rgba(0, 0, 0, 0.4),
+                0 0 30px rgba(79, 195, 247, 0.6);
+        }
+
+        /* Right Side Controls */
+        .right-controls {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .action-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .btn-stop {
+            background: linear-gradient(145deg, rgba(244, 67, 54, 0.8), rgba(211, 47, 47, 0.8));
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4);
+        }
+
+        .btn-stop:hover {
+            transform: scale(1.1);
+        }
+
+        .btn-stop:active {
+            transform: scale(0.95);
+        }
+
+        .btn-audio {
+            background: linear-gradient(145deg, rgba(156, 39, 176, 0.8), rgba(123, 31, 162, 0.8));
+            box-shadow: 0 4px 15px rgba(156, 39, 176, 0.4);
+        }
+
+        .btn-audio.muted {
+            background: linear-gradient(145deg, rgba(100, 100, 100, 0.8), rgba(70, 70, 70, 0.8));
+        }
+
+        /* Speed Meter */
+        .speed-meter {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+        }
+
+        .speed-bar-bg {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .speed-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4fc3f7, #00e5ff);
+            border-radius: 4px;
+            transition: width 0.1s;
+        }
+
+        .speed-label {
+            text-align: center;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 5px;
+        }
+
+        /* Log Panel */
+        .log-panel {
+            position: absolute;
+            top: 60px;
+            left: 15px;
+            width: 160px;
+            max-height: 120px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            padding: 8px;
+            backdrop-filter: blur(5px);
+            overflow-y: auto;
+            font-size: 0.7rem;
+        }
+
+        .log-panel h4 {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 5px;
+        }
+
+        .log-entry {
+            padding: 2px 0;
+            color: rgba(255, 255, 255, 0.6);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .log-entry.sent {
+            color: #4fc3f7;
+        }
+
+        .log-entry.error {
+            color: #f44336;
+        }
+
+        /* No Video Placeholder */
+        .no-video {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .no-video .icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 600px) {
+            .connection-panel {
+                flex-wrap: wrap;
+                width: 90%;
+            }
+
+            .connection-panel input {
+                width: 100%;
+            }
+
+            .joystick-container {
+                left: 15px;
+                bottom: 15px;
+                width: min(150px, 35vmin);
+                height: min(150px, 35vmin);
+            }
+
+            .joystick-handle {
+                width: 55px;
+                height: 55px;
+            }
+
+            .right-controls {
+                right: 15px;
+                bottom: 15px;
+            }
+
+            .action-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+
+            .log-panel {
+                display: none;
+            }
+
+            .speed-meter {
+                width: 100px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Video Background -->
+    <div id="videoContainer">
+        <video id="cameraFeed" autoplay playsinline muted></video>
+        <div class="no-video" id="noVideoPlaceholder">
+            <div class="icon">📷</div>
+            <div>Camera not connected</div>
+            <div style="font-size: 0.8rem; margin-top: 8px;">Enter Pi IP and click "Stream"</div>
+        </div>
+    </div>
+
+    <!-- HUD Overlay -->
+    <div class="hud-overlay">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <span class="title">🤖 Kenza Telepresence</span>
+            <div class="status-badges">
+                <div class="badge">
+                    <div class="badge-dot" id="wsDot"></div>
+                    <span id="wsStatus">WS</span>
+                </div>
+                <div class="badge">
+                    <div class="badge-dot" id="espDot"></div>
+                    <span id="espStatus">ESP32</span>
+                </div>
+                <div class="badge">
+                    <div class="badge-dot" id="camDot"></div>
+                    <span id="camStatus">CAM</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Connection Panel -->
+        <div class="connection-panel">
+            <input type="text" id="piIp" placeholder="Pi IP" value="192.168.1.100">
+            <input type="text" id="espIp" placeholder="ESP32 IP" value="192.168.4.1">
+            <button class="btn btn-connect" id="wsConnectBtn" onclick="toggleWebSocket()">Connect</button>
+            <button class="btn btn-stream" id="streamBtn" onclick="toggleStream()">Stream</button>
+        </div>
+
+        <!-- Direction HUD -->
+        <div class="direction-hud">
+            <div class="direction-text" id="directionDisplay">STOP</div>
+            <div class="speed-text">Speed: <span id="speedDisplay">0%</span></div>
+        </div>
+
+        <!-- Log Panel -->
+        <div class="log-panel">
+            <h4>📋 Log</h4>
+            <div id="logContainer"></div>
+        </div>
+
+        <!-- Joystick -->
+        <div class="joystick-container">
+            <div class="joystick-base" id="joystickBase">
+                <div class="joystick-handle" id="joystickHandle"></div>
+            </div>
+        </div>
+
+        <!-- Speed Meter -->
+        <div class="speed-meter">
+            <div class="speed-bar-bg">
+                <div class="speed-bar-fill" id="speedBar" style="width: 0%;"></div>
+            </div>
+            <div class="speed-label">THROTTLE</div>
+        </div>
+
+        <!-- Right Controls -->
+        <div class="right-controls">
+            <button class="action-btn btn-audio" id="audioBtn" onclick="toggleAudio()" title="Toggle Audio">🔇</button>
+            <button class="action-btn btn-stop" onclick="emergencyStop()" title="Emergency Stop">⏹</button>
+        </div>
+    </div>
+
+    <script>
+        // ========== Configuration ==========
+        const CONFIG = {
+            wsPort: 8765,
+            streamPort: 8889,
+            streamPath: '/kenza/whep',
+            commandInterval: 50,
+            deadzone: 0.15
+        };
+
+        // ========== State ==========
+        const state = {
+            wsConnected: false,
+            espConnected: false,
+            streamConnected: false,
+            currentDirection: 'S',
+            currentSpeed: 0,
+            isDragging: false,
+            handleX: 0,
+            handleY: 0,
+            audioMuted: true
+        };
+
+        let ws = null;
+        let pc = null;
+        let lastCommandTime = 0;
+
+        // ========== DOM Elements ==========
+        const el = {
+            joystickHandle: document.getElementById('joystickHandle'),
+            joystickBase: document.getElementById('joystickBase'),
+            cameraFeed: document.getElementById('cameraFeed'),
+            noVideoPlaceholder: document.getElementById('noVideoPlaceholder'),
+            wsDot: document.getElementById('wsDot'),
+            wsStatus: document.getElementById('wsStatus'),
+            espDot: document.getElementById('espDot'),
+            espStatus: document.getElementById('espStatus'),
+            camDot: document.getElementById('camDot'),
+            camStatus: document.getElementById('camStatus'),
+            directionDisplay: document.getElementById('directionDisplay'),
+            speedDisplay: document.getElementById('speedDisplay'),
+            speedBar: document.getElementById('speedBar'),
+            logContainer: document.getElementById('logContainer'),
+            piIp: document.getElementById('piIp'),
+            espIp: document.getElementById('espIp'),
+            wsConnectBtn: document.getElementById('wsConnectBtn'),
+            streamBtn: document.getElementById('streamBtn'),
+            audioBtn: document.getElementById('audioBtn')
+        };
+
+        // ========== Joystick Logic ==========
+        let baseRect, centerX, centerY, maxRadius;
+
+        function updateJoystickMetrics() {
+            baseRect = el.joystickBase.getBoundingClientRect();
+            centerX = baseRect.width / 2;
+            centerY = baseRect.height / 2;
+            maxRadius = baseRect.width / 2 - 35;
+        }
+
+        window.addEventListener('resize', updateJoystickMetrics);
+        setTimeout(updateJoystickMetrics, 100);
+
+        function handleStart(e) {
+            e.preventDefault();
+            state.isDragging = true;
+            el.joystickHandle.classList.add('active');
+            updateJoystickMetrics();
+            handleMove(e);
+        }
+
+        function handleMove(e) {
+            if (!state.isDragging) return;
+            e.preventDefault();
+
+            const touch = e.touches ? e.touches[0] : e;
+            const rect = el.joystickBase.getBoundingClientRect();
+
+            let x = touch.clientX - rect.left - centerX;
+            let y = touch.clientY - rect.top - centerY;
+
+            const distance = Math.sqrt(x * x + y * y);
+            if (distance > maxRadius) {
+                x = (x / distance) * maxRadius;
+                y = (y / distance) * maxRadius;
+            }
+
+            state.handleX = x / maxRadius;
+            state.handleY = y / maxRadius;
+
+            el.joystickHandle.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+            updateDirection();
+        }
+
+        function handleEnd(e) {
+            e.preventDefault();
+            state.isDragging = false;
+            el.joystickHandle.classList.remove('active');
+
+            el.joystickHandle.style.transition = 'transform 0.15s ease-out';
+            el.joystickHandle.style.transform = 'translate(-50%, -50%)';
+            setTimeout(() => { el.joystickHandle.style.transition = 'none'; }, 150);
+
+            state.handleX = 0;
+            state.handleY = 0;
+            updateDirection();
+        }
+
+        function updateDirection() {
+            const x = state.handleX;
+            const y = state.handleY;
+            const distance = Math.sqrt(x * x + y * y);
+
+            state.currentSpeed = Math.round(Math.min(distance, 1) * 100);
+
+            let newDirection = 'S';
+            if (distance > CONFIG.deadzone) {
+                const angle = Math.atan2(y, x) * (180 / Math.PI);
+                if (angle >= -45 && angle < 45) newDirection = 'R';
+                else if (angle >= 45 && angle < 135) newDirection = 'B';
+                else if (angle >= -135 && angle < -45) newDirection = 'F';
+                else newDirection = 'L';
+            }
+
+            // Update UI
+            const names = { 'F': 'FORWARD', 'B': 'BACKWARD', 'L': 'LEFT', 'R': 'RIGHT', 'S': 'STOP' };
+            el.directionDisplay.textContent = names[newDirection];
+            el.speedDisplay.textContent = state.currentSpeed + '%';
+            el.speedBar.style.width = state.currentSpeed + '%';
+
+            // Send command (throttled)
+            const now = Date.now();
+            if (newDirection !== state.currentDirection || now - lastCommandTime > CONFIG.commandInterval) {
+                state.currentDirection = newDirection;
+                lastCommandTime = now;
+                sendMotorCommand(newDirection, state.currentSpeed);
+            }
+        }
+
+        // Bind joystick events
+        el.joystickHandle.addEventListener('mousedown', handleStart);
+        el.joystickHandle.addEventListener('touchstart', handleStart);
+        document.addEventListener('mousemove', handleMove);
+        document.addEventListener('touchmove', handleMove, { passive: false });
+        document.addEventListener('mouseup', handleEnd);
+        document.addEventListener('touchend', handleEnd);
+
+        // ========== WebSocket Communication ==========
+        function toggleWebSocket() {
+            if (state.wsConnected) {
+                disconnectWebSocket();
+            } else {
+                connectWebSocket();
+            }
+        }
+
+        function connectWebSocket() {
+            const ip = el.piIp.value.trim();
+            if (!ip) {
+                addLog('Enter Pi IP', 'error');
+                return;
+            }
+
+            const url = `ws://${ip}:${CONFIG.wsPort}`;
+            addLog(`Connecting to ${url}...`);
+
+            try {
+                ws = new WebSocket(url);
+
+                ws.onopen = () => {
+                    state.wsConnected = true;
+                    el.wsDot.classList.add('connected');
+                    el.wsStatus.textContent = 'WS ✓';
+                    el.wsConnectBtn.textContent = 'Disconnect';
+                    addLog('WebSocket connected!', 'sent');
+
+                    // Configure ESP32 IP on server
+                    ws.send(JSON.stringify({
+                        type: 'esp32_config',
+                        data: { ip: el.espIp.value.trim() }
+                    }));
+                };
+
+                ws.onmessage = (event) => {
+                    try {
+                        const msg = JSON.parse(event.data);
+                        handleServerMessage(msg);
+                    } catch (e) { }
+                };
+
+                ws.onclose = () => {
+                    state.wsConnected = false;
+                    el.wsDot.classList.remove('connected');
+                    el.wsStatus.textContent = 'WS';
+                    el.wsConnectBtn.textContent = 'Connect';
+                    addLog('WebSocket disconnected');
+                };
+
+                ws.onerror = () => {
+                    addLog('WebSocket error', 'error');
+                };
+            } catch (e) {
+                addLog('Connection failed', 'error');
+            }
+        }
+
+        function disconnectWebSocket() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+
+        function handleServerMessage(msg) {
+            if (msg.type === 'esp32_status') {
+                state.espConnected = msg.data.connected;
+                el.espDot.classList.toggle('connected', state.espConnected);
+                el.espStatus.textContent = state.espConnected ? 'ESP ✓' : 'ESP32';
+            } else if (msg.type === 'motor_ack') {
+                // Motor command acknowledged
+            }
+        }
+
+        function sendMotorCommand(direction, speed) {
+            // Try WebSocket first (lower latency)
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'motor',
+                    data: { direction, speed }
+                }));
+            } else {
+                // Fallback to direct HTTP
+                const ip = el.espIp.value.trim();
+                if (ip) {
+                    fetch(`http://${ip}/${direction}`, { mode: 'no-cors', cache: 'no-store' }).catch(() => { });
+                }
+            }
+        }
+
+        // ========== Camera Stream (WebRTC WHEP) ==========
+        function toggleStream() {
+            if (state.streamConnected) {
+                disconnectStream();
+            } else {
+                connectStream();
+            }
+        }
+
+        async function connectStream() {
+            const ip = el.piIp.value.trim();
+            if (!ip) {
+                addLog('Enter Pi IP for stream', 'error');
+                return;
+            }
+
+            const whepUrl = `http://${ip}:${CONFIG.streamPort}${CONFIG.streamPath}`;
+            addLog(`Connecting camera...`);
+
+            try {
+                pc = new RTCPeerConnection({
+                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                });
+
+                pc.ontrack = (event) => {
+                    if (!el.cameraFeed.srcObject) {
+                        el.cameraFeed.srcObject = new MediaStream();
+                    }
+                    el.cameraFeed.srcObject.addTrack(event.track);
+                    el.noVideoPlaceholder.style.display = 'none';
+
+                    if (event.track.kind === 'video') {
+                        el.camDot.classList.add('connected');
+                        el.camStatus.textContent = 'CAM ✓';
+                    }
+                };
+
+                pc.oniceconnectionstatechange = () => {
+                    if (pc.iceConnectionState === 'connected') {
+                        state.streamConnected = true;
+                        el.streamBtn.textContent = 'Stop';
+                        addLog('Camera connected!', 'sent');
+                    } else if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
+                        disconnectStream();
+                    }
+                };
+
+                // Receive-only
+                pc.addTransceiver('video', { direction: 'recvonly' });
+                pc.addTransceiver('audio', { direction: 'recvonly' });
+
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+
+                // Wait for ICE gathering
+                await new Promise(resolve => {
+                    if (pc.iceGatheringState === 'complete') resolve();
+                    else pc.onicegatheringstatechange = () => {
+                        if (pc.iceGatheringState === 'complete') resolve();
+                    };
+                });
+
+                const response = await fetch(whepUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/sdp' },
+                    body: pc.localDescription.sdp
+                });
+
+                if (!response.ok) throw new Error('Server returned ' + response.status);
+
+                const answer = await response.text();
+                await pc.setRemoteDescription({ type: 'answer', sdp: answer });
+
+            } catch (e) {
+                addLog('Stream error: ' + e.message, 'error');
+                disconnectStream();
+            }
+        }
+
+        function disconnectStream() {
+            if (pc) {
+                pc.close();
+                pc = null;
+            }
+            el.cameraFeed.srcObject = null;
+            el.noVideoPlaceholder.style.display = 'block';
+            el.camDot.classList.remove('connected');
+            el.camStatus.textContent = 'CAM';
+            el.streamBtn.textContent = 'Stream';
+            state.streamConnected = false;
+            addLog('Camera disconnected');
+        }
+
+        // ========== Audio Control ==========
+        function toggleAudio() {
+            state.audioMuted = !state.audioMuted;
+            el.cameraFeed.muted = state.audioMuted;
+            el.audioBtn.innerHTML = state.audioMuted ? '🔇' : '🔊';
+            el.audioBtn.classList.toggle('muted', state.audioMuted);
+
+            if (!state.audioMuted) {
+                el.cameraFeed.play().catch(() => { });
+            }
+        }
+
+        // ========== Emergency Stop ==========
+        function emergencyStop() {
+            state.currentDirection = 'S';
+            state.currentSpeed = 0;
+
+            el.directionDisplay.textContent = 'STOP';
+            el.speedDisplay.textContent = '0%';
+            el.speedBar.style.width = '0%';
+
+            // Send via both channels
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'motor', data: { direction: 'S', speed: 0 } }));
+            }
+            const ip = el.espIp.value.trim();
+            if (ip) {
+                fetch(`http://${ip}/S`, { mode: 'no-cors' }).catch(() => { });
+            }
+
+            addLog('⏹ EMERGENCY STOP', 'sent');
+        }
+
+        // ========== Keyboard Support ==========
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT') return;
+
+            let dir = null;
+            switch (e.key) {
+                case 'ArrowUp': case 'w': case 'W': dir = 'F'; break;
+                case 'ArrowDown': case 's': case 'S': dir = 'B'; break;
+                case 'ArrowLeft': case 'a': case 'A': dir = 'L'; break;
+                case 'ArrowRight': case 'd': case 'D': dir = 'R'; break;
+                case ' ': emergencyStop(); return;
+            }
+
+            if (dir && dir !== state.currentDirection) {
+                state.currentDirection = dir;
+                state.currentSpeed = 100;
+                const names = { 'F': 'FORWARD', 'B': 'BACKWARD', 'L': 'LEFT', 'R': 'RIGHT' };
+                el.directionDisplay.textContent = names[dir];
+                el.speedDisplay.textContent = '100%';
+                el.speedBar.style.width = '100%';
+                sendMotorCommand(dir, 100);
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.target.tagName === 'INPUT') return;
+            const keys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd', 'W', 'A', 'S', 'D'];
+            if (keys.includes(e.key)) {
+                state.currentDirection = 'S';
+                state.currentSpeed = 0;
+                el.directionDisplay.textContent = 'STOP';
+                el.speedDisplay.textContent = '0%';
+                el.speedBar.style.width = '0%';
+                sendMotorCommand('S', 0);
+            }
+        });
+
+        // ========== Logging ==========
+        function addLog(message, type = '') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = message;
+            el.logContainer.insertBefore(entry, el.logContainer.firstChild);
+            while (el.logContainer.children.length > 15) {
+                el.logContainer.removeChild(el.logContainer.lastChild);
+            }
+        }
+
+        // ========== Init ==========
+        addLog('Ready. Connect to control robot.');
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,2276 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kenza Eye Settings</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%);
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            align-items: center;
+            padding: 20px 24px;
+            background: rgba(30, 30, 30, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+            margin-right: 16px;
+            transition: transform 0.2s;
+        }
+
+        .back-btn:hover {
+            transform: translateX(-3px);
+        }
+
+        header h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        /* Main Layout */
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Eye Preview */
+        .eye-preview {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            padding: 40px 20px;
+            margin-bottom: 20px;
+        }
+
+        .eye-canvas {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #4dd9ff 0%, #00a8cc 50%, #006680 100%);
+            box-shadow:
+                0 0 40px rgba(77, 217, 255, 0.4),
+                inset 0 -10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .eye-canvas .pupil {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: radial-gradient(circle at 40% 40%, #333 0%, #000 100%);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.1s ease-out;
+        }
+
+        .eye-canvas .highlight {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            top: 25%;
+            left: 60%;
+        }
+
+        .eye-canvas .highlight-small {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            top: 45%;
+            left: 30%;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px;
+            background: rgba(40, 40, 40, 0.6);
+            border-radius: 16px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: rgba(77, 217, 255, 0.2);
+            color: #4dd9ff;
+        }
+
+        .tab:hover:not(.active) {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Settings Card */
+        .settings-card {
+            background: rgba(40, 40, 40, 0.6);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        /* Toggle Row */
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .toggle-row:last-child {
+            border-bottom: none;
+        }
+
+        .toggle-info h3 {
+            font-size: 1rem;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .toggle-info p {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            width: 52px;
+            height: 28px;
+            background: rgba(60, 60, 60, 0.8);
+            border-radius: 14px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: linear-gradient(90deg, #00c9ff 0%, #4dd9ff 100%);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: #fff;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(24px);
+        }
+
+        /* Style Categories */
+        .style-tabs {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 20px;
+        }
+
+        .style-tab {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            padding-bottom: 8px;
+            position: relative;
+            transition: color 0.3s;
+        }
+
+        .style-tab.active {
+            color: #fff;
+        }
+
+        .style-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: #4dd9ff;
+            border-radius: 2px;
+        }
+
+        /* Eye Grid */
+        .eye-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .eye-option {
+            aspect-ratio: 1;
+            border-radius: 16px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .eye-option:hover {
+            transform: scale(1.05);
+        }
+
+        .eye-option.selected {
+            box-shadow: 0 0 0 3px #4dd9ff;
+        }
+
+        .eye-option .mini-eye {
+            width: 70%;
+            height: 70%;
+            border-radius: 50%;
+            position: relative;
+            box-shadow:
+                0 0 20px currentColor,
+                inset 0 -5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .eye-option .mini-eye::before {
+            content: '';
+            position: absolute;
+            width: 40%;
+            height: 40%;
+            background: radial-gradient(circle at 40% 40%, #333 0%, #000 100%);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .eye-option .mini-eye::after {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            top: 20%;
+            right: 25%;
+        }
+
+        /* Eye Colors */
+        .eye-cyan {
+            background: linear-gradient(135deg, #0a2a3a, #0d1f2a);
+        }
+
+        .eye-cyan .mini-eye {
+            background: radial-gradient(circle at 30% 30%, #4dd9ff 0%, #00a8cc 60%, #006680 100%);
+            color: rgba(77, 217, 255, 0.5);
+        }
+
+        .eye-orange {
+            background: linear-gradient(135deg, #3a2a0a, #2a1f0d);
+        }
+
+        .eye-orange .mini-eye {
+            background: radial-gradient(circle at 30% 30%, #ffaa00 0%, #ff8800 60%, #cc6600 100%);
+            color: rgba(255, 170, 0, 0.5);
+        }
+
+        .eye-teal {
+            background: linear-gradient(135deg, #0a3a3a, #0d2a2a);
+        }
+
+        .eye-teal .mini-eye {
+            background: radial-gradient(circle at 30% 30%, #00ffcc 0%, #00ccaa 60%, #008877 100%);
+            color: rgba(0, 255, 204, 0.5);
+        }
+
+        .eye-pink {
+            background: linear-gradient(135deg, #3a0a2a, #2a0d1f);
+        }
+
+        .eye-pink .mini-eye {
+            background: radial-gradient(circle at 30% 30%, #ff66aa 0%, #ff3388 60%, #cc0066 100%);
+            color: rgba(255, 102, 170, 0.5);
+        }
+
+        .eye-purple {
+            background: linear-gradient(135deg, #2a0a3a, #1f0d2a);
+        }
+
+        .eye-purple .mini-eye {
+            background: radial-gradient(circle at 30% 30%, #aa66ff 0%, #8833ff 60%, #6600cc 100%);
+            color: rgba(170, 102, 255, 0.5);
+        }
+
+        .eye-violet {
+            background: linear-gradient(135deg, #3a0a3a, #2a0d2a);
+        }
+
+        .eye-violet .mini-eye {
+            background: radial-gradient(circle at 30% 30%, #ff66ff 0%, #dd44dd 60%, #aa00aa 100%);
+            color: rgba(255, 102, 255, 0.5);
+        }
+
+        /* Additional Colors for Pet Pulse */
+        .eye-green {
+            background: linear-gradient(135deg, #0a3a0a, #0d2a0d);
+        }
+
+        .eye-green .mini-eye {
+            background: radial-gradient(circle at 30% 30%, #66ff66 0%, #44dd44 60%, #00aa00 100%);
+            color: rgba(102, 255, 102, 0.5);
+        }
+
+        .eye-red {
+            background: linear-gradient(135deg, #3a0a0a, #2a0d0d);
+        }
+
+        .eye-red .mini-eye {
+            background: radial-gradient(circle at 30% 30%, #ff6666 0%, #ff3333 60%, #cc0000 100%);
+            color: rgba(255, 102, 102, 0.5);
+        }
+
+        .eye-gold {
+            background: linear-gradient(135deg, #3a3a0a, #2a2a0d);
+        }
+
+        .eye-gold .mini-eye {
+            background: radial-gradient(circle at 30% 30%, #ffdd66 0%, #ffcc00 60%, #cc9900 100%);
+            color: rgba(255, 221, 102, 0.5);
+        }
+
+        /* Comic Burst Colors */
+        .eye-electric {
+            background: linear-gradient(135deg, #0a1a3a, #0d0f2a);
+        }
+
+        .eye-electric .mini-eye {
+            background: radial-gradient(circle at 30% 30%, #00ffff 0%, #0088ff 60%, #0044cc 100%);
+            color: rgba(0, 255, 255, 0.5);
+        }
+
+        .eye-neon {
+            background: linear-gradient(135deg, #1a3a0a, #0f2a0d);
+        }
+
+        .eye-neon .mini-eye {
+            background: radial-gradient(circle at 30% 30%, #ccff00 0%, #88dd00 60%, #44aa00 100%);
+            color: rgba(204, 255, 0, 0.5);
+        }
+
+        .eye-sunset {
+            background: linear-gradient(135deg, #3a1a0a, #2a0f0d);
+        }
+
+        .eye-sunset .mini-eye {
+            background: radial-gradient(circle at 30% 30%, #ff9966 0%, #ff6633 60%, #cc3300 100%);
+            color: rgba(255, 153, 102, 0.5);
+        }
+
+        /* More Settings */
+        .more-settings {
+            margin-top: 30px;
+        }
+
+        .more-settings h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        /* Slider */
+        .slider-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+        }
+
+        .slider-label {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .slider-control {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex: 1;
+            max-width: 250px;
+        }
+
+        .slider-value {
+            font-size: 1rem;
+            font-weight: 600;
+            min-width: 40px;
+            text-align: right;
+        }
+
+        .slider-track {
+            flex: 1;
+            height: 6px;
+            background: rgba(60, 60, 60, 0.8);
+            border-radius: 3px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .slider-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00c9ff 0%, #4dd9ff 100%);
+            border-radius: 3px;
+            transition: width 0.1s;
+        }
+
+        .slider-thumb {
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            cursor: grab;
+            transition: box-shadow 0.2s;
+        }
+
+        .slider-thumb:hover {
+            box-shadow: 0 2px 12px rgba(77, 217, 255, 0.5);
+        }
+
+        /* Connection Panel */
+        .connection-panel {
+            background: rgba(40, 40, 40, 0.6);
+            border-radius: 20px;
+            padding: 20px 24px;
+            margin-top: 20px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .connection-panel input {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(60, 60, 60, 0.8);
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        .connection-panel input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .connection-panel button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-connect {
+            background: linear-gradient(90deg, #00c9ff 0%, #4dd9ff 100%);
+            color: #000;
+        }
+
+        .btn-simulate {
+            background: rgba(255, 170, 0, 0.2);
+            color: #ffaa00;
+        }
+
+        .btn-connect:hover {
+            box-shadow: 0 4px 15px rgba(77, 217, 255, 0.4);
+        }
+
+        .btn-simulate:hover {
+            background: rgba(255, 170, 0, 0.3);
+        }
+
+        /* Status Indicator */
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(40, 40, 40, 0.6);
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #666;
+        }
+
+        .status-dot.connected {
+            background: #4caf50;
+            box-shadow: 0 0 8px rgba(76, 175, 80, 0.6);
+        }
+
+        /* Gesture Cursor */
+        #gesture-cursor {
+            position: fixed;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: rgba(77, 217, 255, 0.3);
+            border: 2px solid #4dd9ff;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 10000;
+            opacity: 0;
+            transition: all 0.1s ease-out;
+        }
+
+        #gesture-cursor.visible {
+            opacity: 1;
+        }
+
+        #gesture-cursor.clicking {
+            background: rgba(0, 255, 100, 0.6);
+            border-color: #00ff64;
+            transform: translate(-50%, -50%) scale(1.3);
+        }
+
+        #gesture-cursor.dragging {
+            background: rgba(255, 170, 0, 0.6);
+            border-color: #ffaa00;
+        }
+
+        /* Animation for eyes */
+        @keyframes blink {
+
+            0%,
+            100% {
+                transform: scaleY(1);
+            }
+
+            50% {
+                transform: scaleY(0.1);
+            }
+        }
+
+        @keyframes saccade {
+
+            0%,
+            100% {
+                transform: translate(-50%, -50%);
+            }
+
+            25% {
+                transform: translate(-48%, -52%);
+            }
+
+            50% {
+                transform: translate(-52%, -50%);
+            }
+
+            75% {
+                transform: translate(-50%, -48%);
+            }
+        }
+
+        @keyframes tear-drop {
+
+            0%,
+            100% {
+                transform: translateX(-50%) translateY(0);
+                opacity: 0.8;
+            }
+
+            50% {
+                transform: translateX(-50%) translateY(10px);
+                opacity: 1;
+            }
+        }
+
+        @keyframes spin {
+            from {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+
+            to {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        @keyframes pulse-heart {
+
+            0%,
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            50% {
+                transform: translate(-50%, -50%) scale(1.2);
+            }
+        }
+
+        @keyframes dizzy-wobble {
+
+            0%,
+            100% {
+                transform: rotate(-5deg);
+            }
+
+            50% {
+                transform: rotate(5deg);
+            }
+        }
+
+        @keyframes zzz-float {
+            0% {
+                opacity: 0;
+                transform: translateY(0) scale(0.5);
+            }
+
+            20% {
+                opacity: 1;
+            }
+
+            80% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateY(-60px) scale(1.2);
+            }
+        }
+
+        @keyframes watery-shimmer {
+
+            0%,
+            100% {
+                box-shadow:
+                    inset 0 -20px 30px rgba(100, 180, 255, 0.4),
+                    0 0 20px rgba(100, 180, 255, 0.3);
+            }
+
+            50% {
+                box-shadow:
+                    inset 0 -25px 35px rgba(100, 180, 255, 0.5),
+                    0 0 30px rgba(100, 180, 255, 0.4);
+            }
+        }
+
+        @keyframes heart-beat {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            15% {
+                transform: scale(1.15);
+            }
+
+            30% {
+                transform: scale(1);
+            }
+
+            45% {
+                transform: scale(1.1);
+            }
+        }
+
+        @keyframes wink-squeeze {
+            0% {
+                transform: scaleY(1) scaleX(1);
+            }
+
+            30% {
+                transform: scaleY(0.1) scaleX(1.1);
+            }
+
+            50% {
+                transform: scaleY(0.1) scaleX(1.1);
+            }
+
+            100% {
+                transform: scaleY(1) scaleX(1);
+            }
+        }
+
+        @keyframes yawn-open {
+
+            0%,
+            100% {
+                transform: translateX(-50%) scaleY(0.3);
+            }
+
+            50% {
+                transform: translateX(-50%) scaleY(1);
+            }
+        }
+
+        .eye-canvas.blinking {
+            animation: blink 0.15s ease-in-out;
+        }
+
+        .eye-canvas.dizzy-spin {
+            animation: dizzy-wobble 0.3s ease-in-out infinite;
+        }
+
+        .eye-canvas .pupil.saccade {
+            animation: saccade 2s ease-in-out infinite;
+        }
+
+        /* Eye Shape Grid */
+        .eye-shape-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .shape-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 8px;
+            background: rgba(40, 40, 40, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .shape-option:hover {
+            background: rgba(60, 60, 60, 0.8);
+            border-color: rgba(77, 217, 255, 0.5);
+        }
+
+        .shape-option.selected {
+            background: rgba(77, 217, 255, 0.2);
+            border-color: #4dd9ff;
+        }
+
+        .shape-option span {
+            margin-top: 8px;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .shape-preview {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #4dd9ff 0%, #00a8cc 100%);
+            box-shadow: 0 0 15px rgba(77, 217, 255, 0.5);
+        }
+
+        .shape-round {
+            border-radius: 50%;
+        }
+
+        .shape-oval {
+            border-radius: 50%;
+            transform: scaleX(0.7);
+            width: 50px;
+        }
+
+        .shape-anime {
+            border-radius: 50% 50% 40% 40%;
+            height: 45px;
+        }
+
+        .shape-robot {
+            border-radius: 8px;
+        }
+
+        .shape-line {
+            border-radius: 20px;
+            height: 12px;
+            width: 50px;
+        }
+
+        .shape-rectangle {
+            border-radius: 6px;
+            width: 50px;
+            height: 35px;
+        }
+
+        .shape-diamond {
+            border-radius: 4px;
+            transform: rotate(45deg) scale(0.7);
+            width: 35px;
+            height: 35px;
+        }
+
+        .shape-cute {
+            border-radius: 50% 50% 45% 45%;
+            height: 42px;
+            width: 38px;
+        }
+
+        .shape-alien {
+            border-radius: 45% 45% 50% 50%;
+            height: 50px;
+            width: 35px;
+        }
+
+        /* Eye Color Grid */
+        .eye-color-grid {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 10px;
+        }
+
+        .color-option {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .color-option:hover {
+            transform: scale(1.15);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .color-option.selected {
+            border-color: #fff;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        }
+
+        /* Animation State Buttons */
+        .animation-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .anim-btn {
+            padding: 10px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(60, 60, 60, 0.4);
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .anim-btn:hover {
+            background: rgba(77, 217, 255, 0.2);
+            border-color: #4dd9ff;
+        }
+
+        .anim-btn.active {
+            background: rgba(77, 217, 255, 0.3);
+            border-color: #4dd9ff;
+            color: #4dd9ff;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Custom Color Picker */
+        .color-customizer {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .color-wheel-container {
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .color-wheel {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: conic-gradient(hsl(0, 100%, 50%),
+                    hsl(60, 100%, 50%),
+                    hsl(120, 100%, 50%),
+                    hsl(180, 100%, 50%),
+                    hsl(240, 100%, 50%),
+                    hsl(300, 100%, 50%),
+                    hsl(360, 100%, 50%));
+            position: relative;
+            cursor: crosshair;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .color-wheel::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle, #fff 0%, transparent 70%);
+        }
+
+        .color-picker-thumb {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border: 3px solid #fff;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+        }
+
+        .pupil-shapes {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .pupil-shape-btn {
+            width: 60px;
+            height: 60px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: rgba(60, 60, 60, 0.4);
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            transition: all 0.3s;
+        }
+
+        .pupil-shape-btn:hover {
+            border-color: #4dd9ff;
+        }
+
+        .pupil-shape-btn.active {
+            background: rgba(77, 217, 255, 0.2);
+            border-color: #4dd9ff;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Gesture Cursor -->
+    <div id="gesture-cursor"></div>
+
+    <header>
+        <button class="back-btn">←</button>
+        <h1>Eye Settings</h1>
+        <div style="margin-left: auto;">
+            <div class="status-indicator">
+                <div class="status-dot" id="connection-dot"></div>
+                <span id="connection-status">Disconnected</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Eye Preview -->
+        <div class="eye-preview">
+            <div class="eye-canvas" id="left-eye">
+                <div class="pupil"></div>
+                <div class="highlight"></div>
+                <div class="highlight-small"></div>
+            </div>
+            <div class="eye-canvas" id="right-eye">
+                <div class="pupil"></div>
+                <div class="highlight"></div>
+                <div class="highlight-small"></div>
+            </div>
+        </div>
+
+        <!-- Main Tabs -->
+        <div class="tabs">
+            <button class="tab active" data-tab="vivid">Customize</button>
+            <button class="tab" data-tab="time">Time Theme</button>
+        </div>
+
+        <!-- Vivid Eyes Tab -->
+        <div class="tab-content active" id="tab-vivid">
+            <div class="settings-card">
+                <div class="toggle-row">
+                    <div class="toggle-info">
+                        <h3>Eyes follow person</h3>
+                        <p>Once enabled, the eyes will follow the person's movement</p>
+                    </div>
+                    <div class="toggle-switch active" id="follow-toggle"></div>
+                </div>
+            </div>
+
+            <div class="settings-card">
+                <h3 style="margin-bottom: 16px;">Eye Shape</h3>
+
+                <!-- Eye Shape Grid -->
+                <div class="eye-shape-grid">
+                    <!-- Round -->
+                    <div class="shape-option selected" data-shape="round" title="Round">
+                        <div class="shape-preview shape-round"></div>
+                        <span>Round</span>
+                    </div>
+                    <!-- Oval -->
+                    <div class="shape-option" data-shape="oval" title="Oval">
+                        <div class="shape-preview shape-oval"></div>
+                        <span>Oval</span>
+                    </div>
+                    <!-- Anime -->
+                    <div class="shape-option" data-shape="anime" title="Anime">
+                        <div class="shape-preview shape-anime"></div>
+                        <span>Anime</span>
+                    </div>
+                    <!-- Robot -->
+                    <div class="shape-option" data-shape="robot" title="Robot">
+                        <div class="shape-preview shape-robot"></div>
+                        <span>Robot</span>
+                    </div>
+                    <!-- Line -->
+                    <div class="shape-option" data-shape="line" title="Line">
+                        <div class="shape-preview shape-line"></div>
+                        <span>Line</span>
+                    </div>
+                    <!-- Rectangle -->
+                    <div class="shape-option" data-shape="rectangle" title="Rectangle">
+                        <div class="shape-preview shape-rectangle"></div>
+                        <span>Rectangle</span>
+                    </div>
+                    <!-- Diamond -->
+                    <div class="shape-option" data-shape="diamond" title="Diamond">
+                        <div class="shape-preview shape-diamond"></div>
+                        <span>Diamond</span>
+                    </div>
+                    <!-- Cute (Kawaii) -->
+                    <div class="shape-option" data-shape="cute" title="Cute">
+                        <div class="shape-preview shape-cute"></div>
+                        <span>Cute</span>
+                    </div>
+                    <!-- Alien -->
+                    <div class="shape-option" data-shape="alien" title="Alien">
+                        <div class="shape-preview shape-alien"></div>
+                        <span>Alien</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-card">
+                <h3 style="margin-bottom: 16px;">Eye Color</h3>
+                <div class="eye-color-grid">
+                    <div class="color-option selected" data-color="cyan"
+                        style="background: linear-gradient(135deg, #4dd9ff, #00a8cc);" title="Cyan"></div>
+                    <div class="color-option" data-color="orange"
+                        style="background: linear-gradient(135deg, #ffaa00, #ff8800);" title="Orange"></div>
+                    <div class="color-option" data-color="teal"
+                        style="background: linear-gradient(135deg, #00ffcc, #00ccaa);" title="Teal"></div>
+                    <div class="color-option" data-color="pink"
+                        style="background: linear-gradient(135deg, #ff66aa, #ff3388);" title="Pink"></div>
+                    <div class="color-option" data-color="purple"
+                        style="background: linear-gradient(135deg, #aa66ff, #8833ff);" title="Purple"></div>
+                    <div class="color-option" data-color="green"
+                        style="background: linear-gradient(135deg, #66ff66, #44dd44);" title="Green"></div>
+                    <div class="color-option" data-color="red"
+                        style="background: linear-gradient(135deg, #ff6666, #ff3333);" title="Red"></div>
+                    <div class="color-option" data-color="gold"
+                        style="background: linear-gradient(135deg, #ffdd66, #ffcc00);" title="Gold"></div>
+                    <div class="color-option" data-color="white"
+                        style="background: linear-gradient(135deg, #ffffff, #dddddd);" title="White"></div>
+                </div>
+            </div>
+
+            <!-- Animation Controls -->
+            <div class="animation-controls">
+                <button class="anim-btn" data-anim="idle">🔄 Reset</button>
+                <button class="anim-btn" data-anim="blink">👁️ Blink</button>
+                <button class="anim-btn" data-anim="happy">😊 Happy</button>
+                <button class="anim-btn" data-anim="sad">😢 Sad</button>
+                <button class="anim-btn" data-anim="angry">😠 Angry</button>
+                <button class="anim-btn" data-anim="surprised">😲 Surprised</button>
+                <button class="anim-btn" data-anim="sleepy">😴 Sleepy</button>
+                <button class="anim-btn" data-anim="tired">🥱 Tired</button>
+                <button class="anim-btn" data-anim="dizzy">😵 Dizzy</button>
+                <button class="anim-btn" data-anim="love">😍 Love</button>
+                <button class="anim-btn" data-anim="wink">😉 Wink</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Time Theme Tab -->
+    <div class="tab-content" id="tab-time">
+        <div class="settings-card">
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <h3>Auto time-based theme</h3>
+                    <p>Eyes change color based on time of day</p>
+                </div>
+                <div class="toggle-switch" id="time-toggle"></div>
+            </div>
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <h3>Morning (6AM-12PM)</h3>
+                    <p>Warm golden tones</p>
+                </div>
+                <div class="eye-option eye-gold" style="width: 50px; height: 50px; border-radius: 12px;">
+                    <div class="mini-eye" style="width: 30px; height: 30px;"></div>
+                </div>
+            </div>
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <h3>Afternoon (12PM-6PM)</h3>
+                    <p>Bright cyan energy</p>
+                </div>
+                <div class="eye-option eye-cyan" style="width: 50px; height: 50px; border-radius: 12px;">
+                    <div class="mini-eye" style="width: 30px; height: 30px;"></div>
+                </div>
+            </div>
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <h3>Evening (6PM-10PM)</h3>
+                    <p>Calm purple vibes</p>
+                </div>
+                <div class="eye-option eye-purple" style="width: 50px; height: 50px; border-radius: 12px;">
+                    <div class="mini-eye" style="width: 30px; height: 30px;"></div>
+                </div>
+            </div>
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <h3>Night (10PM-6AM)</h3>
+                    <p>Deep sleep mode</p>
+                </div>
+                <div class="eye-option eye-violet" style="width: 50px; height: 50px; border-radius: 12px;">
+                    <div class="mini-eye" style="width: 30px; height: 30px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- More Eye Settings -->
+    <div class="more-settings">
+        <h2>More Eye Settings</h2>
+        <div class="settings-card">
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <h3>Eye switch</h3>
+                </div>
+                <div class="toggle-switch active" id="eye-switch"></div>
+            </div>
+            <div class="slider-row">
+                <span class="slider-label">Eye brightness</span>
+                <div class="slider-control">
+                    <div class="slider-track" id="brightness-track">
+                        <div class="slider-fill" id="brightness-fill" style="width: 100%;"></div>
+                        <div class="slider-thumb" id="brightness-thumb" style="left: 100%;"></div>
+                    </div>
+                    <span class="slider-value" id="brightness-value">100</span>
+                </div>
+            </div>
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <h3>Saccade movements</h3>
+                    <p>Subtle eye micro-movements for realism</p>
+                </div>
+                <div class="toggle-switch active" id="saccade-toggle"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Connection Panel -->
+    <div class="connection-panel">
+        <input type="text" id="pi-ip" placeholder="Pi IP (e.g., 192.168.1.50)">
+        <button class="btn-connect" onclick="connect()">Connect</button>
+        <button class="btn-simulate" onclick="simulateMode()">Simulate</button>
+    </div>
+    </div>
+
+    <script>
+        // ============================================
+        // STATE
+        // ============================================
+        let state = {
+            eyeColor: 'cyan',
+            eyeShape: 'round',  // Eye shape: round, oval, anime, robot, line, rectangle, diamond, cute, alien
+            customColor: { h: 190, s: 100, l: 50 },
+            pupilShape: 'round',
+            brightness: 100,
+            followPerson: true,
+            saccadeEnabled: true,
+            eyeSwitch: true,
+            currentAnimation: 'idle'
+        };
+
+        let ws = null;
+        let simulationMode = false;
+
+        // Color definitions
+        const colorPresets = {
+            cyan: { h: 190, s: 100, l: 50 },
+            orange: { h: 30, s: 100, l: 50 },
+            teal: { h: 160, s: 100, l: 50 },
+            pink: { h: 330, s: 100, l: 65 },
+            purple: { h: 270, s: 100, l: 60 },
+            green: { h: 120, s: 100, l: 50 },
+            red: { h: 0, s: 100, l: 50 },
+            gold: { h: 45, s: 100, l: 50 },
+            white: { h: 0, s: 0, l: 95 }
+        };
+
+        // ============================================
+        // EYE RENDERING
+        // ============================================
+        function updateEyeColor(colorName) {
+            const preset = colorPresets[colorName] || colorPresets.cyan;
+            state.eyeColor = colorName;
+            state.customColor = { ...preset };
+            applyEyeStyle();
+        }
+
+        function applyEyeStyle() {
+            const { h, s, l } = state.customColor;
+            const brightness = state.brightness / 100;
+
+            const eyeCanvases = document.querySelectorAll('.eye-canvas');
+            eyeCanvases.forEach(eye => {
+                const adjustedL = l * brightness;
+                eye.style.background = `radial-gradient(circle at 30% 30%, 
+                    hsl(${h}, ${s}%, ${Math.min(adjustedL + 30, 100)}%) 0%, 
+                    hsl(${h}, ${s}%, ${adjustedL}%) 50%, 
+                    hsl(${h}, ${s}%, ${Math.max(adjustedL - 20, 10)}%) 100%)`;
+                eye.style.boxShadow = `
+                    0 0 ${40 * brightness}px hsla(${h}, ${s}%, ${adjustedL}%, 0.4),
+                    inset 0 -10px 30px rgba(0, 0, 0, 0.3)`;
+
+                // Apply opacity based on eye switch
+                eye.style.opacity = state.eyeSwitch ? 1 : 0.3;
+            });
+
+            // Apply eye shape
+            applyEyeShape();
+
+            // Update pupil shape
+            updatePupilShape();
+
+            // Update saccade
+            document.querySelectorAll('.eye-canvas .pupil').forEach(pupil => {
+                if (state.saccadeEnabled) {
+                    pupil.classList.add('saccade');
+                } else {
+                    pupil.classList.remove('saccade');
+                }
+            });
+        }
+
+        function applyEyeShape() {
+            const eyeCanvases = document.querySelectorAll('.eye-canvas');
+            const pupils = document.querySelectorAll('.eye-canvas .pupil');
+
+            // Reset to default first
+            eyeCanvases.forEach(eye => {
+                eye.style.width = '120px';
+                eye.style.height = '120px';
+                eye.style.borderRadius = '50%';
+                eye.style.transform = '';
+            });
+            pupils.forEach(p => {
+                p.style.width = '50px';
+                p.style.height = '50px';
+            });
+
+            switch (state.eyeShape) {
+                case 'oval':
+                    eyeCanvases.forEach(eye => {
+                        eye.style.width = '100px';
+                        eye.style.height = '130px';
+                        eye.style.borderRadius = '50%';
+                    });
+                    break;
+
+                case 'anime':
+                    // Large eyes with rounded top and flatter bottom (anime style)
+                    eyeCanvases.forEach(eye => {
+                        eye.style.width = '130px';
+                        eye.style.height = '140px';
+                        eye.style.borderRadius = '50% 50% 45% 45%';
+                    });
+                    pupils.forEach(p => {
+                        p.style.width = '55px';
+                        p.style.height = '55px';
+                    });
+                    break;
+
+                case 'robot':
+                    // Square robot eyes
+                    eyeCanvases.forEach(eye => {
+                        eye.style.width = '110px';
+                        eye.style.height = '110px';
+                        eye.style.borderRadius = '15px';
+                    });
+                    pupils.forEach(p => {
+                        p.style.width = '45px';
+                        p.style.height = '45px';
+                        p.style.borderRadius = '8px';
+                    });
+                    break;
+
+                case 'line':
+                    // Thin horizontal line eyes
+                    eyeCanvases.forEach(eye => {
+                        eye.style.width = '140px';
+                        eye.style.height = '25px';
+                        eye.style.borderRadius = '15px';
+                    });
+                    pupils.forEach(p => {
+                        p.style.width = '20px';
+                        p.style.height = '18px';
+                    });
+                    break;
+
+                case 'rectangle':
+                    // Wide rectangular eyes
+                    eyeCanvases.forEach(eye => {
+                        eye.style.width = '140px';
+                        eye.style.height = '80px';
+                        eye.style.borderRadius = '12px';
+                    });
+                    pupils.forEach(p => {
+                        p.style.width = '40px';
+                        p.style.height = '40px';
+                    });
+                    break;
+
+                case 'diamond':
+                    // Diamond shaped eyes
+                    eyeCanvases.forEach(eye => {
+                        eye.style.width = '100px';
+                        eye.style.height = '100px';
+                        eye.style.borderRadius = '10px';
+                        eye.style.transform = 'rotate(45deg)';
+                    });
+                    pupils.forEach(p => {
+                        p.style.width = '35px';
+                        p.style.height = '35px';
+                        p.style.transform = 'translate(-50%, -50%) rotate(-45deg)';
+                    });
+                    break;
+
+                case 'cute':
+                    // Kawaii cute big round eyes
+                    eyeCanvases.forEach(eye => {
+                        eye.style.width = '115px';
+                        eye.style.height = '125px';
+                        eye.style.borderRadius = '50% 50% 48% 48%';
+                    });
+                    pupils.forEach(p => {
+                        p.style.width = '60px';
+                        p.style.height = '60px';
+                    });
+                    break;
+
+                case 'alien':
+                    // Tall narrow alien eyes
+                    eyeCanvases.forEach(eye => {
+                        eye.style.width = '80px';
+                        eye.style.height = '150px';
+                        eye.style.borderRadius = '45% 45% 50% 50%';
+                    });
+                    pupils.forEach(p => {
+                        p.style.width = '35px';
+                        p.style.height = '50px';
+                        p.style.borderRadius = '45%';
+                    });
+                    break;
+
+                case 'round':
+                default:
+                    // Default round - already reset above
+                    break;
+            }
+        }
+
+        function updatePupilShape() {
+            const pupils = document.querySelectorAll('.eye-canvas .pupil');
+            pupils.forEach(pupil => {
+                // Reset all styles first to prevent bugs
+                pupil.style.borderRadius = '50%';
+                pupil.style.transform = 'translate(-50%, -50%)';
+                pupil.style.width = '50px';
+                pupil.style.height = '50px';
+                pupil.innerHTML = '';
+                // Always reset background first
+                pupil.style.background = 'radial-gradient(circle at 40% 40%, #333 0%, #000 100%)';
+
+                switch (state.pupilShape) {
+                    case 'cat':
+                        // Cat eye - vertical slit
+                        pupil.style.borderRadius = '50%';
+                        pupil.style.transform = 'translate(-50%, -50%) scaleX(0.25)';
+                        pupil.style.background = 'radial-gradient(circle at 40% 40%, #222 0%, #000 100%)';
+                        break;
+                    case 'diamond':
+                        pupil.style.background = 'transparent';
+                        pupil.innerHTML = '<span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:34px;color:#000;text-shadow:0 0 5px rgba(0,0,0,0.5);">◆</span>';
+                        break;
+                    case 'spiral':
+                        pupil.style.background = 'transparent';
+                        pupil.innerHTML = '<span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:36px;filter:drop-shadow(0 0 3px rgba(0,0,0,0.5));">🌀</span>';
+                        break;
+                    case 'flower':
+                        pupil.style.background = 'transparent';
+                        pupil.innerHTML = '<span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:34px;color:#222;text-shadow:0 0 3px rgba(0,0,0,0.3);">✿</span>';
+                        break;
+                    case 'round':
+                    default:
+                        // Classic round pupil
+                        pupil.style.background = 'radial-gradient(circle at 40% 40%, #333 0%, #000 100%)';
+                        break;
+                }
+            });
+        }
+
+        // Helper to get current pupil content for emotions that modify pupils
+        function getCurrentPupilContent() {
+            switch (state.pupilShape) {
+                case 'cat':
+                    return { type: 'cat', style: 'transform: translate(-50%, -50%) scaleX(0.25); background: radial-gradient(circle at 40% 40%, #222 0%, #000 100%);' };
+                case 'diamond':
+                    return { type: 'symbol', html: '<span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:34px;color:#000;text-shadow:0 0 5px rgba(0,0,0,0.5);">◆</span>' };
+                case 'spiral':
+                    return { type: 'symbol', html: '<span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:36px;filter:drop-shadow(0 0 3px rgba(0,0,0,0.5));">🌀</span>' };
+                case 'flower':
+                    return { type: 'symbol', html: '<span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:34px;color:#222;text-shadow:0 0 3px rgba(0,0,0,0.3);">✿</span>' };
+                default:
+                    return { type: 'round', style: 'background: radial-gradient(circle at 40% 40%, #333 0%, #000 100%);' };
+            }
+        }
+
+        // ============================================
+        // ANIMATIONS
+        // ============================================
+        let currentAnimationInterval = null;
+
+        function resetEyes() {
+            const eyeCanvases = document.querySelectorAll('.eye-canvas');
+            const leftEye = document.getElementById('left-eye');
+            const rightEye = document.getElementById('right-eye');
+
+            // Clear any running intervals
+            if (currentAnimationInterval) {
+                clearInterval(currentAnimationInterval);
+                currentAnimationInterval = null;
+            }
+
+            // Reset all eye styles completely
+            eyeCanvases.forEach(eye => {
+                // Remove animation classes
+                eye.classList.remove('blinking', 'dizzy-spin');
+
+                // Clear ALL inline styles that emotions might set
+                eye.style.transform = '';
+                eye.style.borderRadius = '50%';
+                eye.style.filter = '';
+                eye.style.animation = '';  // Clear any CSS animations
+                eye.style.boxShadow = '';  // Clear box shadow
+                eye.style.background = ''; // Clear background (will be restored by applyEyeStyle)
+
+                // Remove any extra elements added for emotions
+                const extras = eye.querySelectorAll('.emotion-extra');
+                extras.forEach(el => el.remove());
+            });
+
+            // Reset pupils completely
+            document.querySelectorAll('.eye-canvas .pupil').forEach(p => {
+                p.style.width = '50px';
+                p.style.height = '50px';
+                p.style.top = '50%';
+                p.style.left = '50%';
+                p.style.opacity = '1';  // Make sure pupils are visible
+                p.style.transform = 'translate(-50%, -50%)';
+                p.innerHTML = '';  // Clear any emoji content
+                p.style.background = 'radial-gradient(circle at 40% 40%, #333 0%, #000 100%)';
+            });
+
+            state.currentAnimation = 'idle';
+
+            // Restore the eye color and pupil shape based on current settings
+            applyEyeStyle();
+        }
+
+        function playAnimation(anim) {
+            const eyeCanvases = document.querySelectorAll('.eye-canvas');
+            const leftEye = document.getElementById('left-eye');
+            const rightEye = document.getElementById('right-eye');
+            const pupils = document.querySelectorAll('.eye-canvas .pupil');
+
+            // Reset first (except for blink which is momentary)
+            if (anim !== 'blink') {
+                resetEyes();
+            }
+
+            state.currentAnimation = anim;
+
+            // Update button states
+            document.querySelectorAll('.anim-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.anim === anim);
+            });
+
+            switch (anim) {
+                case 'idle':
+                    // Already reset above
+                    break;
+
+                case 'blink':
+                    // Don't change state for blink - it's momentary
+                    state.currentAnimation = 'idle';
+
+                    // JavaScript-based blink that works with all eye shapes
+                    eyeCanvases.forEach(eye => {
+                        // Store current transform
+                        const currentTransform = eye.style.transform || '';
+                        const baseTransform = currentTransform.replace(/scaleY\([^)]*\)/g, '').trim();
+
+                        // Apply blink (close eyes)
+                        eye.style.transform = baseTransform + ' scaleY(0.1)';
+                        eye.style.transition = 'transform 0.075s ease-in';
+
+                        // Open eyes after 75ms
+                        setTimeout(() => {
+                            eye.style.transform = baseTransform + ' scaleY(1)';
+                            eye.style.transition = 'transform 0.075s ease-out';
+
+                            // Restore original after animation
+                            setTimeout(() => {
+                                eye.style.transition = '';
+                                applyEyeShape();
+                            }, 80);
+                        }, 75);
+                    });
+                    break;
+
+                case 'happy':
+                    // Curved arc eyes with blushed cheeks, no pupils
+                    eyeCanvases.forEach(eye => {
+                        eye.style.borderRadius = '120px 120px 10px 10px';
+                        eye.style.transform = 'scaleY(0.4)';
+                        eye.style.filter = 'brightness(1.2)';
+
+                        // Hide pupils for happy closed eyes
+                        const pupil = eye.querySelector('.pupil');
+                        if (pupil) pupil.style.opacity = '0';
+
+                        // Add blushed cheek
+                        const blush = document.createElement('div');
+                        blush.className = 'emotion-extra';
+                        blush.style.cssText = `
+                            position: absolute;
+                            bottom: -35px;
+                            left: 50%;
+                            transform: translateX(-50%);
+                            width: 50px;
+                            height: 25px;
+                            background: radial-gradient(ellipse, rgba(255, 150, 150, 0.7) 0%, transparent 70%);
+                            border-radius: 50%;
+                        `;
+                        eye.appendChild(blush);
+                    });
+                    break;
+
+                case 'sad':
+                    // Watery eyes with shimmering effect and tears
+                    eyeCanvases.forEach((eye, i) => {
+                        eye.style.borderRadius = '50%';
+                        eye.style.transform = i === 0 ? 'rotate(-8deg) scaleY(0.75)' : 'rotate(8deg) scaleY(0.75)';
+                        eye.style.filter = 'brightness(0.85) saturate(1.2)';
+                        eye.style.animation = 'watery-shimmer 1.5s ease-in-out infinite';
+
+                        // Add watery gloss overlay
+                        const gloss = document.createElement('div');
+                        gloss.className = 'emotion-extra';
+                        gloss.style.cssText = `
+                            position: absolute;
+                            bottom: 0;
+                            left: 0;
+                            right: 0;
+                            height: 40%;
+                            background: linear-gradient(0deg, rgba(100, 180, 255, 0.3) 0%, transparent 100%);
+                            border-radius: 0 0 60px 60px;
+                            pointer-events: none;
+                        `;
+                        eye.appendChild(gloss);
+
+                        // Add teardrop
+                        const tear = document.createElement('div');
+                        tear.className = 'emotion-extra';
+                        tear.style.cssText = `
+                            position: absolute;
+                            bottom: -25px;
+                            left: 50%;
+                            transform: translateX(-50%);
+                            width: 12px;
+                            height: 18px;
+                            background: linear-gradient(180deg, rgba(100, 180, 255, 0.9) 0%, rgba(50, 150, 255, 0.8) 100%);
+                            border-radius: 50% 50% 50% 50% / 30% 30% 70% 70%;
+                            animation: tear-drop 2s ease-in-out infinite;
+                            animation-delay: ${i * 0.5}s;
+                        `;
+                        eye.appendChild(tear);
+                    });
+                    pupils.forEach(p => {
+                        p.style.top = '55%';
+                        p.style.width = '35px';
+                        p.style.height = '35px';
+                    });
+                    break;
+
+                case 'angry':
+                    // Red-tinted eyes with angry slanted eyebrows
+                    const angryColor = 'hsl(0, 80%, 50%)';
+                    eyeCanvases.forEach((eye, i) => {
+                        eye.style.borderRadius = '50%';
+                        eye.style.transform = i === 0 ? 'rotate(12deg) scaleY(0.55)' : 'rotate(-12deg) scaleY(0.55)';
+                        // Red tint for angry
+                        eye.style.background = `radial-gradient(circle at 30% 30%, 
+                            hsl(0, 70%, 65%) 0%, 
+                            hsl(0, 80%, 45%) 50%, 
+                            hsl(0, 90%, 30%) 100%)`;
+                        eye.style.boxShadow = '0 0 30px rgba(255, 50, 50, 0.5), inset 0 -10px 30px rgba(0, 0, 0, 0.3)';
+
+                        // Add angry slanted eyebrow
+                        const brow = document.createElement('div');
+                        brow.className = 'emotion-extra';
+                        brow.style.cssText = `
+                            position: absolute;
+                            top: -20px;
+                            left: 50%;
+                            transform: translateX(-50%) rotate(${i === 0 ? '-25deg' : '25deg'});
+                            width: 100px;
+                            height: 12px;
+                            background: linear-gradient(${i === 0 ? '90deg' : '-90deg'}, #222 0%, #444 100%);
+                            border-radius: 6px;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                        `;
+                        eye.appendChild(brow);
+                    });
+                    pupils.forEach(p => {
+                        p.style.width = '30px';
+                        p.style.height = '30px';
+                    });
+                    break;
+
+                case 'surprised':
+                    // Extra wide eyes with small pupils and raised eyebrows
+                    eyeCanvases.forEach((eye, i) => {
+                        eye.style.transform = 'scale(1.25)';
+                        eye.style.filter = 'brightness(1.15)';
+
+                        // Add raised eyebrow
+                        const brow = document.createElement('div');
+                        brow.className = 'emotion-extra';
+                        brow.style.cssText = `
+                            position: absolute;
+                            top: -25px;
+                            left: 50%;
+                            transform: translateX(-50%);
+                            width: 90px;
+                            height: 10px;
+                            background: linear-gradient(90deg, transparent 0%, #444 20%, #444 80%, transparent 100%);
+                            border-radius: 5px 5px 0 0;
+                            border-top: 3px solid #333;
+                        `;
+                        eye.appendChild(brow);
+                    });
+                    pupils.forEach(p => {
+                        p.style.width = '22px';
+                        p.style.height = '22px';
+                    });
+                    break;
+
+                case 'sleepy':
+                    // Closed eyes with floating Zzz animation
+                    eyeCanvases.forEach((eye, i) => {
+                        eye.style.borderRadius = '50%';
+                        eye.style.transform = 'scaleY(0.15)';
+                        eye.style.filter = 'brightness(0.5)';
+
+                        // Hide pupils
+                        const pupil = eye.querySelector('.pupil');
+                        if (pupil) pupil.style.opacity = '0';
+                    });
+
+                    // Add floating Zzz to right eye only
+                    const zzzContainer = document.createElement('div');
+                    zzzContainer.className = 'emotion-extra';
+                    zzzContainer.style.cssText = `
+                        position: absolute;
+                        top: -10px;
+                        right: -30px;
+                        font-size: 20px;
+                        color: #aaccff;
+                        text-shadow: 0 0 10px rgba(100, 150, 255, 0.8);
+                    `;
+                    zzzContainer.innerHTML = `
+                        <span style="position:absolute; animation: zzz-float 2s ease-out infinite;">z</span>
+                        <span style="position:absolute; left: 15px; top: -10px; font-size: 24px; animation: zzz-float 2s ease-out infinite 0.4s;">Z</span>
+                        <span style="position:absolute; left: 35px; top: -25px; font-size: 28px; animation: zzz-float 2s ease-out infinite 0.8s;">Z</span>
+                    `;
+                    rightEye.appendChild(zzzContainer);
+                    break;
+
+                case 'tired':
+                    // Baggy eyes with yawning mouth animation
+                    eyeCanvases.forEach((eye, i) => {
+                        eye.style.borderRadius = '50%';
+                        eye.style.transform = `rotate(${i === 0 ? '-3deg' : '3deg'}) scaleY(0.5)`;
+                        eye.style.filter = 'brightness(0.6) saturate(0.6)';
+
+                        // Add baggy under-eye
+                        const bag = document.createElement('div');
+                        bag.className = 'emotion-extra';
+                        bag.style.cssText = `
+                            position: absolute;
+                            bottom: -15px;
+                            left: 50%;
+                            transform: translateX(-50%);
+                            width: 80px;
+                            height: 20px;
+                            background: radial-gradient(ellipse, rgba(80, 60, 100, 0.4) 0%, transparent 70%);
+                            border-radius: 50%;
+                        `;
+                        eye.appendChild(bag);
+                    });
+
+                    // Add yawning mouth between eyes
+                    const eyePreview = document.querySelector('.eye-preview');
+                    const mouth = document.createElement('div');
+                    mouth.className = 'emotion-extra';
+                    mouth.id = 'tired-mouth';
+                    mouth.style.cssText = `
+                        position: absolute;
+                        bottom: -60px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        width: 60px;
+                        height: 40px;
+                        background: radial-gradient(ellipse at center, #1a0a0a 0%, #2a1515 100%);
+                        border-radius: 30% 30% 50% 50%;
+                        border: 3px solid rgba(200, 150, 150, 0.3);
+                        animation: yawn-open 3s ease-in-out infinite;
+                    `;
+                    rightEye.appendChild(mouth);
+
+                    pupils.forEach(p => {
+                        p.style.top = '60%';
+                        p.style.width = '40px';
+                        p.style.height = '40px';
+                    });
+
+                    // Eyes tilt upward during yawn
+                    currentAnimationInterval = setInterval(() => {
+                        eyeCanvases.forEach((eye, i) => {
+                            eye.style.transform = `rotate(${i === 0 ? '-3deg' : '3deg'}) scaleY(0.3) translateY(-5px)`;
+                            setTimeout(() => {
+                                eye.style.transform = `rotate(${i === 0 ? '-3deg' : '3deg'}) scaleY(0.5)`;
+                            }, 1500);
+                        });
+                    }, 3000);
+                    break;
+
+                case 'dizzy':
+                    // Spinning spiral eyes
+                    eyeCanvases.forEach(eye => {
+                        eye.style.filter = 'brightness(1.1)';
+                        eye.classList.add('dizzy-spin');
+
+                        // Hide the pupil completely
+                        const pupil = eye.querySelector('.pupil');
+                        if (pupil) {
+                            pupil.style.opacity = '0';
+                        }
+
+                        // Add spinning spiral as emotion-extra
+                        const spiral = document.createElement('div');
+                        spiral.className = 'emotion-extra';
+                        spiral.style.cssText = `
+                            position: absolute;
+                            top: 50%;
+                            left: 50%;
+                            transform: translate(-50%, -50%);
+                            font-size: 50px;
+                            animation: spin 0.5s linear infinite;
+                            line-height: 1;
+                        `;
+                        spiral.innerHTML = '🌀';
+                        eye.appendChild(spiral);
+                    });
+                    break;
+
+                case 'love':
+                    // Soft pulsing heart eyes replacing entire iris
+                    eyeCanvases.forEach(eye => {
+                        // Make the entire eye a soft pink heart
+                        eye.style.background = 'radial-gradient(circle at 35% 35%, #ffb3d9 0%, #ff69b4 40%, #ff1493 100%)';
+                        eye.style.boxShadow = '0 0 40px rgba(255, 105, 180, 0.6), inset 0 -10px 30px rgba(0, 0, 0, 0.2)';
+                        eye.style.animation = 'heart-beat 1s ease-in-out infinite';
+
+                        // Hide original pupil
+                        const pupil = eye.querySelector('.pupil');
+                        if (pupil) pupil.style.opacity = '0';
+
+                        // Add soft heart symbol
+                        const heart = document.createElement('div');
+                        heart.className = 'emotion-extra';
+                        heart.style.cssText = `
+                            position: absolute;
+                            top: 50%;
+                            left: 50%;
+                            transform: translate(-50%, -50%);
+                            font-size: 55px;
+                            color: rgba(255, 255, 255, 0.9);
+                            text-shadow: 0 0 20px rgba(255, 150, 200, 0.8);
+                            filter: blur(0.5px);
+                        `;
+                        heart.innerHTML = '♥';
+                        eye.appendChild(heart);
+                    });
+                    break;
+
+                case 'wink':
+                    // Proper animated wink - left eye closes with curve
+                    leftEye.style.borderRadius = '120px 120px 10px 10px';
+                    leftEye.style.transform = 'scaleY(0.15)';
+                    leftEye.style.filter = 'brightness(0.9)';
+
+                    // Hide left pupil
+                    const leftPupil = leftEye.querySelector('.pupil');
+                    if (leftPupil) leftPupil.style.opacity = '0';
+
+                    // Add wink line/curve to left eye
+                    const winkLine = document.createElement('div');
+                    winkLine.className = 'emotion-extra';
+                    winkLine.style.cssText = `
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        width: 60%;
+                        height: 4px;
+                        background: rgba(0, 0, 0, 0.3);
+                        border-radius: 2px;
+                    `;
+                    leftEye.appendChild(winkLine);
+
+                    // Right eye stays bright and happy
+                    rightEye.style.transform = 'scale(1.1)';
+                    rightEye.style.filter = 'brightness(1.15)';
+
+                    // Add slight sparkle to right eye
+                    const sparkle = document.createElement('div');
+                    sparkle.className = 'emotion-extra';
+                    sparkle.style.cssText = `
+                        position: absolute;
+                        top: 20%;
+                        right: 25%;
+                        font-size: 16px;
+                        animation: pulse-heart 1s ease-in-out infinite;
+                    `;
+                    sparkle.innerHTML = '✨';
+                    rightEye.appendChild(sparkle);
+                    break;
+            }
+        }
+
+        // Natural blinking - humans blink every 2-6 seconds with some randomness
+        function scheduleNextBlink() {
+            // Random interval between 2-6 seconds
+            const minInterval = 2000;
+            const maxInterval = 6000;
+            const nextBlink = minInterval + Math.random() * (maxInterval - minInterval);
+
+            setTimeout(() => {
+                if (state.currentAnimation === 'idle' && state.eyeSwitch) {
+                    playAnimation('blink');
+
+                    // Sometimes do a double-blink (20% chance)
+                    if (Math.random() < 0.2) {
+                        setTimeout(() => {
+                            if (state.currentAnimation === 'idle' && state.eyeSwitch) {
+                                playAnimation('blink');
+                            }
+                        }, 200);
+                    }
+                }
+                scheduleNextBlink();
+            }, nextBlink);
+        }
+
+        // Start natural blinking
+        scheduleNextBlink();
+
+        // ============================================
+        // UI INTERACTIONS
+        // ============================================
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+                tab.classList.add('active');
+                document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+            });
+        });
+
+
+        // Eye Shape selection
+        document.querySelectorAll('.shape-option').forEach(option => {
+            option.addEventListener('click', () => {
+                document.querySelectorAll('.shape-option').forEach(o => o.classList.remove('selected'));
+                option.classList.add('selected');
+                state.eyeShape = option.dataset.shape;
+                applyEyeStyle();
+            });
+        });
+
+        // Eye Color selection
+        document.querySelectorAll('.color-option').forEach(option => {
+            option.addEventListener('click', () => {
+                document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
+                option.classList.add('selected');
+                updateEyeColor(option.dataset.color);
+            });
+        });
+
+        // Toggle switches
+        document.querySelectorAll('.toggle-switch').forEach(toggle => {
+            toggle.addEventListener('click', () => {
+                toggle.classList.toggle('active');
+
+                if (toggle.id === 'follow-toggle') {
+                    state.followPerson = toggle.classList.contains('active');
+                } else if (toggle.id === 'saccade-toggle') {
+                    state.saccadeEnabled = toggle.classList.contains('active');
+                    applyEyeStyle();
+                } else if (toggle.id === 'eye-switch') {
+                    state.eyeSwitch = toggle.classList.contains('active');
+                    if (!state.eyeSwitch) {
+                        playAnimation('sleep');
+                    } else {
+                        state.currentAnimation = 'idle';
+                        applyEyeStyle();
+                    }
+                }
+            });
+        });
+
+        // Animation buttons
+        document.querySelectorAll('.anim-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                playAnimation(btn.dataset.anim);
+            });
+        });
+
+        // Brightness slider
+        const brightnessTrack = document.getElementById('brightness-track');
+        const brightnessThumb = document.getElementById('brightness-thumb');
+        const brightnessFill = document.getElementById('brightness-fill');
+        const brightnessValue = document.getElementById('brightness-value');
+
+        let isDraggingBrightness = false;
+
+        function updateBrightness(x) {
+            const rect = brightnessTrack.getBoundingClientRect();
+            let percent = ((x - rect.left) / rect.width) * 100;
+            percent = Math.max(0, Math.min(100, percent));
+
+            state.brightness = Math.round(percent);
+            brightnessThumb.style.left = percent + '%';
+            brightnessFill.style.width = percent + '%';
+            brightnessValue.textContent = state.brightness;
+            applyEyeStyle();
+        }
+
+        brightnessTrack.addEventListener('mousedown', (e) => {
+            isDraggingBrightness = true;
+            updateBrightness(e.clientX);
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDraggingBrightness) {
+                updateBrightness(e.clientX);
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDraggingBrightness = false;
+        });
+
+        // Color wheel
+        const colorWheel = document.getElementById('color-wheel');
+        const colorThumb = document.getElementById('color-thumb');
+        let isDraggingColor = false;
+
+        function updateColorFromWheel(x, y) {
+            const rect = colorWheel.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            const dx = x - centerX;
+            const dy = y - centerY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const maxDistance = rect.width / 2;
+
+            // Calculate angle for hue
+            let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+            if (angle < 0) angle += 360;
+
+            // Clamp distance
+            const clampedDistance = Math.min(distance, maxDistance);
+            const saturation = (clampedDistance / maxDistance) * 100;
+
+            // Position thumb
+            const thumbX = (dx / distance) * clampedDistance;
+            const thumbY = (dy / distance) * clampedDistance;
+            colorThumb.style.left = (50 + (thumbX / rect.width) * 100) + '%';
+            colorThumb.style.top = (50 + (thumbY / rect.height) * 100) + '%';
+
+            // Update color
+            state.customColor = { h: angle, s: saturation, l: 50 };
+            colorThumb.style.background = `hsl(${angle}, ${saturation}%, 50%)`;
+            applyEyeStyle();
+        }
+
+        colorWheel.addEventListener('mousedown', (e) => {
+            isDraggingColor = true;
+            updateColorFromWheel(e.clientX, e.clientY);
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDraggingColor) {
+                updateColorFromWheel(e.clientX, e.clientY);
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDraggingColor = false;
+        });
+
+        // Pupil shape buttons
+        document.querySelectorAll('.pupil-shape-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.pupil-shape-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.pupilShape = btn.dataset.shape;
+                applyEyeStyle();
+            });
+        });
+
+        // ============================================
+        // GESTURE CONTROL INTEGRATION
+        // ============================================
+        const gestureCursor = document.getElementById('gesture-cursor');
+
+        function updateGestureCursor(x, y, gesture, action) {
+            const screenX = x * window.innerWidth;
+            const screenY = y * window.innerHeight;
+
+            gestureCursor.style.left = screenX + 'px';
+            gestureCursor.style.top = screenY + 'px';
+            gestureCursor.classList.add('visible');
+
+            gestureCursor.classList.remove('clicking', 'dragging');
+            if (action === 'click') {
+                gestureCursor.classList.add('clicking');
+            } else if (action === 'dragging' || action === 'drag_start') {
+                gestureCursor.classList.add('dragging');
+            }
+
+            // Handle element interactions
+            handleGestureInteraction(screenX, screenY, action);
+        }
+
+        function handleGestureInteraction(x, y, action) {
+            const elements = document.elementsFromPoint(x, y);
+
+            for (const el of elements) {
+                // Eye options
+                if (el.classList.contains('eye-option') && action === 'click') {
+                    el.click();
+                    break;
+                }
+
+                // Tabs
+                if (el.classList.contains('tab') && action === 'click') {
+                    el.click();
+                    break;
+                }
+
+                // Style tabs
+                if (el.classList.contains('style-tab') && action === 'click') {
+                    el.click();
+                    break;
+                }
+
+                // Toggle switches
+                if (el.classList.contains('toggle-switch') && action === 'click') {
+                    el.click();
+                    break;
+                }
+
+                // Animation buttons
+                if (el.classList.contains('anim-btn') && action === 'click') {
+                    el.click();
+                    break;
+                }
+
+                // Pupil shape buttons
+                if (el.classList.contains('pupil-shape-btn') && action === 'click') {
+                    el.click();
+                    break;
+                }
+
+                // Brightness slider (drag)
+                if ((el.id === 'brightness-track' || el.id === 'brightness-thumb') &&
+                    (action === 'dragging' || action === 'drag_start')) {
+                    updateBrightness(x);
+                    break;
+                }
+
+                // Color wheel (drag)
+                if ((el.id === 'color-wheel' || el.id === 'color-thumb') &&
+                    (action === 'dragging' || action === 'drag_start')) {
+                    updateColorFromWheel(x, y);
+                    break;
+                }
+            }
+        }
+
+        // ============================================
+        // WEBSOCKET CONNECTION
+        // ============================================
+        function connect() {
+            const ip = document.getElementById('pi-ip').value.trim();
+            if (!ip) {
+                alert('Enter Pi IP address');
+                return;
+            }
+
+            const url = `ws://${ip}:8765`;
+            console.log('Connecting to', url);
+
+            try {
+                ws = new WebSocket(url);
+
+                ws.onopen = () => {
+                    document.getElementById('connection-dot').classList.add('connected');
+                    document.getElementById('connection-status').textContent = 'Connected';
+                };
+
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    updateGestureCursor(data.x, data.y, data.gesture, data.action);
+                };
+
+                ws.onclose = () => {
+                    document.getElementById('connection-dot').classList.remove('connected');
+                    document.getElementById('connection-status').textContent = 'Disconnected';
+                    gestureCursor.classList.remove('visible');
+                };
+
+                ws.onerror = (err) => {
+                    console.error('WebSocket error:', err);
+                };
+            } catch (e) {
+                console.error('Connection failed:', e);
+            }
+        }
+
+        function simulateMode() {
+            simulationMode = true;
+            document.getElementById('connection-dot').classList.add('connected');
+            document.getElementById('connection-status').textContent = 'Simulation';
+
+            document.addEventListener('mousemove', (e) => {
+                if (simulationMode) {
+                    const x = e.clientX / window.innerWidth;
+                    const y = e.clientY / window.innerHeight;
+                    updateGestureCursor(x, y, 'Open Palm', 'hover');
+                }
+            });
+
+            document.addEventListener('mousedown', (e) => {
+                if (simulationMode && e.button === 0) {
+                    const x = e.clientX / window.innerWidth;
+                    const y = e.clientY / window.innerHeight;
+                    updateGestureCursor(x, y, 'Pinch', 'click');
+                }
+            });
+
+            document.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                if (simulationMode) {
+                    const x = e.clientX / window.innerWidth;
+                    const y = e.clientY / window.innerHeight;
+                    updateGestureCursor(x, y, 'Closed Fist', 'drag_start');
+                }
+            });
+        }
+
+        // Initialize
+        applyEyeStyle();
+    </script>
+</body>
+
+</html>

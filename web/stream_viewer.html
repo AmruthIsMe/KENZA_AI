@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kenza Stream Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #1a1a2e;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: #fff;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-connect {
+            background: #4a90d9;
+            color: #fff;
+        }
+
+        .btn-connect:hover {
+            background: #3a80c9;
+        }
+
+        .btn-disconnect {
+            background: #d94a4a;
+            color: #fff;
+        }
+
+        #videoContainer {
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+
+        video {
+            width: 100%;
+            display: block;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            align-items: center;
+        }
+
+        .volume-slider {
+            flex: 1;
+            height: 8px;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #4a90d9;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .status {
+            text-align: center;
+            padding: 10px;
+            margin-top: 15px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .status.connected {
+            color: #69db7c;
+        }
+
+        .status.error {
+            color: #ff6b6b;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🤖 Kenza Stream Viewer</h1>
+    <div class="container">
+        <div class="input-row">
+            <input type="text" id="streamUrl" placeholder="Enter Pi IP (e.g., 192.168.1.50)">
+            <button class="btn-connect" id="connectBtn" onclick="connect()">▶ Connect</button>
+            <button class="btn-disconnect" id="disconnectBtn" onclick="disconnect()" disabled>⏹ Stop</button>
+        </div>
+
+        <div id="videoContainer">
+            <video id="video" autoplay playsinline></video>
+        </div>
+
+        <div class="controls">
+            <span>🔊</span>
+            <input type="range" class="volume-slider" id="volume" min="0" max="100" value="100"
+                oninput="setVolume(this.value)">
+            <span id="volumeLabel">100%</span>
+            <button onclick="unmute()">🔈 Unmute</button>
+        </div>
+
+        <div class="status" id="status">Enter Pi IP and click Connect</div>
+    </div>
+
+    <script>
+        let pc = null;
+
+        function log(msg, isError = false) {
+            const status = document.getElementById('status');
+            status.textContent = msg;
+            status.className = 'status ' + (isError ? 'error' : 'connected');
+        }
+
+        async function connect() {
+            const ip = document.getElementById('streamUrl').value.trim();
+            if (!ip) {
+                log('Please enter Pi IP address', true);
+                return;
+            }
+
+            // Build WHEP URL
+            const whepUrl = ip.includes('://') ? ip : `http://${ip}:8889/kenza/whep`;
+            log('Connecting to ' + whepUrl + '...');
+
+            try {
+                pc = new RTCPeerConnection({
+                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                });
+
+                pc.ontrack = (event) => {
+                    console.log('Received track:', event.track.kind);
+                    const video = document.getElementById('video');
+                    if (!video.srcObject) {
+                        video.srcObject = new MediaStream();
+                    }
+                    video.srcObject.addTrack(event.track);
+
+                    // Force unmute on first track
+                    video.muted = false;
+                    video.volume = 1.0;
+                };
+
+                pc.oniceconnectionstatechange = () => {
+                    log('Connection: ' + pc.iceConnectionState);
+                    if (pc.iceConnectionState === 'connected') {
+                        document.getElementById('connectBtn').disabled = true;
+                        document.getElementById('disconnectBtn').disabled = false;
+                    }
+                };
+
+                // Add receive-only transceivers
+                pc.addTransceiver('video', { direction: 'recvonly' });
+                pc.addTransceiver('audio', { direction: 'recvonly' });
+
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+
+                // Wait for ICE gathering
+                await new Promise(r => {
+                    if (pc.iceGatheringState === 'complete') r();
+                    else pc.onicegatheringstatechange = () => {
+                        if (pc.iceGatheringState === 'complete') r();
+                    };
+                });
+
+                // Send to WHEP endpoint
+                const response = await fetch(whepUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/sdp' },
+                    body: pc.localDescription.sdp
+                });
+
+                if (!response.ok) throw new Error('Server returned ' + response.status);
+
+                const answer = await response.text();
+                await pc.setRemoteDescription({ type: 'answer', sdp: answer });
+
+                log('Connected! Click Unmute if no audio.');
+
+            } catch (e) {
+                log('Error: ' + e.message, true);
+                console.error(e);
+            }
+        }
+
+        function disconnect() {
+            if (pc) {
+                pc.close();
+                pc = null;
+            }
+            document.getElementById('video').srcObject = null;
+            document.getElementById('connectBtn').disabled = false;
+            document.getElementById('disconnectBtn').disabled = true;
+            log('Disconnected');
+        }
+
+        function setVolume(val) {
+            document.getElementById('video').volume = val / 100;
+            document.getElementById('volumeLabel').textContent = val + '%';
+        }
+
+        function unmute() {
+            const video = document.getElementById('video');
+            video.muted = false;
+            video.volume = 1.0;
+            video.play().catch(e => console.log('Play error:', e));
+            log('Audio unmuted!');
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kenza - Two-Way Audio Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff4444;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: #44ff44;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        input[type="text"] {
+            padding: 12px 15px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 1rem;
+        }
+
+        input[type="text"]:focus {
+            outline: 2px solid #4a90d9;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4a90d9 0%, #2d5aa0 100%);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(74, 144, 217, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #d94a4a 0%, #a02d2d 100%);
+            color: #fff;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .audio-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .audio-controls .btn {
+            flex: 1;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .volume-control input[type="range"] {
+            flex: 1;
+            height: 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            -webkit-appearance: none;
+        }
+
+        .volume-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4a90d9;
+            cursor: pointer;
+        }
+
+        .visualizer {
+            height: 60px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .visualizer canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .log {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        .log-entry {
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .log-entry.error { color: #ff6b6b; }
+        .log-entry.success { color: #69db7c; }
+        .log-entry.info { color: #74c0fc; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Kenza Audio Test</h1>
+        <p class="subtitle">Two-Way Audio Communication</p>
+
+        <div class="status">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusText">Disconnected</span>
+        </div>
+
+        <div class="controls">
+            <div class="input-group">
+                <label>Pi Stream URL (WHEP endpoint)</label>
+                <input type="text" id="streamUrl" placeholder="http://192.168.1.X:8889/kenza/whep">
+            </div>
+
+            <button class="btn btn-primary" id="connectBtn" onclick="connect()">
+                🔌 Connect
+            </button>
+
+            <div class="audio-controls">
+                <button class="btn btn-secondary" id="muteBtn" onclick="toggleMute()" disabled>
+                    🎤 Mute
+                </button>
+                <button class="btn btn-danger" id="disconnectBtn" onclick="disconnect()" disabled>
+                    ❌ Disconnect
+                </button>
+            </div>
+
+            <div class="volume-control">
+                <span>🔊</span>
+                <input type="range" id="volumeSlider" min="0" max="100" value="80" oninput="setVolume(this.value)">
+                <span id="volumeValue">80%</span>
+            </div>
+        </div>
+
+        <div class="visualizer">
+            <canvas id="visualizer"></canvas>
+        </div>
+
+        <div class="log" id="log"></div>
+    </div>
+
+    <audio id="remoteAudio" autoplay></audio>
+
+    <script>
+        let pc = null;
+        let localStream = null;
+        let isMuted = false;
+        let audioContext = null;
+        let analyser = null;
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.insertBefore(entry, logDiv.firstChild);
+        }
+
+        function updateStatus(connected) {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            
+            if (connected) {
+                dot.classList.add('connected');
+                text.textContent = 'Connected';
+            } else {
+                dot.classList.remove('connected');
+                text.textContent = 'Disconnected';
+            }
+        }
+
+        async function connect() {
+            const url = document.getElementById('streamUrl').value.trim();
+            
+            if (!url) {
+                log('Please enter the Pi stream URL', 'error');
+                return;
+            }
+
+            log('Requesting microphone access...');
+            
+            try {
+                // Get user's microphone
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    },
+                    video: false
+                });
+                log('Microphone access granted', 'success');
+
+                // Setup audio visualizer
+                setupVisualizer(localStream);
+
+                // Create peer connection
+                pc = new RTCPeerConnection({
+                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                });
+
+                // Add local audio track (your mic → Pi)
+                localStream.getTracks().forEach(track => {
+                    pc.addTrack(track, localStream);
+                    log(`Added local track: ${track.kind}`);
+                });
+
+                // Handle incoming tracks (Pi → your speaker)
+                pc.ontrack = (event) => {
+                    log(`Received remote track: ${event.track.kind}`, 'success');
+                    if (event.track.kind === 'audio') {
+                        const audio = document.getElementById('remoteAudio');
+                        audio.srcObject = event.streams[0];
+                        audio.volume = document.getElementById('volumeSlider').value / 100;
+                    }
+                };
+
+                pc.oniceconnectionstatechange = () => {
+                    log(`ICE state: ${pc.iceConnectionState}`);
+                    updateStatus(pc.iceConnectionState === 'connected');
+                };
+
+                // Create offer (WHEP expects us to send offer)
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+
+                // Wait for ICE gathering
+                await new Promise((resolve) => {
+                    if (pc.iceGatheringState === 'complete') {
+                        resolve();
+                    } else {
+                        pc.onicegatheringstatechange = () => {
+                            if (pc.iceGatheringState === 'complete') resolve();
+                        };
+                    }
+                });
+
+                log('Connecting to Pi...');
+
+                // Send offer to WHEP endpoint
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/sdp' },
+                    body: pc.localDescription.sdp
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}`);
+                }
+
+                const answerSdp = await response.text();
+                await pc.setRemoteDescription({
+                    type: 'answer',
+                    sdp: answerSdp
+                });
+
+                log('Connected to Pi!', 'success');
+                updateStatus(true);
+
+                document.getElementById('connectBtn').disabled = true;
+                document.getElementById('muteBtn').disabled = false;
+                document.getElementById('disconnectBtn').disabled = false;
+
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+
+        function disconnect() {
+            if (pc) {
+                pc.close();
+                pc = null;
+            }
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+            
+            updateStatus(false);
+            log('Disconnected');
+
+            document.getElementById('connectBtn').disabled = false;
+            document.getElementById('muteBtn').disabled = true;
+            document.getElementById('disconnectBtn').disabled = true;
+        }
+
+        function toggleMute() {
+            if (!localStream) return;
+
+            isMuted = !isMuted;
+            localStream.getAudioTracks().forEach(track => {
+                track.enabled = !isMuted;
+            });
+
+            const btn = document.getElementById('muteBtn');
+            btn.textContent = isMuted ? '🔇 Unmute' : '🎤 Mute';
+            log(isMuted ? 'Microphone muted' : 'Microphone unmuted');
+        }
+
+        function setVolume(value) {
+            document.getElementById('volumeValue').textContent = `${value}%`;
+            const audio = document.getElementById('remoteAudio');
+            audio.volume = value / 100;
+        }
+
+        function setupVisualizer(stream) {
+            audioContext = new AudioContext();
+            analyser = audioContext.createAnalyser();
+            const source = audioContext.createMediaStreamSource(stream);
+            source.connect(analyser);
+            analyser.fftSize = 256;
+
+            const canvas = document.getElementById('visualizer');
+            const ctx = canvas.getContext('2d');
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            function draw() {
+                requestAnimationFrame(draw);
+                analyser.getByteFrequencyData(dataArray);
+
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                const barWidth = (canvas.width / bufferLength) * 2.5;
+                let x = 0;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    const barHeight = (dataArray[i] / 255) * canvas.height;
+                    
+                    const gradient = ctx.createLinearGradient(0, canvas.height, 0, canvas.height - barHeight);
+                    gradient.addColorStop(0, '#4a90d9');
+                    gradient.addColorStop(1, '#69db7c');
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+                    x += barWidth + 1;
+                }
+            }
+            draw();
+        }
+
+        // Auto-fill URL from query param
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('url')) {
+            document.getElementById('streamUrl').value = urlParams.get('url');
+        }
+    </script>
+</body>
+</html>

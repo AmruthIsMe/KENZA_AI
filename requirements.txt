@@ -1,0 +1,35 @@
+# Kenza Robot - All Dependencies
+# ================================
+
+# === Conversational AI (kenza_ai.py) ===
+google-generativeai>=0.3.0   # Gemini API
+pyyaml>=6.0                  # Configuration
+python-dotenv>=1.0.0         # Environment variables
+SpeechRecognition>=3.10.0    # Google Speech Recognition
+pyaudio>=0.2.14              # Audio input
+edge-tts>=6.1.0              # Microsoft Edge TTS
+pygame>=2.5.0                # Audio playback
+llama-cpp-python>=0.2.0      # Offline LLM
+
+# === Two-Way Streaming (kenza_stream.py) ===
+aiortc>=1.6.0                # WebRTC for Python
+aiohttp>=3.9.0               # Async HTTP/WebSocket
+av>=10.0.0                   # Audio/Video frames
+numpy>=1.24.0                # Array operations
+requests>=2.31.0             # HTTP requests
+
+# === Vision & Face Detection (kenza_vision.py) ===
+mediapipe>=0.10.0            # Face detection (Google)
+opencv-python>=4.8.0         # Computer vision
+face-recognition>=1.3.0      # Face recognition (optional)
+websockets>=12.0             # WebSocket for gesture UI
+
+# === Optional (Raspberry Pi specific) ===
+# picamera2                  # Pi Camera (pre-installed on Pi OS)
+# gpiozero                   # GPIO control (pre-installed on Pi OS)
+# miniupnpc                  # UPnP for router port forwarding
+
+# === Pi System Dependencies ===
+# Run these first on Raspberry Pi:
+# sudo apt-get install portaudio19-dev python3-pyaudio libopus-dev libvpx-dev
+# For face-recognition: sudo apt-get install cmake libopenblas-dev liblapack-dev
