@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Kenza Motor Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            overflow: hidden;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            background: linear-gradient(90deg, #ff9800, #ff5722);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #666;
+        }
+
+        .status-dot.connected {
+            background: #4caf50;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.8);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* Connection Panel */
+        .connection-panel {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .connection-panel input {
+            padding: 10px 15px;
+            border: 1px solid rgba(255, 152, 0, 0.4);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 1rem;
+            width: 160px;
+        }
+
+        .connection-panel input:focus {
+            outline: none;
+            border-color: #ff9800;
+        }
+
+        .connection-panel input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Direction HUD */
+        .direction-hud {
+            margin-top: 25px;
+            text-align: center;
+            padding: 15px 40px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+        }
+
+        .direction-text {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ff9800;
+            text-shadow: 0 0 20px rgba(255, 152, 0, 0.5);
+        }
+
+        .last-command {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 5px;
+        }
+
+        /* Main Control Area */
+        .control-area {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            padding: 20px;
+        }
+
+        /* Joystick */
+        .joystick-container {
+            position: relative;
+            width: min(250px, 60vmin);
+            height: min(250px, 60vmin);
+        }
+
+        .joystick-base {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: rgba(30, 30, 48, 0.9);
+            box-shadow:
+                inset 0 0 50px rgba(0, 0, 0, 0.6),
+                0 0 0 3px rgba(255, 152, 0, 0.3);
+            position: relative;
+        }
+
+        .joystick-handle {
+            position: absolute;
+            width: 90px;
+            height: 90px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: linear-gradient(145deg, rgba(255, 152, 0, 0.9), rgba(255, 87, 34, 0.9));
+            box-shadow:
+                0 5px 25px rgba(0, 0, 0, 0.5),
+                0 0 0 4px rgba(255, 255, 255, 0.1);
+            cursor: grab;
+            transition: box-shadow 0.2s;
+        }
+
+        .joystick-handle.active {
+            cursor: grabbing;
+            box-shadow:
+                0 5px 25px rgba(0, 0, 0, 0.5),
+                0 0 40px rgba(255, 152, 0, 0.6);
+        }
+
+        /* Direction indicators */
+        .direction-indicator {
+            position: absolute;
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .direction-indicator.top {
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .direction-indicator.bottom {
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .direction-indicator.left {
+            left: -35px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .direction-indicator.right {
+            right: -35px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* Bottom Controls */
+        .bottom-controls {
+            width: 100%;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .action-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn-stop {
+            background: linear-gradient(145deg, #f44336, #d32f2f);
+            box-shadow: 0 5px 20px rgba(244, 67, 54, 0.4);
+        }
+
+        .btn-stop:hover {
+            transform: scale(1.1);
+        }
+
+        .btn-stop:active {
+            transform: scale(0.95);
+        }
+
+        /* Log Panel */
+        .log-panel {
+            position: fixed;
+            bottom: 100px;
+            left: 15px;
+            width: 180px;
+            max-height: 150px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 12px;
+            padding: 10px;
+            backdrop-filter: blur(10px);
+            overflow-y: auto;
+            font-size: 0.75rem;
+        }
+
+        .log-panel h4 {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 6px;
+        }
+
+        .log-entry {
+            padding: 3px 0;
+            color: rgba(255, 255, 255, 0.6);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .log-entry.sent {
+            color: #ff9800;
+        }
+
+        .log-entry.error {
+            color: #f44336;
+        }
+
+        /* Keyboard hints */
+        .keyboard-hints {
+            position: fixed;
+            bottom: 15px;
+            right: 15px;
+            padding: 10px 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .keyboard-hints span {
+            display: inline-block;
+            padding: 2px 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            margin: 0 2px;
+        }
+
+        @media (max-width: 600px) {
+            .joystick-container {
+                width: min(200px, 55vmin);
+                height: min(200px, 55vmin);
+            }
+
+            .joystick-handle {
+                width: 70px;
+                height: 70px;
+            }
+
+            .log-panel,
+            .keyboard-hints {
+                display: none;
+            }
+
+            .connection-panel {
+                flex-direction: column;
+                width: 90%;
+            }
+
+            .connection-panel input {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <span class="title">🔧 Motor Test Controller</span>
+        <div class="status-badge">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusText">Disconnected</span>
+        </div>
+    </div>
+
+    <!-- Connection Panel -->
+    <div class="connection-panel">
+        <input type="text" id="piIp" placeholder="Raspberry Pi IP" value="192.168.1.100">
+        <input type="text" id="piPort" placeholder="Port" value="8080" style="width: 80px;">
+    </div>
+
+    <!-- Direction HUD -->
+    <div class="direction-hud">
+        <div class="direction-text" id="directionDisplay">STOP</div>
+        <div class="last-command" id="lastCommand">Ready to control</div>
+    </div>
+
+    <!-- Control Area -->
+    <div class="control-area">
+        <div class="joystick-container">
+            <div class="direction-indicator top">▲</div>
+            <div class="direction-indicator bottom">▼</div>
+            <div class="direction-indicator left">◀</div>
+            <div class="direction-indicator right">▶</div>
+            <div class="joystick-base" id="joystickBase">
+                <div class="joystick-handle" id="joystickHandle"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Controls -->
+    <div class="bottom-controls">
+        <button class="action-btn btn-stop" onclick="sendCommand('S')" title="Emergency Stop">⏹</button>
+    </div>
+
+    <!-- Log Panel -->
+    <div class="log-panel">
+        <h4>📋 Command Log</h4>
+        <div id="logContainer"></div>
+    </div>
+
+    <!-- Keyboard Hints -->
+    <div class="keyboard-hints">
+        <span>W</span><span>A</span><span>S</span><span>D</span> or Arrows | <span>Space</span> Stop
+    </div>
+
+    <script>
+        // ========== Configuration ==========
+        const CONFIG = {
+            commandInterval: 100,
+            deadzone: 0.2
+        };
+
+        // ========== State ==========
+        const state = {
+            currentDirection: 'S',
+            isDragging: false,
+            handleX: 0,
+            handleY: 0,
+            lastSentDirection: null
+        };
+
+        // ========== DOM Elements ==========
+        const el = {
+            joystickHandle: document.getElementById('joystickHandle'),
+            joystickBase: document.getElementById('joystickBase'),
+            directionDisplay: document.getElementById('directionDisplay'),
+            lastCommand: document.getElementById('lastCommand'),
+            logContainer: document.getElementById('logContainer'),
+            piIp: document.getElementById('piIp'),
+            piPort: document.getElementById('piPort'),
+            statusDot: document.getElementById('statusDot'),
+            statusText: document.getElementById('statusText')
+        };
+
+        // ========== Joystick Logic ==========
+        let baseRect, centerX, centerY, maxRadius;
+
+        function updateJoystickMetrics() {
+            baseRect = el.joystickBase.getBoundingClientRect();
+            centerX = baseRect.width / 2;
+            centerY = baseRect.height / 2;
+            maxRadius = baseRect.width / 2 - 45;
+        }
+
+        window.addEventListener('resize', updateJoystickMetrics);
+        setTimeout(updateJoystickMetrics, 100);
+
+        function handleStart(e) {
+            e.preventDefault();
+            state.isDragging = true;
+            el.joystickHandle.classList.add('active');
+            updateJoystickMetrics();
+            handleMove(e);
+        }
+
+        function handleMove(e) {
+            if (!state.isDragging) return;
+            e.preventDefault();
+
+            const touch = e.touches ? e.touches[0] : e;
+            const rect = el.joystickBase.getBoundingClientRect();
+
+            let x = touch.clientX - rect.left - centerX;
+            let y = touch.clientY - rect.top - centerY;
+
+            const distance = Math.sqrt(x * x + y * y);
+            if (distance > maxRadius) {
+                x = (x / distance) * maxRadius;
+                y = (y / distance) * maxRadius;
+            }
+
+            state.handleX = x / maxRadius;
+            state.handleY = y / maxRadius;
+
+            el.joystickHandle.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+            updateDirection();
+        }
+
+        function handleEnd(e) {
+            e.preventDefault();
+            state.isDragging = false;
+            el.joystickHandle.classList.remove('active');
+
+            el.joystickHandle.style.transition = 'transform 0.15s ease-out';
+            el.joystickHandle.style.transform = 'translate(-50%, -50%)';
+            setTimeout(() => { el.joystickHandle.style.transition = 'none'; }, 150);
+
+            state.handleX = 0;
+            state.handleY = 0;
+            sendCommand('S');
+        }
+
+        function updateDirection() {
+            const x = state.handleX;
+            const y = state.handleY;
+            const distance = Math.sqrt(x * x + y * y);
+
+            let newDirection = 'S';
+            if (distance > CONFIG.deadzone) {
+                const angle = Math.atan2(y, x) * (180 / Math.PI);
+                if (angle >= -45 && angle < 45) newDirection = 'R';
+                else if (angle >= 45 && angle < 135) newDirection = 'B';
+                else if (angle >= -135 && angle < -45) newDirection = 'F';
+                else newDirection = 'L';
+            }
+
+            if (newDirection !== state.lastSentDirection) {
+                sendCommand(newDirection);
+            }
+        }
+
+        // Bind joystick events
+        el.joystickHandle.addEventListener('mousedown', handleStart);
+        el.joystickHandle.addEventListener('touchstart', handleStart);
+        document.addEventListener('mousemove', handleMove);
+        document.addEventListener('touchmove', handleMove, { passive: false });
+        document.addEventListener('mouseup', handleEnd);
+        document.addEventListener('touchend', handleEnd);
+
+        // ========== Send Commands to Raspberry Pi ==========
+        function sendCommand(direction) {
+            const ip = el.piIp.value.trim();
+            const port = el.piPort.value.trim() || '80';
+
+            if (!ip) {
+                addLog('Enter Pi IP address', 'error');
+                return;
+            }
+
+            const names = { 'F': 'FORWARD', 'B': 'BACKWARD', 'L': 'LEFT', 'R': 'RIGHT', 'S': 'STOP' };
+            const url = `http://${ip}:${port}/${direction}`;
+
+            state.currentDirection = direction;
+            state.lastSentDirection = direction;
+
+            // Update display
+            el.directionDisplay.textContent = names[direction];
+            el.lastCommand.textContent = `→ ${url}`;
+
+            // Send HTTP request
+            fetch(url, { mode: 'no-cors', cache: 'no-store' })
+                .then(() => {
+                    el.statusDot.classList.add('connected');
+                    el.statusText.textContent = 'Sending...';
+                    addLog(`${names[direction]}`, 'sent');
+
+                    // Reset status after a moment
+                    setTimeout(() => {
+                        if (state.currentDirection === 'S') {
+                            el.statusDot.classList.remove('connected');
+                            el.statusText.textContent = 'Idle';
+                        }
+                    }, 500);
+                })
+                .catch((err) => {
+                    el.statusDot.classList.remove('connected');
+                    el.statusText.textContent = 'Error';
+                    addLog(`Failed: ${direction}`, 'error');
+                });
+        }
+
+        // ========== Keyboard Support ==========
+        const keyState = {};
+
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || keyState[e.key]) return;
+            keyState[e.key] = true;
+
+            let dir = null;
+            switch (e.key) {
+                case 'ArrowUp': case 'w': case 'W': dir = 'F'; break;
+                case 'ArrowDown': case 's': case 'S': dir = 'B'; break;
+                case 'ArrowLeft': case 'a': case 'A': dir = 'L'; break;
+                case 'ArrowRight': case 'd': case 'D': dir = 'R'; break;
+                case ' ': sendCommand('S'); return;
+            }
+
+            if (dir) {
+                sendCommand(dir);
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.target.tagName === 'INPUT') return;
+            keyState[e.key] = false;
+
+            const keys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd', 'W', 'A', 'S', 'D'];
+            if (keys.includes(e.key)) {
+                // Check if any movement key is still held
+                const stillPressed = keys.some(k => keyState[k]);
+                if (!stillPressed) {
+                    sendCommand('S');
+                }
+            }
+        });
+
+        // ========== Logging ==========
+        function addLog(message, type = '') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            entry.textContent = `${time} ${message}`;
+            el.logContainer.insertBefore(entry, el.logContainer.firstChild);
+            while (el.logContainer.children.length > 20) {
+                el.logContainer.removeChild(el.logContainer.lastChild);
+            }
+        }
+
+        // ========== Init ==========
+        addLog('Ready. Enter Pi IP and use joystick.');
+    </script>
+</body>
+
+</html>

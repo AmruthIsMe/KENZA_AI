@@ -1,0 +1,3756 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Kenza Companion</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-dark: #0a0a0f;
+            --bg-card: rgba(25, 25, 35, 0.6);
+            --accent: #4fc3f7;
+            --accent-glow: rgba(79, 195, 247, 0.4);
+            --pink: #ff66aa;
+            --green: #4caf50;
+            --orange: #ffaa00;
+            --red: #f44336;
+            --text: #ffffff;
+            --text-dim: rgba(255, 255, 255, 0.5);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            min-height: 100vh;
+            color: var(--text);
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        /* Animated Background */
+        .bg-gradient {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 20%, rgba(79, 195, 247, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(255, 102, 170, 0.06) 0%, transparent 50%),
+                linear-gradient(135deg, #0a0a0f 0%, #12121a 50%, #0a0a0f 100%);
+            z-index: -1;
+            animation: gradientShift 20s ease-in-out infinite;
+        }
+
+        @keyframes gradientShift {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.8;
+            }
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: linear-gradient(to bottom, rgba(10, 10, 15, 0.95), transparent);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .back-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: none;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .back-btn.visible {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent), var(--pink));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #666;
+        }
+
+        .status-dot.connected {
+            background: var(--green);
+            box-shadow: 0 0 10px var(--green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* View Container */
+        .view-container {
+            position: fixed;
+            top: 70px;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            overflow: hidden;
+        }
+
+        .view {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            overflow-y: auto;
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+        }
+
+        .view.hidden {
+            transform: translateX(100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .view.hidden-left {
+            transform: translateX(-30%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Login Screen */
+        #view-login {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 40px 20px;
+        }
+
+        .login-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px 30px;
+            width: 100%;
+            max-width: 340px;
+            text-align: center;
+        }
+
+        .login-logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--accent), var(--pink));
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin: 0 auto 20px;
+            box-shadow: 0 10px 40px rgba(79, 195, 247, 0.3);
+        }
+
+        .login-card h1 {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+
+        .login-card p {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 14px 18px;
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 1rem;
+            margin-bottom: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .login-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .login-input::placeholder {
+            color: var(--text-dim);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent), #00a8cc);
+            color: #000;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .login-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 5px 20px var(--accent-glow);
+        }
+
+        .login-error {
+            color: var(--red);
+            font-size: 0.85rem;
+            margin-top: 14px;
+            display: none;
+        }
+
+        .login-error.visible {
+            display: block;
+        }
+
+        /* Glass Card */
+        .glass-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 16px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            padding-top: 10px;
+        }
+
+        .hub-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .hub-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+            box-shadow: 0 15px 50px rgba(79, 195, 247, 0.15);
+        }
+
+        .hub-icon {
+            font-size: 3rem;
+            margin-bottom: 14px;
+            display: block;
+        }
+
+        .hub-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 6px;
+        }
+
+        .hub-card p {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        /* Settings List */
+        .settings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .settings-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 20px;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .settings-item:hover {
+            background: rgba(40, 40, 55, 0.7);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .settings-item-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .settings-item-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(79, 195, 247, 0.15);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .settings-item h3 {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .settings-item p {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        .chevron {
+            color: var(--text-dim);
+            font-size: 1.2rem;
+        }
+
+        /* Sub-settings controls */
+        .control-section {
+            margin-bottom: 24px;
+        }
+
+        .control-section h4 {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+        }
+
+        .color-option {
+            aspect-ratio: 1;
+            border-radius: 12px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+
+        .color-option.selected {
+            border-color: #fff;
+            box-shadow: 0 0 15px currentColor;
+        }
+
+        .color-cyan {
+            background: linear-gradient(135deg, #4dd9ff, #00a8cc);
+        }
+
+        .color-pink {
+            background: linear-gradient(135deg, #ff66aa, #ff3388);
+        }
+
+        .color-purple {
+            background: linear-gradient(135deg, #aa66ff, #8833ff);
+        }
+
+        .color-orange {
+            background: linear-gradient(135deg, #ffaa00, #ff8800);
+        }
+
+        .color-green {
+            background: linear-gradient(135deg, #66ff66, #44dd44);
+        }
+
+        .color-red {
+            background: linear-gradient(135deg, #ff6666, #ff3333);
+        }
+
+        /* Toggle */
+        .toggle {
+            width: 52px;
+            height: 28px;
+            background: rgba(60, 60, 60, 0.8);
+            border-radius: 14px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle.active {
+            background: linear-gradient(90deg, #00c9ff, var(--accent));
+        }
+
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: #fff;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+            transition: transform 0.3s;
+        }
+
+        .toggle.active::after {
+            transform: translateX(24px);
+        }
+
+        /* Voice Grid */
+        .voice-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .voice-card {
+            padding: 20px 12px;
+            background: rgba(60, 60, 60, 0.4);
+            border-radius: 16px;
+            text-align: center;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .voice-card:hover {
+            background: rgba(80, 80, 80, 0.5);
+        }
+
+        .voice-card.selected {
+            border-color: var(--accent);
+            background: rgba(79, 195, 247, 0.1);
+        }
+
+        .voice-card .emoji {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+
+        .voice-card .name {
+            font-size: 0.8rem;
+        }
+
+        /* Setting Row */
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .setting-row:last-child {
+            border-bottom: none;
+        }
+
+        .setting-label h3 {
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .setting-label p {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        /* QR Section */
+        .qr-section {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .wifi-inputs {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .wifi-inputs input {
+            padding: 14px 18px;
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 0.95rem;
+        }
+
+        .wifi-inputs input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .qr-container {
+            width: 180px;
+            height: 180px;
+            background: #fff;
+            border-radius: 16px;
+            padding: 14px;
+            margin: 20px auto;
+            display: none;
+        }
+
+        #qr-code {
+            width: 100%;
+            height: 100%;
+        }
+
+        .scan-status {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px 24px;
+            background: var(--bg-card);
+            border-radius: 24px;
+            margin-top: 16px;
+        }
+
+        .pulse-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        /* Button */
+        .btn {
+            padding: 14px 24px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), #00a8cc);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.02);
+            box-shadow: 0 5px 20px var(--accent-glow);
+        }
+
+        .btn-danger {
+            background: rgba(244, 67, 54, 0.2);
+            color: var(--red);
+        }
+
+        /* Remote HUD */
+        .hud-container {
+            position: relative;
+            height: calc(100vh - 90px);
+            background: #000;
+            border-radius: 20px;
+            overflow: hidden;
+            margin: -20px;
+        }
+
+        #remote-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+        }
+
+        .hud-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .hud-overlay>* {
+            pointer-events: auto;
+        }
+
+        .telemetry-bar {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 16px;
+            padding: 12px 20px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            font-size: 0.85rem;
+        }
+
+        .direction-hud {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 24px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .direction-text {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .joystick-container {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            width: 130px;
+            height: 130px;
+        }
+
+        .joystick-base {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: rgba(30, 30, 48, 0.85);
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5), 0 0 0 2px rgba(79, 195, 247, 0.3);
+            position: relative;
+        }
+
+        .joystick-handle {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: linear-gradient(145deg, rgba(79, 195, 247, 0.9), rgba(0, 150, 200, 0.9));
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            cursor: grab;
+        }
+
+        .joystick-handle.active {
+            box-shadow: 0 0 25px var(--accent);
+        }
+
+        /* Direction Indicators */
+        .direction-indicator {
+            position: absolute;
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.4);
+            z-index: 10;
+        }
+
+        .joystick-container .direction-indicator.top {
+            top: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .joystick-container .direction-indicator.bottom {
+            bottom: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .joystick-container .direction-indicator.left {
+            left: -22px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .joystick-container .direction-indicator.right {
+            right: -22px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* Emergency Stop Button */
+        .emergency-stop-btn {
+            position: absolute;
+            bottom: 180px;
+            left: 30px;
+            width: 130px;
+            height: 50px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            background: linear-gradient(145deg, #f44336, #d32f2f);
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4);
+            color: #fff;
+            transition: all 0.2s;
+        }
+
+        .emergency-stop-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(244, 67, 54, 0.6);
+        }
+
+        .emergency-stop-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Keyboard Hints */
+        .keyboard-hints {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 8px 14px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .keyboard-hints span {
+            display: inline-block;
+            padding: 2px 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            margin: 0 2px;
+        }
+
+        .speed-meter {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+        }
+
+        .speed-bar-bg {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .speed-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), #00e5ff);
+            border-radius: 3px;
+            width: 0%;
+        }
+
+        .hud-actions {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .hud-btn {
+            width: 50px;
+            height: 50px;
+            border: none;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            color: #fff;
+            transition: all 0.2s;
+        }
+
+        .hud-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .hud-btn.muted {
+            background: var(--red);
+        }
+
+        .hud-btn.recording {
+            background: var(--red);
+            animation: pulse 1s infinite;
+        }
+
+        .hud-btn.active {
+            background: var(--accent);
+            transform: scale(1.2);
+        }
+
+        /* Auto Mode */
+        .auto-card {
+            margin-bottom: 16px;
+        }
+
+        .auto-card .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Autonomy Status Panel */
+        .autonomy-status {
+            background: rgba(15, 15, 25, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(79, 195, 247, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .autonomy-status h4 {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 14px;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .status-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .status-item .label {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+
+        .status-item .value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .status-item .value.warning {
+            color: var(--orange);
+        }
+
+        .status-item .value.danger {
+            color: var(--red);
+        }
+
+        .status-item .value.safe {
+            color: var(--green);
+        }
+
+        .auto-emergency-btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(145deg, #f44336, #d32f2f);
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+            box-shadow: 0 4px 20px rgba(244, 67, 54, 0.3);
+        }
+
+        .auto-emergency-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 25px rgba(244, 67, 54, 0.5);
+        }
+
+        .auto-emergency-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* AI Chat */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 150px);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            margin-bottom: 12px;
+            scroll-behavior: smooth;
+        }
+
+        .chat-msg {
+            padding: 12px 16px;
+            border-radius: 16px;
+            margin-bottom: 10px;
+            max-width: 85%;
+            animation: msgSlideIn 0.25s ease-out;
+            position: relative;
+        }
+
+        @keyframes msgSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chat-msg.user {
+            background: linear-gradient(135deg, var(--accent), #00a8cc);
+            color: #000;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-msg.ai {
+            background: rgba(60, 60, 60, 0.6);
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-msg .msg-badge {
+            font-size: 0.65rem;
+            opacity: 0.7;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .chat-msg.user .msg-badge {
+            justify-content: flex-end;
+        }
+
+        /* Thinking Indicator */
+        .chat-msg.thinking {
+            background: rgba(60, 60, 60, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .thinking-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .thinking-dots span {
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: thinkBounce 1.4s infinite ease-in-out both;
+        }
+
+        .thinking-dots span:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .thinking-dots span:nth-child(2) {
+            animation-delay: 0.16s;
+        }
+
+        .thinking-dots span:nth-child(3) {
+            animation-delay: 0.32s;
+        }
+
+        @keyframes thinkBounce {
+
+            0%,
+            80%,
+            100% {
+                transform: scale(0.6);
+                opacity: 0.5;
+            }
+
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Chat Status Bar */
+        .chat-status-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            transition: all 0.3s ease;
+        }
+
+        .chat-status-bar.listening {
+            background: rgba(79, 195, 247, 0.15);
+            color: var(--accent);
+        }
+
+        .chat-status-bar.thinking {
+            background: rgba(255, 170, 0, 0.15);
+            color: var(--orange);
+        }
+
+        .chat-status-bar.speaking {
+            background: rgba(76, 175, 80, 0.15);
+            color: var(--green);
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .chat-status-bar.listening .status-indicator,
+        .chat-status-bar.thinking .status-indicator,
+        .chat-status-bar.speaking .status-indicator {
+            animation: statusPulse 1.5s infinite;
+        }
+
+        @keyframes statusPulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: scale(0.8);
+            }
+        }
+
+        /* Voice Selection UI */
+        .voice-selection-container {
+            display: flex;
+            gap: 16px;
+            height: calc(100vh - 180px);
+        }
+
+        .voice-list {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+        }
+
+        .voice-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 14px;
+            background: rgba(40, 50, 70, 0.6);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .voice-card:hover {
+            background: rgba(60, 70, 90, 0.7);
+            transform: translateX(4px);
+        }
+
+        .voice-card.selected {
+            background: rgba(79, 195, 247, 0.15);
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(79, 195, 247, 0.2);
+        }
+
+        .voice-card .avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .voice-card.selected .avatar {
+            border-color: var(--accent);
+        }
+
+        .voice-card .info {
+            flex: 1;
+        }
+
+        .voice-card .name {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+
+        .voice-card .desc {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        /* Voice Preview Panel */
+        .voice-preview-panel {
+            flex: 1.2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: rgba(30, 40, 60, 0.5);
+            border: 2px solid var(--accent);
+            border-radius: 16px;
+            box-shadow: 0 0 30px rgba(79, 195, 247, 0.15);
+        }
+
+        .voice-preview-panel .avatar-large {
+            width: 140px;
+            height: 140px;
+            border-radius: 16px;
+            object-fit: cover;
+            border: 3px solid var(--accent);
+            box-shadow: 0 0 30px rgba(79, 195, 247, 0.3);
+            margin-bottom: 20px;
+        }
+
+        .voice-preview-panel .preview-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .voice-preview-panel .preview-desc {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            margin-bottom: 20px;
+        }
+
+        /* Audio Waveform Animation */
+        .waveform {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            height: 40px;
+            margin-bottom: 16px;
+        }
+
+        .waveform .bar {
+            width: 4px;
+            background: var(--accent);
+            border-radius: 2px;
+            animation: waveAnim 1.2s ease-in-out infinite;
+        }
+
+        .waveform .bar:nth-child(1) {
+            height: 15px;
+            animation-delay: 0s;
+        }
+
+        .waveform .bar:nth-child(2) {
+            height: 25px;
+            animation-delay: 0.1s;
+        }
+
+        .waveform .bar:nth-child(3) {
+            height: 35px;
+            animation-delay: 0.2s;
+        }
+
+        .waveform .bar:nth-child(4) {
+            height: 20px;
+            animation-delay: 0.3s;
+        }
+
+        .waveform .bar:nth-child(5) {
+            height: 30px;
+            animation-delay: 0.4s;
+        }
+
+        .waveform .bar:nth-child(6) {
+            height: 40px;
+            animation-delay: 0.5s;
+        }
+
+        .waveform .bar:nth-child(7) {
+            height: 25px;
+            animation-delay: 0.6s;
+        }
+
+        .waveform .bar:nth-child(8) {
+            height: 35px;
+            animation-delay: 0.7s;
+        }
+
+        .waveform .bar:nth-child(9) {
+            height: 20px;
+            animation-delay: 0.8s;
+        }
+
+        .waveform .bar:nth-child(10) {
+            height: 30px;
+            animation-delay: 0.9s;
+        }
+
+        .waveform .bar:nth-child(11) {
+            height: 15px;
+            animation-delay: 1.0s;
+        }
+
+        .waveform .bar:nth-child(12) {
+            height: 25px;
+            animation-delay: 1.1s;
+        }
+
+        @keyframes waveAnim {
+
+            0%,
+            100% {
+                transform: scaleY(0.5);
+                opacity: 0.6;
+            }
+
+            50% {
+                transform: scaleY(1);
+                opacity: 1;
+            }
+        }
+
+        .voice-preview-btn {
+            padding: 12px 28px;
+            background: linear-gradient(135deg, var(--accent), #00a8cc);
+            border: none;
+            border-radius: 10px;
+            color: #000;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .voice-preview-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+
+        .chat-input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input-row input {
+            flex: 1;
+            padding: 14px 18px;
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+
+        .chat-input-row input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .chat-input-row button {
+            padding: 14px 20px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent), #00a8cc);
+            color: #000;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .chat-input-row button:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 15px var(--accent-glow);
+        }
+
+        /* Dev Panel */
+        .dev-panel {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            gap: 10px;
+            padding: 12px 16px;
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            z-index: 200;
+        }
+
+        .dev-panel input {
+            padding: 10px 14px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(60, 60, 60, 0.8);
+            color: #fff;
+            font-size: 0.85rem;
+            width: 140px;
+        }
+
+        .dev-panel .btn {
+            padding: 10px 16px;
+            font-size: 0.85rem;
+        }
+
+        /* WiFi QR Section */
+        .wifi-inputs {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .wifi-inputs input {
+            padding: 14px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 0.95rem;
+        }
+
+        .wifi-inputs input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .qr-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: #fff;
+            border-radius: 16px;
+        }
+
+        .qr-container canvas {
+            max-width: 180px;
+        }
+
+        .qr-container .qr-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .qr-container .btn-save-qr {
+            padding: 8px 16px;
+            background: #4caf50;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .qr-container .btn-clear-qr {
+            padding: 8px 16px;
+            background: #666;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .scan-status {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px 20px;
+            background: rgba(79, 195, 247, 0.1);
+            border-radius: 24px;
+            margin-top: 16px;
+        }
+
+        .pulse-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        .qr-status-msg {
+            text-align: center;
+            margin-top: 12px;
+            font-size: 0.9rem;
+        }
+
+        .qr-status-msg.success {
+            color: #4caf50;
+        }
+
+        .qr-status-msg.error {
+            color: #f44336;
+        }
+
+        .qr-status-msg.validating {
+            color: #ffaa00;
+        }
+
+        /* Saved Networks */
+        .saved-networks {
+            margin-top: 24px;
+        }
+
+        .saved-networks h4 {
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+            color: var(--text-dim);
+        }
+
+        .saved-network-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            background: rgba(60, 60, 60, 0.4);
+            border-radius: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .saved-network-item:hover {
+            background: rgba(79, 195, 247, 0.1);
+            border-color: var(--accent);
+        }
+
+        .saved-network-item .ssid-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .saved-network-item .delete-btn {
+            padding: 6px 10px;
+            background: rgba(244, 67, 54, 0.2);
+            border: none;
+            border-radius: 8px;
+            color: #f44336;
+            cursor: pointer;
+        }
+
+        /* View Title */
+        .view-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        /* Eye Preview */
+        .eye-preview-container {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            padding: 40px 20px;
+            margin-bottom: 20px;
+        }
+
+        .eye-canvas {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #4dd9ff 0%, #00a8cc 50%, #006680 100%);
+            box-shadow: 0 0 40px rgba(77, 217, 255, 0.4), inset 0 -10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .eye-canvas .pupil {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: radial-gradient(circle at 40% 40%, #333 0%, #000 100%);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.1s ease-out;
+        }
+
+        .eye-canvas .highlight {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            top: 25%;
+            left: 60%;
+        }
+
+        .eye-canvas .highlight-small {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            top: 45%;
+            left: 30%;
+        }
+
+        .eye-canvas.blinking {
+            animation: blink 0.15s ease-in-out;
+        }
+
+        .eye-canvas.dizzy-spin {
+            animation: dizzy-wobble 0.3s ease-in-out infinite;
+        }
+
+        .eye-canvas .pupil.saccade {
+            animation: saccade 2s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                transform: scaleY(1);
+            }
+
+            50% {
+                transform: scaleY(0.1);
+            }
+        }
+
+        @keyframes saccade {
+
+            0%,
+            100% {
+                transform: translate(-50%, -50%);
+            }
+
+            25% {
+                transform: translate(-48%, -52%);
+            }
+
+            50% {
+                transform: translate(-52%, -50%);
+            }
+
+            75% {
+                transform: translate(-50%, -48%);
+            }
+        }
+
+        @keyframes dizzy-wobble {
+
+            0%,
+            100% {
+                transform: rotate(-5deg);
+            }
+
+            50% {
+                transform: rotate(5deg);
+            }
+        }
+
+        @keyframes spin {
+            from {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+
+            to {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        @keyframes heart-beat {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            15% {
+                transform: scale(1.15);
+            }
+
+            30% {
+                transform: scale(1);
+            }
+
+            45% {
+                transform: scale(1.1);
+            }
+        }
+
+        @keyframes watery-shimmer {
+
+            0%,
+            100% {
+                box-shadow: inset 0 -20px 30px rgba(100, 180, 255, 0.4), 0 0 20px rgba(100, 180, 255, 0.3);
+            }
+
+            50% {
+                box-shadow: inset 0 -25px 35px rgba(100, 180, 255, 0.5), 0 0 30px rgba(100, 180, 255, 0.4);
+            }
+        }
+
+        @keyframes tear-drop {
+
+            0%,
+            100% {
+                transform: translateX(-50%) translateY(0);
+                opacity: 0.8;
+            }
+
+            50% {
+                transform: translateX(-50%) translateY(10px);
+                opacity: 1;
+            }
+        }
+
+        @keyframes zzz-float {
+            0% {
+                opacity: 0;
+                transform: translateY(0) scale(0.5);
+            }
+
+            20% {
+                opacity: 1;
+            }
+
+            80% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateY(-60px) scale(1.2);
+            }
+        }
+
+        @keyframes yawn-open {
+
+            0%,
+            100% {
+                transform: translateX(-50%) scaleY(0.3);
+            }
+
+            50% {
+                transform: translateX(-50%) scaleY(1);
+            }
+        }
+
+        /* Eye Shape Grid */
+        .eye-shape-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .shape-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 14px 10px;
+            background: rgba(40, 40, 40, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .shape-option:hover {
+            background: rgba(60, 60, 60, 0.8);
+            border-color: rgba(77, 217, 255, 0.5);
+        }
+
+        .shape-option.selected {
+            background: rgba(77, 217, 255, 0.15);
+            border-color: var(--accent);
+        }
+
+        .shape-option span {
+            margin-top: 8px;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .shape-preview {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #4dd9ff 0%, #00a8cc 100%);
+            box-shadow: 0 0 12px rgba(77, 217, 255, 0.5);
+        }
+
+        .shape-round {
+            border-radius: 50%;
+        }
+
+        .shape-oval {
+            border-radius: 50%;
+            transform: scaleX(0.7);
+            width: 44px;
+        }
+
+        .shape-anime {
+            border-radius: 50% 50% 40% 40%;
+            height: 40px;
+        }
+
+        .shape-robot {
+            border-radius: 6px;
+        }
+
+        .shape-line {
+            border-radius: 18px;
+            height: 10px;
+            width: 44px;
+        }
+
+        .shape-rectangle {
+            border-radius: 5px;
+            width: 44px;
+            height: 30px;
+        }
+
+        .shape-diamond {
+            border-radius: 4px;
+            transform: rotate(45deg) scale(0.7);
+            width: 30px;
+            height: 30px;
+        }
+
+        .shape-cute {
+            border-radius: 50% 50% 45% 45%;
+            height: 38px;
+            width: 34px;
+        }
+
+        .shape-alien {
+            border-radius: 45% 45% 50% 50%;
+            height: 44px;
+            width: 30px;
+        }
+
+        /* Eye Color Grid (9 colors) */
+        .eye-color-grid {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 8px;
+        }
+
+        .eye-color-grid .color-option {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .eye-color-grid .color-option:hover {
+            transform: scale(1.15);
+        }
+
+        .eye-color-grid .color-option.selected {
+            border-color: #fff;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        }
+
+        /* Animation Buttons */
+        .anim-btn-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .anim-btn {
+            padding: 10px 14px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(60, 60, 60, 0.4);
+            color: #fff;
+            font-size: 0.8rem;
+            font-weight: 500;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .anim-btn:hover {
+            background: rgba(77, 217, 255, 0.2);
+            border-color: var(--accent);
+        }
+
+        .anim-btn.active {
+            background: rgba(77, 217, 255, 0.3);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-gradient"></div>
+
+    <header>
+        <div class="header-left">
+            <button class="back-btn" id="back-btn">←</button>
+            <div class="logo">
+                <div class="logo-icon">🤖</div>
+                <span>Kenza</span>
+            </div>
+        </div>
+        <div class="status-badge">
+            <div class="status-dot" id="status-dot"></div>
+            <span id="status-text">Offline</span>
+        </div>
+    </header>
+
+    <div class="view-container">
+        <!-- LOGIN VIEW -->
+        <div class="view" id="view-login">
+            <div class="login-card">
+                <div class="login-logo">🤖</div>
+                <h1>Welcome</h1>
+                <p>Sign in to control Kenza</p>
+                <input type="text" class="login-input" id="login-user" placeholder="Username" autocomplete="off">
+                <input type="password" class="login-input" id="login-pass" placeholder="Password">
+                <button class="login-btn" id="btn-login">Sign In</button>
+                <div class="login-error" id="login-error">Incorrect credentials</div>
+            </div>
+        </div>
+
+        <!-- HOME DASHBOARD -->
+        <div class="view hidden" id="view-home">
+            <h2 class="view-title">Dashboard</h2>
+            <div class="dashboard-grid">
+                <div class="hub-card" data-target="view-remote">
+                    <span class="hub-icon">🎮</span>
+                    <h3>Remote Control</h3>
+                    <p>Telepresence & Drive</p>
+                </div>
+                <div class="hub-card" data-target="view-auto">
+                    <span class="hub-icon">🤖</span>
+                    <h3>Autonomous</h3>
+                    <p>Follow & Sentry</p>
+                </div>
+                <div class="hub-card" data-target="view-ai">
+                    <span class="hub-icon">🧠</span>
+                    <h3>AI Chat</h3>
+                    <p>Talk to Kenza</p>
+                </div>
+                <div class="hub-card" data-target="view-settings">
+                    <span class="hub-icon">⚙️</span>
+                    <h3>Settings</h3>
+                    <p>Customize & Pair</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- REMOTE CONTROL -->
+        <div class="view hidden" id="view-remote">
+            <div class="hud-container">
+                <video id="remote-video" autoplay playsinline muted></video>
+                <div class="hud-overlay">
+                    <div class="telemetry-bar">
+                        <span>🔋 <span id="hud-battery">95%</span></span>
+                        <span>📶 <span id="hud-wifi">-45dB</span></span>
+                        <span>🌡️ <span id="hud-temp">38°C</span></span>
+                    </div>
+                    <div class="direction-hud">
+                        <div class="direction-text" id="direction-display">STOP</div>
+                        <div style="font-size:0.8rem;color:var(--text-dim);">Speed: <span id="speed-display">0%</span>
+                        </div>
+                        <div class="last-command" id="last-command"
+                            style="font-size:0.7rem;color:var(--text-dim);margin-top:4px;"></div>
+                    </div>
+                    <div class="joystick-container">
+                        <div class="direction-indicator top">▲</div>
+                        <div class="direction-indicator bottom">▼</div>
+                        <div class="direction-indicator left">◀</div>
+                        <div class="direction-indicator right">▶</div>
+                        <div class="joystick-base" id="joystick-base">
+                            <div class="joystick-handle" id="joystick-handle"></div>
+                        </div>
+                    </div>
+                    <div class="speed-meter">
+                        <div class="speed-bar-bg">
+                            <div class="speed-bar-fill" id="speed-bar"></div>
+                        </div>
+                    </div>
+                    <div class="hud-actions">
+                        <button class="hud-btn" id="btn-mic">🎤</button>
+                        <button class="hud-btn" id="btn-video">📹</button>
+                        <button class="hud-btn" id="btn-screenshot">📷</button>
+                    </div>
+                    <!-- Keyboard Hints -->
+                    <div class="keyboard-hints">
+                        <span>W</span><span>A</span><span>S</span><span>D</span> or Arrows | <span>Space</span> Stop
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AUTONOMOUS MODE -->
+        <div class="view hidden" id="view-auto">
+            <h2 class="view-title">Autonomous</h2>
+
+            <!-- Live Status Panel -->
+            <div class="autonomy-status" id="autonomy-status">
+                <h4>Live Status</h4>
+                <div class="status-grid">
+                    <div class="status-item">
+                        <span class="label">Mode</span>
+                        <span class="value" id="auto-status-mode">Idle</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Direction</span>
+                        <span class="value" id="auto-status-direction">STOP</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Obstacles</span>
+                        <span class="value safe" id="auto-status-obstacles">0</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Target</span>
+                        <span class="value" id="auto-status-target">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Follow Me -->
+            <div class="glass-card auto-card">
+                <div class="card-title">🚶 Follow Me</div>
+                <div class="setting-row">
+                    <div class="setting-label">
+                        <h3>Person Tracking</h3>
+                        <p>Follows you using pose detection</p>
+                    </div>
+                    <div class="toggle" id="toggle-follow"></div>
+                </div>
+            </div>
+
+            <!-- Autonomous Explore -->
+            <div class="glass-card auto-card">
+                <div class="card-title">🧭 Explore</div>
+                <div class="setting-row">
+                    <div class="setting-label">
+                        <h3>Autonomous Roaming</h3>
+                        <p>Navigate and avoid obstacles on its own</p>
+                    </div>
+                    <div class="toggle" id="toggle-explore"></div>
+                </div>
+            </div>
+
+            <!-- Sentry Patrol -->
+            <div class="glass-card auto-card">
+                <div class="card-title">🔒 Sentry Patrol</div>
+                <div class="setting-row">
+                    <div class="setting-label">
+                        <h3>Motion Detection</h3>
+                        <p>Alert on unexpected movement</p>
+                    </div>
+                    <div class="toggle" id="toggle-sentry"></div>
+                </div>
+            </div>
+
+            <!-- Collision Avoidance -->
+            <div class="glass-card auto-card">
+                <div class="card-title">🛡️ Collision Avoidance</div>
+                <div class="setting-row">
+                    <div class="setting-label">
+                        <h3>Obstacle Shield</h3>
+                        <p>Auto-stops before hitting objects</p>
+                    </div>
+                    <div class="toggle active" id="toggle-collision"></div>
+                </div>
+            </div>
+
+            <!-- Gesture Navigation -->
+            <div class="glass-card auto-card">
+                <div class="card-title">✋ Gesture Navigation</div>
+                <div class="setting-row">
+                    <div class="setting-label">
+                        <h3>Hand Control</h3>
+                        <p>Point to steer, fist to stop</p>
+                    </div>
+                    <div class="toggle" id="toggle-gesture-nav"></div>
+                </div>
+            </div>
+
+            <!-- Emergency Stop -->
+            <button class="auto-emergency-btn" id="btn-auto-emergency">🛑 EMERGENCY STOP</button>
+        </div>
+
+        <!-- AI CHAT -->
+        <div class="view hidden" id="view-ai">
+            <h2 class="view-title">AI Chat</h2>
+            <div class="chat-container">
+                <div class="chat-status-bar" id="chat-status-bar">
+                    <div class="status-indicator"></div>
+                    <span id="chat-status-text">Say "Kenza" to start talking</span>
+                </div>
+                <div class="chat-messages" id="chat-messages">
+                    <div class="chat-msg ai">Hi! I'm Kenza. How can I help you today?</div>
+                </div>
+                <div class="chat-input-row">
+                    <input type="text" id="chat-input" placeholder="Type or say 'Kenza'...">
+                    <button id="btn-send-chat">Send</button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- SETTINGS MAIN -->
+        <div class="view hidden" id="view-settings">
+            <h2 class="view-title">Settings</h2>
+            <div class="settings-list">
+                <div class="settings-item" data-target="view-settings-eyes">
+                    <div class="settings-item-left">
+                        <div class="settings-item-icon">👁️</div>
+                        <div>
+                            <h3>Eye Customization</h3>
+                            <p>Color & style</p>
+                        </div>
+                    </div>
+                    <span class="chevron">›</span>
+                </div>
+                <div class="settings-item" data-target="view-settings-voice">
+                    <div class="settings-item-left">
+                        <div class="settings-item-icon">🗣️</div>
+                        <div>
+                            <h3>Voice Selection</h3>
+                            <p>Change Kenza's voice</p>
+                        </div>
+                    </div>
+                    <span class="chevron">›</span>
+                </div>
+                <div class="settings-item" data-target="view-settings-privacy">
+                    <div class="settings-item-left">
+                        <div class="settings-item-icon">🔒</div>
+                        <div>
+                            <h3>Privacy & Security</h3>
+                            <p>Camera & mic controls</p>
+                        </div>
+                    </div>
+                    <span class="chevron">›</span>
+                </div>
+                <div class="settings-item" data-target="view-settings-ai">
+                    <div class="settings-item-left">
+                        <div class="settings-item-icon">🧠</div>
+                        <div>
+                            <h3>AI Settings</h3>
+                            <p>Offline model &amp; LLM chain</p>
+                        </div>
+                    </div>
+                    <span class="chevron">›</span>
+                </div>
+                <div class="settings-item" data-target="view-settings-network">
+                    <div class="settings-item-left">
+                        <div class="settings-item-icon">📶</div>
+                        <div>
+                            <h3>Network &amp; Pairing</h3>
+                            <p>WiFi QR code</p>
+                        </div>
+                    </div>
+                    <span class="chevron">›</span>
+                </div>
+                <div class="settings-item" id="btn-logout" style="margin-top:20px;">
+                    <div class="settings-item-left">
+                        <div class="settings-item-icon" style="background:rgba(244,67,54,0.15);">🚪</div>
+                        <div>
+                            <h3 style="color:var(--red);">Logout</h3>
+                            <p>Sign out of Kenza</p>
+                        </div>
+                    </div>
+                    <span class="chevron">›</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- SETTINGS: AI -->
+        <div class="view hidden" id="view-settings-ai">
+            <h2 class="view-title">AI Settings</h2>
+
+            <div style="margin-bottom:16px;">
+                <p style="color:var(--text-muted);font-size:0.88rem;line-height:1.5;">
+                    Choose which model Kenza uses when internet is <strong>offline</strong>.
+                    Requires <a href="https://ollama.com" target="_blank" style="color:var(--accent);">Ollama</a>
+                    running on the Pi (<code>ollama pull &lt;model&gt;</code>).
+                </p>
+            </div>
+
+            <!-- Ollama status bar -->
+            <div id="ollama-status-bar" style="
+                display:flex;align-items:center;gap:10px;
+                background:rgba(255,255,255,0.05);border-radius:12px;
+                padding:12px 16px;margin-bottom:20px;
+            ">
+                <span id="ollama-status-dot" style="
+                    width:10px;height:10px;border-radius:50%;
+                    background:#666;flex-shrink:0;transition:background .3s;
+                "></span>
+                <span id="ollama-status-text" style="font-size:0.85rem;color:var(--text-muted);">Checking Ollama…</span>
+            </div>
+
+            <!-- Active model label -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <span
+                    style="font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;">Offline
+                    Model</span>
+                <span id="active-model-badge" style="
+                    font-size:0.75rem;padding:3px 10px;border-radius:20px;
+                    background:rgba(0,188,212,0.15);color:var(--accent);font-weight:600;
+                ">—</span>
+            </div>
+
+            <!-- Model cards -->
+            <div id="ai-model-list" style="display:flex;flex-direction:column;gap:10px;">
+                <!-- Cards injected by JS or pre-defined -->
+                <div class="ai-model-card" data-model="gemma3:270m" style="
+                    background:rgba(255,255,255,0.05);border-radius:14px;padding:14px 16px;
+                    border:1.5px solid transparent;cursor:pointer;transition:all .2s;
+                    display:flex;align-items:center;justify-content:space-between;
+                ">
+                    <div>
+                        <div style="font-weight:600;font-size:0.92rem;">Gemma 3 Nano</div>
+                        <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px;">Google • 270M params •
+                            ultra-fast</div>
+                        <div style="font-size:0.72rem;color:#aaa;margin-top:2px;">RAM: ~500 MB</div>
+                    </div>
+                    <span class="model-check" style="font-size:1.2rem;opacity:0;">✓</span>
+                </div>
+                <div class="ai-model-card" data-model="ministral-3:3b-instruct-2512-q4_K_M" style="
+                    background:rgba(255,255,255,0.05);border-radius:14px;padding:14px 16px;
+                    border:1.5px solid transparent;cursor:pointer;transition:all .2s;
+                    display:flex;align-items:center;justify-content:space-between;
+                ">
+                    <div>
+                        <div style="font-weight:600;font-size:0.92rem;">Ministral 3B</div>
+                        <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px;">Mistral • 3B Instruct •
+                            fast & capable</div>
+                        <div style="font-size:0.72rem;color:#aaa;margin-top:2px;">RAM: ~2.5 GB</div>
+                    </div>
+                    <span class="model-check" style="font-size:1.2rem;opacity:0;">✓</span>
+                </div>
+                <div class="ai-model-card" data-model="phi3:mini" style="
+                    background:rgba(255,255,255,0.05);border-radius:14px;padding:14px 16px;
+                    border:1.5px solid transparent;cursor:pointer;transition:all .2s;
+                    display:flex;align-items:center;justify-content:space-between;
+                ">
+                    <div>
+                        <div style="font-weight:600;font-size:0.92rem;">Phi-3 Mini</div>
+                        <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px;">Microsoft • 3.8B • strong
+                            reasoning</div>
+                        <div style="font-size:0.72rem;color:#aaa;margin-top:2px;">RAM: ~2.7 GB</div>
+                    </div>
+                    <span class="model-check" style="font-size:1.2rem;opacity:0;">✓</span>
+                </div>
+                <div class="ai-model-card" data-model="tinyllama:1.1b" style="
+                    background:rgba(255,255,255,0.05);border-radius:14px;padding:14px 16px;
+                    border:1.5px solid transparent;cursor:pointer;transition:all .2s;
+                    display:flex;align-items:center;justify-content:space-between;
+                ">
+                    <div>
+                        <div style="font-weight:600;font-size:0.92rem;">TinyLlama (1.1B)</div>
+                        <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px;">Minimal RAM • fastest
+                            option</div>
+                        <div style="font-size:0.72rem;color:#aaa;margin-top:2px;">RAM: ~1 GB</div>
+                    </div>
+                    <span class="model-check" style="font-size:1.2rem;opacity:0;">✓</span>
+                </div>
+            </div>
+
+            <p style="font-size:0.73rem;color:var(--text-muted);margin-top:18px;text-align:center;">
+                LLM chain: <strong>Groq</strong> → <strong>Gemini</strong> → <strong>Ollama (selected)</strong> →
+                <strong>LlamaGGUF</strong>
+            </p>
+        </div>
+
+        <!-- SETTINGS: EYES -->
+        <div class="view hidden" id="view-settings-eyes">
+            <h2 class="view-title">Eye Customization</h2>
+
+            <!-- Eye Preview -->
+            <div class="eye-preview-container">
+                <div class="eye-canvas" id="left-eye-preview">
+                    <div class="pupil"></div>
+                    <div class="highlight"></div>
+                    <div class="highlight-small"></div>
+                </div>
+                <div class="eye-canvas" id="right-eye-preview">
+                    <div class="pupil"></div>
+                    <div class="highlight"></div>
+                    <div class="highlight-small"></div>
+                </div>
+            </div>
+
+            <!-- Eye Tracking Toggle -->
+            <div class="glass-card">
+                <div class="setting-row">
+                    <div class="setting-label">
+                        <h3>Eyes follow person</h3>
+                        <p>Track movement with the camera</p>
+                    </div>
+                    <div class="toggle active" id="toggle-eye-follow"></div>
+                </div>
+            </div>
+
+            <!-- Eye Shape -->
+            <div class="glass-card">
+                <h4 style="margin-bottom:16px;font-size:0.95rem;">Eye Shape</h4>
+                <div class="eye-shape-grid">
+                    <div class="shape-option selected" data-shape="round">
+                        <div class="shape-preview shape-round"></div><span>Round</span>
+                    </div>
+                    <div class="shape-option" data-shape="oval">
+                        <div class="shape-preview shape-oval"></div><span>Oval</span>
+                    </div>
+                    <div class="shape-option" data-shape="anime">
+                        <div class="shape-preview shape-anime"></div><span>Anime</span>
+                    </div>
+                    <div class="shape-option" data-shape="robot">
+                        <div class="shape-preview shape-robot"></div><span>Robot</span>
+                    </div>
+                    <div class="shape-option" data-shape="line">
+                        <div class="shape-preview shape-line"></div><span>Line</span>
+                    </div>
+                    <div class="shape-option" data-shape="rectangle">
+                        <div class="shape-preview shape-rectangle"></div><span>Rectangle</span>
+                    </div>
+                    <div class="shape-option" data-shape="diamond">
+                        <div class="shape-preview shape-diamond"></div><span>Diamond</span>
+                    </div>
+                    <div class="shape-option" data-shape="cute">
+                        <div class="shape-preview shape-cute"></div><span>Cute</span>
+                    </div>
+                    <div class="shape-option" data-shape="alien">
+                        <div class="shape-preview shape-alien"></div><span>Alien</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Eye Color -->
+            <div class="glass-card">
+                <h4 style="margin-bottom:16px;font-size:0.95rem;">Eye Color</h4>
+                <div class="eye-color-grid">
+                    <div class="color-option selected" data-color="cyan"
+                        style="background:linear-gradient(135deg,#4dd9ff,#00a8cc);"></div>
+                    <div class="color-option" data-color="orange"
+                        style="background:linear-gradient(135deg,#ffaa00,#ff8800);"></div>
+                    <div class="color-option" data-color="teal"
+                        style="background:linear-gradient(135deg,#00ffcc,#00ccaa);"></div>
+                    <div class="color-option" data-color="pink"
+                        style="background:linear-gradient(135deg,#ff66aa,#ff3388);"></div>
+                    <div class="color-option" data-color="purple"
+                        style="background:linear-gradient(135deg,#aa66ff,#8833ff);"></div>
+                    <div class="color-option" data-color="green"
+                        style="background:linear-gradient(135deg,#66ff66,#44dd44);"></div>
+                    <div class="color-option" data-color="red"
+                        style="background:linear-gradient(135deg,#ff6666,#ff3333);"></div>
+                    <div class="color-option" data-color="gold"
+                        style="background:linear-gradient(135deg,#ffdd66,#ffcc00);"></div>
+                    <div class="color-option" data-color="white"
+                        style="background:linear-gradient(135deg,#ffffff,#dddddd);"></div>
+                </div>
+            </div>
+
+            <!-- Animation Controls -->
+            <div class="glass-card">
+                <h4 style="margin-bottom:16px;font-size:0.95rem;">Expressions</h4>
+                <div class="anim-btn-grid">
+                    <button class="anim-btn" data-anim="idle">🔄 Reset</button>
+                    <button class="anim-btn" data-anim="blink">👁️ Blink</button>
+                    <button class="anim-btn" data-anim="happy">😊 Happy</button>
+                    <button class="anim-btn" data-anim="sad">😢 Sad</button>
+                    <button class="anim-btn" data-anim="angry">😠 Angry</button>
+                    <button class="anim-btn" data-anim="surprised">😲 Surprised</button>
+                    <button class="anim-btn" data-anim="sleepy">😴 Sleepy</button>
+                    <button class="anim-btn" data-anim="dizzy">😵 Dizzy</button>
+                    <button class="anim-btn" data-anim="love">😍 Love</button>
+                    <button class="anim-btn" data-anim="wink">😉 Wink</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SETTINGS: VOICE -->
+        <div class="view hidden" id="view-settings-voice">
+            <h2 class="view-title">Voice Selection</h2>
+            <div class="voice-selection-container">
+                <!-- Voice Cards List -->
+                <div class="voice-list">
+                    <!-- Female Voices -->
+                    <div class="voice-card selected" data-voice="aria" data-avatar="avatars/aria.png"
+                        data-desc="Warm, Friendly">
+                        <img src="avatars/aria.png" alt="Aria" class="avatar">
+                        <div class="info">
+                            <div class="name">Aria</div>
+                            <div class="desc">Warm, Friendly</div>
+                        </div>
+                    </div>
+                    <div class="voice-card" data-voice="luna" data-avatar="avatars/luna.png"
+                        data-desc="Ethereal, Mystical">
+                        <img src="avatars/luna.png" alt="Luna" class="avatar">
+                        <div class="info">
+                            <div class="name">Luna</div>
+                            <div class="desc">Ethereal, Mystical</div>
+                        </div>
+                    </div>
+                    <div class="voice-card" data-voice="nova" data-avatar="avatars/nova.png"
+                        data-desc="Adventurous, Bold">
+                        <img src="avatars/nova.png" alt="Nova" class="avatar">
+                        <div class="info">
+                            <div class="name">Nova</div>
+                            <div class="desc">Adventurous, Bold</div>
+                        </div>
+                    </div>
+                    <!-- Male Voices -->
+                    <div class="voice-card" data-voice="rex" data-avatar="avatars/rex.png" data-desc="Cool, Confident">
+                        <img src="avatars/rex.png" alt="Rex" class="avatar">
+                        <div class="info">
+                            <div class="name">Rex</div>
+                            <div class="desc">Cool, Confident</div>
+                        </div>
+                    </div>
+                    <div class="voice-card" data-voice="drake" data-avatar="avatars/drake.png"
+                        data-desc="Gruff, Warrior">
+                        <img src="avatars/drake.png" alt="Drake" class="avatar">
+                        <div class="info">
+                            <div class="name">Drake</div>
+                            <div class="desc">Gruff, Warrior</div>
+                        </div>
+                    </div>
+                    <div class="voice-card" data-voice="leo" data-avatar="avatars/leo.png"
+                        data-desc="Youthful, Energetic">
+                        <img src="avatars/leo.png" alt="Leo" class="avatar">
+                        <div class="info">
+                            <div class="name">Leo</div>
+                            <div class="desc">Youthful, Energetic</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preview Panel -->
+                <div class="voice-preview-panel">
+                    <img src="avatars/aria.png" alt="Selected Voice" class="avatar-large" id="voice-preview-avatar">
+                    <div class="preview-name" id="voice-preview-name">Aria</div>
+                    <div class="preview-desc" id="voice-preview-desc">Warm, Friendly</div>
+                    <div class="waveform">
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                    </div>
+                    <button class="voice-preview-btn" id="btn-preview-voice">▶ Preview Voice</button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- SETTINGS: PRIVACY -->
+        <div class="view hidden" id="view-settings-privacy">
+            <h2 class="view-title">Privacy & Security</h2>
+            <div class="glass-card">
+                <div class="setting-row">
+                    <div class="setting-label">
+                        <h3>Privacy Mode</h3>
+                        <p>Disable camera & microphone</p>
+                    </div>
+                    <div class="toggle" id="toggle-privacy"></div>
+                </div>
+                <div class="setting-row">
+                    <div class="setting-label">
+                        <h3>Mute Microphone</h3>
+                        <p>Turn off voice input</p>
+                    </div>
+                    <div class="toggle" id="toggle-mic"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SETTINGS: NETWORK -->
+        <div class="view hidden" id="view-settings-network">
+            <h2 class="view-title">Network & Pairing</h2>
+            <div class="glass-card">
+                <div class="qr-section">
+                    <p style="color:var(--text-dim);margin-bottom:16px;">Generate a WiFi QR code for Kenza to scan</p>
+                    <div class="wifi-inputs">
+                        <input type="text" id="wifi-ssid" placeholder="WiFi Network Name (SSID)">
+                        <input type="password" id="wifi-pass" placeholder="WiFi Password">
+                    </div>
+                    <button class="btn btn-primary" id="btn-generate-qr" style="width:100%;">📶 Generate QR
+                        Code</button>
+
+                    <div id="qr-status-msg" class="qr-status-msg"></div>
+
+                    <div class="qr-container" id="qr-container">
+                        <canvas id="qr-code"></canvas>
+                        <div class="qr-actions">
+                            <button class="btn-save-qr" id="btn-save-qr">💾 Save QR</button>
+                            <button class="btn-clear-qr" id="btn-clear-qr">✕ Clear</button>
+                        </div>
+                    </div>
+                    <div class="scan-status" id="scan-status">
+                        <div class="pulse-dot"></div>
+                        <span>Waiting for Kenza to scan...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Saved Networks -->
+            <div class="glass-card saved-networks">
+                <h4>📡 Saved Networks</h4>
+                <div id="saved-networks-list">
+                    <p style="color:var(--text-dim);font-size:0.85rem;text-align:center;">No saved networks yet</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dev Panel -->
+    <div class="dev-panel" id="dev-panel">
+        <input type="text" id="pi-ip" placeholder="Pi IP Address">
+        <button class="btn btn-primary" onclick="connectWebSocket()">Connect</button>
+        <button class="btn" style="background:rgba(255,170,0,0.2);color:var(--orange);"
+            onclick="enableSimulation()">Simulate</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"
+        onerror="window.QRCodeFailed=true"></script>
+    <script>
+        // Fallback QR Code solution using Image API when CDN fails
+        if (typeof QRCode === 'undefined' || window.QRCodeFailed) {
+            window.QRCode = {
+                toCanvas: function (canvas, text, options, callback) {
+                    try {
+                        var size = options.width || 180;
+                        canvas.width = size;
+                        canvas.height = size;
+                        var ctx = canvas.getContext('2d');
+                        var img = new Image();
+                        img.crossOrigin = "anonymous";
+                        // Use a QR code API service
+                        var encodedText = encodeURIComponent(text);
+                        img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=' + size + 'x' + size + '&data=' + encodedText;
+                        img.onload = function () {
+                            ctx.drawImage(img, 0, 0, size, size);
+                            if (callback) callback(null);
+                        };
+                        img.onerror = function () {
+                            // Draw placeholder if API fails too
+                            ctx.fillStyle = '#fff';
+                            ctx.fillRect(0, 0, size, size);
+                            ctx.fillStyle = '#333';
+                            ctx.font = '14px Inter, sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.fillText('QR Code', size / 2, size / 2 - 10);
+                            ctx.fillText('(offline)', size / 2, size / 2 + 10);
+                            if (callback) callback(new Error('QR generation failed'));
+                        };
+                    } catch (e) {
+                        if (callback) callback(e);
+                    }
+                }
+            };
+        }
+    </script>
+    <script>
+        // ===== AUTH =====
+        const AUTH = { user: 'titanic', pass: 'sinking' };
+
+        // ===== EYE STATE (from eyes_display.html) =====
+        const eyeState = {
+            eyeColor: 'cyan',
+            eyeShape: 'round',
+            customColor: { h: 190, s: 100, l: 50 },
+            brightness: 100,
+            followPerson: true,
+            saccadeEnabled: true,
+            currentAnimation: 'idle'
+        };
+
+        const colorPresets = {
+            cyan: { h: 190, s: 100, l: 50 },
+            orange: { h: 30, s: 100, l: 50 },
+            teal: { h: 160, s: 100, l: 50 },
+            pink: { h: 330, s: 100, l: 65 },
+            purple: { h: 270, s: 100, l: 60 },
+            green: { h: 120, s: 100, l: 50 },
+            red: { h: 0, s: 100, l: 50 },
+            gold: { h: 45, s: 100, l: 50 },
+            white: { h: 0, s: 0, l: 95 }
+        };
+
+        function updateEyeColor(colorName) {
+            const preset = colorPresets[colorName] || colorPresets.cyan;
+            eyeState.eyeColor = colorName;
+            eyeState.customColor = { ...preset };
+            applyEyeStyle();
+        }
+
+        function applyEyeStyle() {
+            const { h, s, l } = eyeState.customColor;
+            const brightness = eyeState.brightness / 100;
+            const eyeCanvases = document.querySelectorAll('.eye-canvas');
+
+            eyeCanvases.forEach(eye => {
+                const adjustedL = l * brightness;
+                eye.style.background = `radial-gradient(circle at 30% 30%, 
+                    hsl(${h}, ${s}%, ${Math.min(adjustedL + 30, 100)}%) 0%, 
+                    hsl(${h}, ${s}%, ${adjustedL}%) 50%, 
+                    hsl(${h}, ${s}%, ${Math.max(adjustedL - 20, 10)}%) 100%)`;
+                eye.style.boxShadow = `
+                    0 0 ${40 * brightness}px hsla(${h}, ${s}%, ${adjustedL}%, 0.4),
+                    inset 0 -10px 30px rgba(0, 0, 0, 0.3)`;
+            });
+            applyEyeShape();
+        }
+
+        function applyEyeShape() {
+            const eyeCanvases = document.querySelectorAll('.eye-canvas');
+            const pupils = document.querySelectorAll('.eye-canvas .pupil');
+
+            // Reset to default first
+            eyeCanvases.forEach(eye => {
+                eye.style.width = '120px';
+                eye.style.height = '120px';
+                eye.style.borderRadius = '50%';
+                eye.style.transform = '';
+            });
+            pupils.forEach(p => {
+                p.style.width = '50px';
+                p.style.height = '50px';
+                p.style.borderRadius = '50%';
+                p.style.transform = 'translate(-50%, -50%)';
+            });
+
+            switch (eyeState.eyeShape) {
+                case 'oval':
+                    eyeCanvases.forEach(eye => {
+                        eye.style.width = '100px';
+                        eye.style.height = '130px';
+                        eye.style.borderRadius = '50%';
+                    });
+                    break;
+                case 'anime':
+                    eyeCanvases.forEach(eye => {
+                        eye.style.width = '130px';
+                        eye.style.height = '140px';
+                        eye.style.borderRadius = '50% 50% 45% 45%';
+                    });
+                    pupils.forEach(p => {
+                        p.style.width = '55px';
+                        p.style.height = '55px';
+                    });
+                    break;
+                case 'robot':
+                    eyeCanvases.forEach(eye => {
+                        eye.style.width = '110px';
+                        eye.style.height = '110px';
+                        eye.style.borderRadius = '15px';
+                    });
+                    pupils.forEach(p => {
+                        p.style.width = '45px';
+                        p.style.height = '45px';
+                        p.style.borderRadius = '8px';
+                    });
+                    break;
+                case 'line':
+                    eyeCanvases.forEach(eye => {
+                        eye.style.width = '140px';
+                        eye.style.height = '25px';
+                        eye.style.borderRadius = '15px';
+                    });
+                    pupils.forEach(p => {
+                        p.style.width = '20px';
+                        p.style.height = '18px';
+                    });
+                    break;
+                case 'rectangle':
+                    eyeCanvases.forEach(eye => {
+                        eye.style.width = '140px';
+                        eye.style.height = '80px';
+                        eye.style.borderRadius = '12px';
+                    });
+                    pupils.forEach(p => {
+                        p.style.width = '40px';
+                        p.style.height = '40px';
+                    });
+                    break;
+                case 'diamond':
+                    eyeCanvases.forEach(eye => {
+                        eye.style.width = '100px';
+                        eye.style.height = '100px';
+                        eye.style.borderRadius = '10px';
+                        eye.style.transform = 'rotate(45deg)';
+                    });
+                    pupils.forEach(p => {
+                        p.style.width = '35px';
+                        p.style.height = '35px';
+                        p.style.transform = 'translate(-50%, -50%) rotate(-45deg)';
+                    });
+                    break;
+                case 'cute':
+                    eyeCanvases.forEach(eye => {
+                        eye.style.width = '115px';
+                        eye.style.height = '125px';
+                        eye.style.borderRadius = '50% 50% 48% 48%';
+                    });
+                    pupils.forEach(p => {
+                        p.style.width = '60px';
+                        p.style.height = '60px';
+                    });
+                    break;
+                case 'alien':
+                    eyeCanvases.forEach(eye => {
+                        eye.style.width = '80px';
+                        eye.style.height = '150px';
+                        eye.style.borderRadius = '45% 45% 50% 50%';
+                    });
+                    pupils.forEach(p => {
+                        p.style.width = '35px';
+                        p.style.height = '50px';
+                        p.style.borderRadius = '45%';
+                    });
+                    break;
+                case 'round':
+                default:
+                    break;
+            }
+        }
+
+        let currentAnimationInterval = null;
+        function resetEyes() {
+            const eyeCanvases = document.querySelectorAll('.eye-canvas');
+            if (currentAnimationInterval) {
+                clearInterval(currentAnimationInterval);
+                currentAnimationInterval = null;
+            }
+            eyeCanvases.forEach(eye => {
+                eye.classList.remove('blinking', 'dizzy-spin');
+                eye.style.transform = '';
+                eye.style.borderRadius = '50%';
+                eye.style.filter = '';
+                eye.style.animation = '';
+                eye.style.boxShadow = '';
+                eye.style.background = '';
+                const extras = eye.querySelectorAll('.emotion-extra');
+                extras.forEach(el => el.remove());
+            });
+            document.querySelectorAll('.eye-canvas .pupil').forEach(p => {
+                p.style.width = '50px';
+                p.style.height = '50px';
+                p.style.top = '50%';
+                p.style.left = '50%';
+                p.style.opacity = '1';
+                p.style.transform = 'translate(-50%, -50%)';
+                p.innerHTML = '';
+                p.style.background = 'radial-gradient(circle at 40% 40%, #333 0%, #000 100%)';
+            });
+            eyeState.currentAnimation = 'idle';
+            applyEyeStyle();
+        }
+
+        function playAnimation(anim) {
+            const eyeCanvases = document.querySelectorAll('.eye-canvas');
+            const leftEye = document.getElementById('left-eye-preview');
+            const rightEye = document.getElementById('right-eye-preview');
+            const pupils = document.querySelectorAll('.eye-canvas .pupil');
+
+            if (anim !== 'blink') resetEyes();
+            eyeState.currentAnimation = anim;
+
+            switch (anim) {
+                case 'idle':
+                    break;
+                case 'blink':
+                    eyeState.currentAnimation = 'idle';
+                    eyeCanvases.forEach(eye => {
+                        const currentTransform = eye.style.transform || '';
+                        const baseTransform = currentTransform.replace(/scaleY\([^)]*\)/g, '').trim();
+                        eye.style.transform = baseTransform + ' scaleY(0.1)';
+                        eye.style.transition = 'transform 0.075s ease-in';
+                        setTimeout(() => {
+                            eye.style.transform = baseTransform + ' scaleY(1)';
+                            eye.style.transition = 'transform 0.075s ease-out';
+                            setTimeout(() => {
+                                eye.style.transition = '';
+                                applyEyeShape();
+                            }, 80);
+                        }, 75);
+                    });
+                    break;
+                case 'happy':
+                    eyeCanvases.forEach(eye => {
+                        eye.style.borderRadius = '120px 120px 10px 10px';
+                        eye.style.transform = 'scaleY(0.4)';
+                        eye.style.filter = 'brightness(1.2)';
+                        const pupil = eye.querySelector('.pupil');
+                        if (pupil) pupil.style.opacity = '0';
+                        const blush = document.createElement('div');
+                        blush.className = 'emotion-extra';
+                        blush.style.cssText = `position: absolute; bottom: -35px; left: 50%; transform: translateX(-50%);
+                            width: 50px; height: 25px; background: radial-gradient(ellipse, rgba(255, 150, 150, 0.7) 0%, transparent 70%);
+                            border-radius: 50%;`;
+                        eye.appendChild(blush);
+                    });
+                    break;
+                case 'sad':
+                    eyeCanvases.forEach((eye, i) => {
+                        eye.style.borderRadius = '50%';
+                        eye.style.transform = i === 0 ? 'rotate(-8deg) scaleY(0.75)' : 'rotate(8deg) scaleY(0.75)';
+                        eye.style.filter = 'brightness(0.85) saturate(1.2)';
+                        eye.style.animation = 'watery-shimmer 1.5s ease-in-out infinite';
+                        const tear = document.createElement('div');
+                        tear.className = 'emotion-extra';
+                        tear.style.cssText = `position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%);
+                            width: 12px; height: 18px; background: linear-gradient(180deg, rgba(100, 180, 255, 0.9) 0%, rgba(50, 150, 255, 0.8) 100%);
+                            border-radius: 50% 50% 50% 50% / 30% 30% 70% 70%; animation: tear-drop 2s ease-in-out infinite;`;
+                        eye.appendChild(tear);
+                    });
+                    pupils.forEach(p => { p.style.top = '55%'; p.style.width = '35px'; p.style.height = '35px'; });
+                    break;
+                case 'angry':
+                    eyeCanvases.forEach((eye, i) => {
+                        eye.style.borderRadius = '50%';
+                        eye.style.transform = i === 0 ? 'rotate(12deg) scaleY(0.55)' : 'rotate(-12deg) scaleY(0.55)';
+                        eye.style.background = `radial-gradient(circle at 30% 30%, hsl(0, 70%, 65%) 0%, hsl(0, 80%, 45%) 50%, hsl(0, 90%, 30%) 100%)`;
+                        eye.style.boxShadow = '0 0 30px rgba(255, 50, 50, 0.5), inset 0 -10px 30px rgba(0, 0, 0, 0.3)';
+                        const brow = document.createElement('div');
+                        brow.className = 'emotion-extra';
+                        brow.style.cssText = `position: absolute; top: -20px; left: 50%; 
+                            transform: translateX(-50%) rotate(${i === 0 ? '-25deg' : '25deg'});
+                            width: 100px; height: 12px; background: linear-gradient(${i === 0 ? '90deg' : '-90deg'}, #222 0%, #444 100%);
+                            border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.3);`;
+                        eye.appendChild(brow);
+                    });
+                    pupils.forEach(p => { p.style.width = '30px'; p.style.height = '30px'; });
+                    break;
+                case 'surprised':
+                    eyeCanvases.forEach(eye => {
+                        eye.style.transform = 'scale(1.25)';
+                        eye.style.filter = 'brightness(1.15)';
+                    });
+                    pupils.forEach(p => { p.style.width = '22px'; p.style.height = '22px'; });
+                    break;
+                case 'sleepy':
+                    eyeCanvases.forEach(eye => {
+                        eye.style.borderRadius = '50%';
+                        eye.style.transform = 'scaleY(0.15)';
+                        eye.style.filter = 'brightness(0.5)';
+                        const pupil = eye.querySelector('.pupil');
+                        if (pupil) pupil.style.opacity = '0';
+                    });
+                    const zzzContainer = document.createElement('div');
+                    zzzContainer.className = 'emotion-extra';
+                    zzzContainer.style.cssText = `position: absolute; top: -10px; right: -30px; font-size: 20px;
+                        color: #aaccff; text-shadow: 0 0 10px rgba(100, 150, 255, 0.8);`;
+                    zzzContainer.innerHTML = `<span style="position:absolute; animation: zzz-float 2s ease-out infinite;">z</span>
+                        <span style="position:absolute; left: 15px; top: -10px; font-size: 24px; animation: zzz-float 2s ease-out infinite 0.4s;">Z</span>
+                        <span style="position:absolute; left: 35px; top: -25px; font-size: 28px; animation: zzz-float 2s ease-out infinite 0.8s;">Z</span>`;
+                    rightEye.appendChild(zzzContainer);
+                    break;
+                case 'dizzy':
+                    eyeCanvases.forEach(eye => {
+                        eye.style.filter = 'brightness(1.1)';
+                        eye.classList.add('dizzy-spin');
+                        const pupil = eye.querySelector('.pupil');
+                        if (pupil) pupil.style.opacity = '0';
+                        const spiral = document.createElement('div');
+                        spiral.className = 'emotion-extra';
+                        spiral.style.cssText = `position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                            font-size: 50px; animation: spin 0.5s linear infinite; line-height: 1;`;
+                        spiral.innerHTML = '🌀';
+                        eye.appendChild(spiral);
+                    });
+                    break;
+                case 'love':
+                    eyeCanvases.forEach(eye => {
+                        eye.style.background = 'radial-gradient(circle at 35% 35%, #ffb3d9 0%, #ff69b4 40%, #ff1493 100%)';
+                        eye.style.boxShadow = '0 0 40px rgba(255, 105, 180, 0.6), inset 0 -10px 30px rgba(0, 0, 0, 0.2)';
+                        eye.style.animation = 'heart-beat 1s ease-in-out infinite';
+                        const pupil = eye.querySelector('.pupil');
+                        if (pupil) pupil.style.opacity = '0';
+                        const heart = document.createElement('div');
+                        heart.className = 'emotion-extra';
+                        heart.style.cssText = `position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                            font-size: 55px; color: rgba(255, 255, 255, 0.9); text-shadow: 0 0 20px rgba(255, 150, 200, 0.8); filter: blur(0.5px);`;
+                        heart.innerHTML = '♥';
+                        eye.appendChild(heart);
+                    });
+                    break;
+                case 'wink':
+                    leftEye.style.borderRadius = '120px 120px 10px 10px';
+                    leftEye.style.transform = 'scaleY(0.15)';
+                    leftEye.style.filter = 'brightness(0.9)';
+                    const leftPupil = leftEye.querySelector('.pupil');
+                    if (leftPupil) leftPupil.style.opacity = '0';
+                    const winkLine = document.createElement('div');
+                    winkLine.className = 'emotion-extra';
+                    winkLine.style.cssText = `position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                        width: 60%; height: 4px; background: rgba(0, 0, 0, 0.3); border-radius: 2px;`;
+                    leftEye.appendChild(winkLine);
+                    rightEye.style.transform = 'scale(1.1)';
+                    rightEye.style.filter = 'brightness(1.15)';
+                    const sparkle = document.createElement('div');
+                    sparkle.className = 'emotion-extra';
+                    sparkle.style.cssText = `position: absolute; top: 20%; right: 25%; font-size: 16px; animation: heart-beat 1s ease-in-out infinite;`;
+                    sparkle.innerHTML = '✨';
+                    rightEye.appendChild(sparkle);
+                    break;
+            }
+        }
+
+        function checkAuth() {
+            return localStorage.getItem('kenza_auth') === 'true';
+        }
+
+        function login() {
+            const user = document.getElementById('login-user').value;
+            const pass = document.getElementById('login-pass').value;
+            if (user === AUTH.user && pass === AUTH.pass) {
+                localStorage.setItem('kenza_auth', 'true');
+                navigateTo('view-home');
+                document.getElementById('login-error').classList.remove('visible');
+            } else {
+                document.getElementById('login-error').classList.add('visible');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('kenza_auth');
+            navigateTo('view-login');
+        }
+
+        document.getElementById('btn-login').addEventListener('click', login);
+        document.getElementById('login-pass').addEventListener('keypress', e => { if (e.key === 'Enter') login(); });
+        document.getElementById('btn-logout').addEventListener('click', logout);
+
+        // ===== NAVIGATION =====
+        const navStack = [];
+        const views = document.querySelectorAll('.view');
+        const backBtn = document.getElementById('back-btn');
+
+        function navigateTo(viewId) {
+            const currentView = document.querySelector('.view:not(.hidden):not(.hidden-left)');
+            if (currentView && currentView.id !== viewId) {
+                if (viewId !== 'view-login') navStack.push(currentView.id);
+                currentView.classList.add('hidden-left');
+            }
+            views.forEach(v => {
+                if (v.id === viewId) {
+                    v.classList.remove('hidden', 'hidden-left');
+                } else if (v.id !== currentView?.id) {
+                    v.classList.add('hidden');
+                }
+            });
+            updateBackBtn();
+        }
+
+        function goBack() {
+            if (navStack.length > 0) {
+                const prevId = navStack.pop();
+                const currentView = document.querySelector('.view:not(.hidden):not(.hidden-left)');
+                if (currentView) currentView.classList.add('hidden');
+                views.forEach(v => {
+                    if (v.id === prevId) v.classList.remove('hidden', 'hidden-left');
+                });
+                updateBackBtn();
+            }
+        }
+
+        function updateBackBtn() {
+            backBtn.classList.toggle('visible', navStack.length > 0);
+        }
+
+        backBtn.addEventListener('click', goBack);
+
+        // Hub cards navigation
+        document.querySelectorAll('.hub-card, .settings-item[data-target]').forEach(card => {
+            card.addEventListener('click', () => {
+                const target = card.dataset.target;
+                if (target) navigateTo(target);
+            });
+        });
+
+        // ===== WEBSOCKET =====
+        let ws = null;
+        let simulationMode = false;
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+
+        function connectWebSocket(ipOverride) {
+            const ip = ipOverride || document.getElementById('pi-ip').value.trim();
+            if (!ip) return;
+            ws = new WebSocket(`ws://${ip}:8765`);
+            ws.onopen = () => {
+                statusDot.classList.add('connected');
+                statusText.textContent = 'Connected';
+                localStorage.setItem('kenza_pi_ip', ip);
+            };
+            ws.onmessage = e => {
+                const d = JSON.parse(e.data);
+                if (d.type === 'pairing_success') {
+                    document.getElementById('scan-status').style.display = 'none';
+                    navigateTo('view-home');
+                }
+                if (d.type === 'telemetry') {
+                    document.getElementById('hud-battery').textContent = d.data.battery + '%';
+                }
+                // Voice user speech - display what user said
+                if (d.type === 'voice_user_speech') {
+                    addChatMessage(d.data.text, 'user', true);
+                    showThinkingIndicator();
+                }
+                // AI response - display LLM response
+                if (d.type === 'ai_response') {
+                    hideThinkingIndicator();
+                    addChatMessage(d.data.message, 'ai');
+                }
+                // AI thinking indicator
+                if (d.type === 'ai_thinking') {
+                    showThinkingIndicator();
+                }
+                // Voice state changes
+                if (d.type === 'voice_state') {
+                    updateChatStatus(d.data.state);
+                }
+                // Autonomy status updates
+                if (d.type === 'autonomy_status') {
+                    handleAutonomyStatus(d);
+                }
+                // Offline model info response
+                if (d.type === 'offline_models_info') {
+                    updateOfflineModelUI(d.data);
+                }
+                // Offline model switch acknowledgement
+                if (d.type === 'offline_model_ack') {
+                    if (d.data.success) setActiveModelCard(d.data.model);
+                }
+            };
+
+            ws.onclose = () => {
+                statusDot.classList.remove('connected');
+                statusText.textContent = 'Offline';
+            };
+        }
+
+        function sendCmd(type, data) {
+            if (ws?.readyState === 1) ws.send(JSON.stringify({ type, data }));
+        }
+
+        function enableSimulation() {
+            simulationMode = true;
+            statusDot.classList.add('connected');
+            statusText.textContent = 'Simulation';
+        }
+
+        // ===== MOTOR CONTROL CONFIG =====
+        const MOTOR_CONFIG = {
+            deadzone: 0.2,
+            lastSentDirection: null
+        };
+
+        // ===== SEND MOTOR COMMAND (HTTP to Pi) =====
+        function sendMotorCommand(direction) {
+            const ip = document.getElementById('pi-ip')?.value?.trim();
+            const port = '8080';
+            const names = { 'F': 'FORWARD', 'B': 'BACKWARD', 'L': 'LEFT', 'R': 'RIGHT', 'S': 'STOP' };
+
+            // Update display
+            document.getElementById('direction-display').textContent = names[direction] || 'STOP';
+            if (direction === 'S') {
+                document.getElementById('speed-bar').style.width = '0%';
+                document.getElementById('speed-display').textContent = '0%';
+            }
+
+            // Send via WebSocket if connected
+            sendCmd('motor', { direction, speed: direction === 'S' ? 0 : 100 });
+
+            // Also send HTTP request if Pi IP is configured
+            if (ip) {
+                const url = `http://${ip}:${port}/${direction}`;
+                document.getElementById('last-command').textContent = `→ ${url}`;
+                fetch(url, { mode: 'no-cors', cache: 'no-store' }).catch(() => { });
+            }
+
+            MOTOR_CONFIG.lastSentDirection = direction;
+        }
+
+        // ===== JOYSTICK =====
+        const joyBase = document.getElementById('joystick-base');
+        const joyHandle = document.getElementById('joystick-handle');
+        let joyDragging = false, joyRect, joyCenterX, joyCenterY, joyMaxR;
+
+        function updateJoyMetrics() {
+            joyRect = joyBase.getBoundingClientRect();
+            joyCenterX = joyRect.width / 2;
+            joyCenterY = joyRect.height / 2;
+            joyMaxR = joyRect.width / 2 - 28;
+        }
+
+        joyHandle.addEventListener('mousedown', e => { e.preventDefault(); joyDragging = true; joyHandle.classList.add('active'); updateJoyMetrics(); });
+        joyHandle.addEventListener('touchstart', e => { e.preventDefault(); joyDragging = true; joyHandle.classList.add('active'); updateJoyMetrics(); });
+        document.addEventListener('mousemove', handleJoyMove);
+        document.addEventListener('touchmove', handleJoyMove, { passive: false });
+        document.addEventListener('mouseup', handleJoyEnd);
+        document.addEventListener('touchend', handleJoyEnd);
+
+        function handleJoyMove(e) {
+            if (!joyDragging) return;
+            e.preventDefault();
+            const t = e.touches ? e.touches[0] : e;
+            let x = t.clientX - joyRect.left - joyCenterX;
+            let y = t.clientY - joyRect.top - joyCenterY;
+            const d = Math.sqrt(x * x + y * y);
+            if (d > joyMaxR) { x = (x / d) * joyMaxR; y = (y / d) * joyMaxR; }
+            joyHandle.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+
+            const normalizedD = d / joyMaxR;
+            const speed = Math.round(Math.min(normalizedD, 1) * 100);
+            document.getElementById('speed-bar').style.width = speed + '%';
+            document.getElementById('speed-display').textContent = speed + '%';
+
+            let dir = 'S';
+            if (normalizedD > MOTOR_CONFIG.deadzone) {
+                const ang = Math.atan2(y, x) * 180 / Math.PI;
+                if (ang >= -45 && ang < 45) dir = 'R';
+                else if (ang >= 45 && ang < 135) dir = 'B';
+                else if (ang >= -135 && ang < -45) dir = 'F';
+                else dir = 'L';
+            }
+
+            const names = { 'F': 'FORWARD', 'B': 'BACKWARD', 'L': 'LEFT', 'R': 'RIGHT', 'S': 'STOP' };
+            document.getElementById('direction-display').textContent = names[dir];
+
+            // Only send if direction changed
+            if (dir !== MOTOR_CONFIG.lastSentDirection) {
+                sendMotorCommand(dir);
+            }
+        }
+
+        function handleJoyEnd() {
+            if (!joyDragging) return;
+            joyDragging = false;
+            joyHandle.classList.remove('active');
+            joyHandle.style.transition = 'transform 0.15s';
+            joyHandle.style.transform = 'translate(-50%, -50%)';
+            setTimeout(() => joyHandle.style.transition = '', 150);
+            sendMotorCommand('S');
+        }
+
+        // ===== EMERGENCY STOP BUTTON =====
+        document.getElementById('btn-emergency-stop')?.addEventListener('click', () => {
+            sendMotorCommand('S');
+        });
+
+        // ===== KEYBOARD SUPPORT (WASD / Arrows) =====
+        const keyState = {};
+
+        document.addEventListener('keydown', (e) => {
+            // Ignore if typing in input
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            // Ignore if key already pressed
+            if (keyState[e.key]) return;
+            // Only work in remote view (check if remote view is NOT hidden)
+            const remoteView = document.getElementById('view-remote');
+            if (remoteView && !remoteView.classList.contains('hidden')) {
+                keyState[e.key] = true;
+
+                let dir = null;
+                switch (e.key) {
+                    case 'ArrowUp': case 'w': case 'W': dir = 'F'; break;
+                    case 'ArrowDown': case 's': dir = 'B'; break;
+                    case 'ArrowLeft': case 'a': case 'A': dir = 'L'; break;
+                    case 'ArrowRight': case 'd': case 'D': dir = 'R'; break;
+                    case ' ': sendMotorCommand('S'); e.preventDefault(); return;
+                }
+
+                if (dir) {
+                    e.preventDefault();
+                    sendMotorCommand(dir);
+                }
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            keyState[e.key] = false;
+
+            const moveKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd', 'W', 'A', 'S', 'D'];
+            if (moveKeys.includes(e.key)) {
+                // Check if any movement key is still held
+                const stillPressed = moveKeys.some(k => keyState[k]);
+                if (!stillPressed) {
+                    sendMotorCommand('S');
+                }
+            }
+        });
+
+        // ===== TOGGLES =====
+        // Autonomy exclusive-mode toggles
+        const autoModeToggles = ['toggle-follow', 'toggle-explore', 'toggle-sentry', 'toggle-gesture-nav'];
+
+        document.querySelectorAll('.toggle').forEach(t => {
+            t.addEventListener('click', () => {
+                const id = t.id;
+                const isAutoModeToggle = autoModeToggles.includes(id);
+
+                // For autonomy mode toggles, enforce mutual exclusion
+                if (isAutoModeToggle) {
+                    const wasActive = t.classList.contains('active');
+                    // Deactivate all auto mode toggles first
+                    autoModeToggles.forEach(tid => {
+                        const el = document.getElementById(tid);
+                        if (el) el.classList.remove('active');
+                    });
+                    // Re-activate this one only if it was previously off
+                    if (!wasActive) {
+                        t.classList.add('active');
+                    }
+                } else {
+                    t.classList.toggle('active');
+                }
+
+                const enabled = t.classList.contains('active');
+                if (id === 'toggle-privacy') sendCmd('privacy_mode', { enabled });
+                if (id === 'toggle-follow') sendCmd('follow_mode', { enabled });
+                if (id === 'toggle-sentry') sendCmd('sentry_mode', { enabled });
+                if (id === 'toggle-explore') sendCmd('autonomous_mode', { enabled });
+                if (id === 'toggle-collision') sendCmd('obstacle_avoidance', { enabled });
+                if (id === 'toggle-gesture-nav') sendCmd('gesture_nav', { enabled });
+            });
+        });
+
+        // ===== AUTONOMY EMERGENCY STOP =====
+        document.getElementById('btn-auto-emergency')?.addEventListener('click', () => {
+            // Stop all autonomy modes
+            autoModeToggles.forEach(tid => {
+                const el = document.getElementById(tid);
+                if (el) el.classList.remove('active');
+            });
+            sendCmd('follow_mode', { enabled: false });
+            sendCmd('autonomous_mode', { enabled: false });
+            sendCmd('sentry_mode', { enabled: false });
+            sendCmd('gesture_nav', { enabled: false });
+            sendCmd('motor', { direction: 'S', speed: 0 });
+        });
+
+        // ===== COLOR OPTIONS =====
+        document.querySelectorAll('.color-option').forEach(c => {
+            c.addEventListener('click', () => {
+                document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
+                c.classList.add('selected');
+                sendCmd('update_settings', { eyes: { color: c.dataset.color } });
+            });
+        });
+
+        // ===== VOICE CARDS =====
+        document.querySelectorAll('.voice-card').forEach(c => {
+            c.addEventListener('click', () => {
+                document.querySelectorAll('.voice-card').forEach(o => o.classList.remove('selected'));
+                c.classList.add('selected');
+                sendCmd('voice_select', { voice: c.dataset.voice });
+            });
+        });
+
+        // ===== AI MODEL CARDS =====
+        function setActiveModelCard(modelName) {
+            document.querySelectorAll('.ai-model-card').forEach(card => {
+                const isActive = card.dataset.model === modelName;
+                card.style.border = isActive
+                    ? '1.5px solid var(--accent)'
+                    : '1.5px solid transparent';
+                card.style.background = isActive
+                    ? 'rgba(0,188,212,0.08)'
+                    : 'rgba(255,255,255,0.05)';
+                const check = card.querySelector('.model-check');
+                if (check) check.style.opacity = isActive ? '1' : '0';
+            });
+            const badge = document.getElementById('active-model-badge');
+            if (badge) badge.textContent = modelName;
+        }
+
+        function updateOfflineModelUI(data) {
+            // Ollama status indicator
+            const dot = document.getElementById('ollama-status-dot');
+            const txt = document.getElementById('ollama-status-text');
+            if (dot && txt) {
+                if (data.ollama_available) {
+                    dot.style.background = '#4caf50';
+                    const localCount = (data.local_models || []).length;
+                    txt.textContent = `Ollama running • ${localCount} model${localCount !== 1 ? 's' : ''} installed`;
+                } else {
+                    dot.style.background = '#f44336';
+                    txt.textContent = 'Ollama not running on Pi — models will use GGUF fallback';
+                }
+            }
+            // Highlight the currently active model
+            if (data.current_model) setActiveModelCard(data.current_model);
+        }
+
+        document.querySelectorAll('.ai-model-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const model = card.dataset.model;
+                setActiveModelCard(model);
+                sendCmd('set_offline_model', { model });
+            });
+        });
+
+        // When navigating to AI Settings, fetch current model info from robot
+        document.querySelectorAll('.settings-item[data-target="view-settings-ai"]').forEach(item => {
+            item.addEventListener('click', () => {
+                sendCmd('get_offline_models', {});
+            });
+        });
+
+        // ===== EYE SHAPE OPTIONS =====
+        document.querySelectorAll('.shape-option').forEach(s => {
+            s.addEventListener('click', () => {
+                document.querySelectorAll('.shape-option').forEach(o => o.classList.remove('selected'));
+                s.classList.add('selected');
+                eyeState.eyeShape = s.dataset.shape;
+                applyEyeStyle();
+                sendCmd('update_settings', { eyes: { shape: s.dataset.shape } });
+            });
+        });
+
+        // ===== EYE COLOR (with preview update) =====
+        document.querySelectorAll('.eye-color-grid .color-option').forEach(c => {
+            c.addEventListener('click', () => {
+                document.querySelectorAll('.eye-color-grid .color-option').forEach(o => o.classList.remove('selected'));
+                c.classList.add('selected');
+                const color = c.dataset.color;
+                updateEyeColor(color);
+                sendCmd('update_settings', { eyes: { color } });
+            });
+        });
+
+        // ===== EYE TRACKING TOGGLE =====
+        const eyeFollowToggle = document.getElementById('toggle-eye-follow');
+        if (eyeFollowToggle) {
+            eyeFollowToggle.addEventListener('click', () => {
+                eyeFollowToggle.classList.toggle('active');
+                eyeState.followPerson = eyeFollowToggle.classList.contains('active');
+                sendCmd('update_settings', { eyes: { follow: eyeState.followPerson } });
+            });
+        }
+
+        // ===== ANIMATION BUTTONS =====
+        document.querySelectorAll('.anim-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const anim = btn.dataset.anim;
+                playAnimation(anim);
+                document.querySelectorAll('.anim-btn').forEach(b => b.classList.remove('active'));
+                if (anim !== 'idle') btn.classList.add('active');
+                sendCmd('eye_animation', { animation: anim });
+            });
+        });
+
+        // ===== VOICE CARDS =====
+        document.querySelectorAll('.voice-list .voice-card').forEach(card => {
+            card.addEventListener('click', () => {
+                // Update selection
+                document.querySelectorAll('.voice-list .voice-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+
+                // Update preview panel
+                const voice = card.dataset.voice;
+                const avatar = card.dataset.avatar;
+                const desc = card.dataset.desc;
+                const name = card.querySelector('.name').textContent;
+
+                document.getElementById('voice-preview-avatar').src = avatar;
+                document.getElementById('voice-preview-name').textContent = name;
+                document.getElementById('voice-preview-desc').textContent = desc;
+
+                // Send to server
+                sendCmd('voice_select', { voice: voice });
+            });
+        });
+
+        // Voice preview button
+        document.getElementById('btn-preview-voice')?.addEventListener('click', () => {
+            const selectedCard = document.querySelector('.voice-list .voice-card.selected');
+            if (selectedCard) {
+                sendCmd('voice_preview', { voice: selectedCard.dataset.voice });
+            }
+        });
+
+        // ===== QR CODE =====
+        document.getElementById('btn-generate-qr').addEventListener('click', () => {
+            const ssid = document.getElementById('wifi-ssid').value.trim();
+            const pass = document.getElementById('wifi-pass').value;
+            if (!ssid) return;
+            const wifiString = `WIFI:T:WPA;S:${ssid};P:${pass};;`;
+            const canvas = document.getElementById('qr-code');
+            if (typeof QRCode !== 'undefined') {
+                QRCode.toCanvas(canvas, wifiString, { width: 152, margin: 0 }, err => {
+                    if (!err) {
+                        document.getElementById('qr-container').style.display = 'block';
+                        document.getElementById('scan-status').style.display = 'flex';
+                    }
+                });
+            }
+        });
+
+        // ===== CHAT =====
+        document.getElementById('btn-send-chat').addEventListener('click', sendChat);
+        document.getElementById('chat-input').addEventListener('keypress', e => { if (e.key === 'Enter') sendChat(); });
+
+        function sendChat() {
+            const input = document.getElementById('chat-input');
+            const msg = input.value.trim();
+            if (!msg) return;
+            addChatMessage(msg, 'user', false);
+            input.value = '';
+            sendCmd('ai_message', { message: msg });
+            showThinkingIndicator();
+        }
+
+        // Add a chat message with smooth animation
+        function addChatMessage(text, type, isVoice = false) {
+            const msgs = document.getElementById('chat-messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `chat-msg ${type}`;
+            msgDiv.textContent = text;
+
+            // Add voice badge if from voice
+            if (isVoice) {
+                const badge = document.createElement('div');
+                badge.className = 'msg-badge';
+                badge.innerHTML = '🎤 via voice';
+                msgDiv.appendChild(badge);
+            }
+
+            msgs.appendChild(msgDiv);
+            msgs.scrollTop = msgs.scrollHeight;
+        }
+
+        // Show thinking indicator
+        function showThinkingIndicator() {
+            const msgs = document.getElementById('chat-messages');
+            // Remove existing thinking indicator
+            hideThinkingIndicator();
+
+            const thinking = document.createElement('div');
+            thinking.className = 'chat-msg ai thinking';
+            thinking.id = 'thinking-indicator';
+            thinking.innerHTML = `
+                <div class="thinking-dots">
+                    <span></span><span></span><span></span>
+                </div>
+                <span>Kenza is thinking...</span>
+            `;
+            msgs.appendChild(thinking);
+            msgs.scrollTop = msgs.scrollHeight;
+
+            updateChatStatus('thinking');
+        }
+
+        // Hide thinking indicator
+        function hideThinkingIndicator() {
+            const indicator = document.getElementById('thinking-indicator');
+            if (indicator) indicator.remove();
+        }
+
+        // Update chat status bar
+        function updateChatStatus(state) {
+            const statusBar = document.getElementById('chat-status-bar');
+            const statusText = document.getElementById('chat-status-text');
+
+            statusBar.classList.remove('listening', 'thinking', 'speaking');
+
+            const states = {
+                'sleeping': { text: 'Say "Kenza" to start talking', class: '' },
+                'idle': { text: 'Ready', class: '' },
+                'listening': { text: '👂 Listening...', class: 'listening' },
+                'thinking': { text: '🧠 Thinking...', class: 'thinking' },
+                'speaking': { text: '🔊 Speaking...', class: 'speaking' }
+            };
+
+            const config = states[state] || states['idle'];
+            statusText.textContent = config.text;
+            if (config.class) statusBar.classList.add(config.class);
+        }
+
+        // ===== HUD BUTTONS =====
+        document.getElementById('btn-mic').addEventListener('click', function () {
+            this.classList.toggle('muted');
+            const isMuted = this.classList.contains('muted');
+            sendCmd('toggle_mic', { muted: isMuted });
+            // Sync with privacy toggle
+            const privacyMicToggle = document.getElementById('toggle-mic');
+            if (privacyMicToggle) {
+                privacyMicToggle.classList.toggle('active', isMuted);
+            }
+        });
+
+        document.getElementById('btn-video')?.addEventListener('click', function () {
+            this.classList.toggle('recording');
+            const isRecording = this.classList.contains('recording');
+            sendCmd('toggle_video', { recording: isRecording });
+        });
+
+        document.getElementById('btn-screenshot')?.addEventListener('click', function () {
+            this.classList.add('active');
+            sendCmd('take_screenshot', {});
+            setTimeout(() => this.classList.remove('active'), 300);
+        });
+
+        // ===== PRIVACY TOGGLE: Mute Mic (syncs with HUD) =====
+        document.getElementById('toggle-mic')?.addEventListener('click', function () {
+            this.classList.toggle('active');
+            const isMuted = this.classList.contains('active');
+            sendCmd('toggle_mic', { muted: isMuted });
+            // Sync with HUD button
+            const hudMicBtn = document.getElementById('btn-mic');
+            if (hudMicBtn) {
+                hudMicBtn.classList.toggle('muted', isMuted);
+            }
+        });
+
+        // ===== QR CODE GENERATION =====
+        function showQRStatus(message, type) {
+            const statusEl = document.getElementById('qr-status-msg');
+            if (statusEl) {
+                statusEl.textContent = message;
+                statusEl.className = 'qr-status-msg ' + type;
+            }
+        }
+
+        function generateQRCode() {
+            const ssid = document.getElementById('wifi-ssid').value.trim();
+            const pass = document.getElementById('wifi-pass').value;
+            const qrCanvas = document.getElementById('qr-code');
+            const qrContainer = document.getElementById('qr-container');
+            const scanStatus = document.getElementById('scan-status');
+            const btn = document.getElementById('btn-generate-qr');
+
+            if (!ssid) {
+                showQRStatus('❌ Please enter a WiFi network name', 'error');
+                qrContainer.style.display = 'none';
+                scanStatus.style.display = 'none';
+                return;
+            }
+
+            showQRStatus('⏳ Generating QR code...', 'validating');
+            btn.disabled = true;
+            btn.textContent = '⏳ Generating...';
+
+            setTimeout(() => {
+                const wifiString = `WIFI:T:WPA;S:${ssid};P:${pass};;`;
+
+                if (typeof QRCode === 'undefined') {
+                    showQRStatus('❌ QR library not loaded', 'error');
+                    btn.disabled = false;
+                    btn.textContent = '📶 Generate QR Code';
+                    return;
+                }
+
+                QRCode.toCanvas(qrCanvas, wifiString, {
+                    width: 180, margin: 1, color: { dark: '#000', light: '#fff' }
+                }, (error) => {
+                    btn.disabled = false;
+                    btn.textContent = '📶 Generate QR Code';
+
+                    if (error) {
+                        showQRStatus('❌ Failed to generate QR code', 'error');
+                        qrContainer.style.display = 'none';
+                    } else {
+                        showQRStatus('✅ QR Code Ready! Show to Kenza to connect.', 'success');
+                        qrContainer.style.display = 'flex';
+                        scanStatus.style.display = 'flex';
+                        saveNetwork(ssid, pass);
+                    }
+                });
+            }, 500);
+        }
+
+        function saveQRCode() {
+            const canvas = document.getElementById('qr-code');
+            const link = document.createElement('a');
+            const ssid = document.getElementById('wifi-ssid').value.trim() || 'kenza_wifi';
+            link.download = `kenza_qr_${ssid}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showQRStatus('💾 QR code saved!', 'success');
+        }
+
+        function clearQRCode() {
+            document.getElementById('qr-container').style.display = 'none';
+            document.getElementById('scan-status').style.display = 'none';
+            showQRStatus('', '');
+        }
+
+        // ===== SAVED NETWORKS =====
+        function getSavedNetworks() {
+            try {
+                return JSON.parse(localStorage.getItem('kenza_saved_networks') || '[]');
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveNetwork(ssid, password) {
+            let networks = getSavedNetworks();
+            const existing = networks.findIndex(n => n.ssid === ssid);
+            if (existing >= 0) {
+                networks[existing] = { ssid, password, lastUsed: Date.now() };
+            } else {
+                networks.unshift({ ssid, password, lastUsed: Date.now() });
+            }
+            networks = networks.slice(0, 10);
+            localStorage.setItem('kenza_saved_networks', JSON.stringify(networks));
+            loadSavedNetworks();
+        }
+
+        function loadSavedNetworks() {
+            const container = document.getElementById('saved-networks-list');
+            const networks = getSavedNetworks();
+
+            if (networks.length === 0) {
+                container.innerHTML = '<p style="color:var(--text-dim);font-size:0.85rem;text-align:center;">No saved networks yet</p>';
+                return;
+            }
+
+            container.innerHTML = networks.map((n, i) => `
+                <div class="saved-network-item" data-index="${i}">
+                    <div class="ssid-name">
+                        <span>📶</span>
+                        <span>${n.ssid}</span>
+                    </div>
+                    <button class="delete-btn" data-index="${i}">🗑️</button>
+                </div>
+            `).join('');
+
+            container.querySelectorAll('.saved-network-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('delete-btn')) return;
+                    const idx = parseInt(item.dataset.index);
+                    const network = networks[idx];
+                    if (network) {
+                        document.getElementById('wifi-ssid').value = network.ssid;
+                        document.getElementById('wifi-pass').value = network.password || '';
+                        // Auto-generate QR for this network
+                        generateQRCode();
+                    }
+                });
+            });
+
+            container.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const idx = parseInt(btn.dataset.index);
+                    deleteNetwork(idx);
+                });
+            });
+        }
+
+        function deleteNetwork(index) {
+            let networks = getSavedNetworks();
+            networks.splice(index, 1);
+            localStorage.setItem('kenza_saved_networks', JSON.stringify(networks));
+            loadSavedNetworks();
+        }
+
+        // QR Code event listeners
+        document.getElementById('btn-generate-qr')?.addEventListener('click', generateQRCode);
+        document.getElementById('btn-save-qr')?.addEventListener('click', saveQRCode);
+        document.getElementById('btn-clear-qr')?.addEventListener('click', clearQRCode);
+
+        // Load saved networks on page load
+        loadSavedNetworks();
+
+        // ===== DEV PANEL (Triple-tap logo) =====
+        let devTaps = 0, devTimer = null;
+        document.querySelector('.logo').addEventListener('click', () => {
+            devTaps++;
+            clearTimeout(devTimer);
+            devTimer = setTimeout(() => devTaps = 0, 500);
+            if (devTaps >= 3) {
+                devTaps = 0;
+                const panel = document.getElementById('dev-panel');
+                panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
+            }
+        });
+
+        // ===== INIT =====
+        updateJoyMetrics();
+        window.addEventListener('resize', updateJoyMetrics);
+
+        // Check auth on load
+        if (checkAuth()) {
+            navigateTo('view-home');
+        }
+
+        // Auto-connect if saved IP
+        const savedIp = localStorage.getItem('kenza_pi_ip');
+        if (savedIp) {
+            document.getElementById('pi-ip').value = savedIp;
+            setTimeout(() => connectWebSocket(savedIp), 500);
+        }
+
+        // ===== AUTONOMY STATUS HANDLER =====
+        // Listens for 'autonomy_status' messages broadcast by AutonomyEngine
+        function handleAutonomyStatus(data) {
+            const d = data.data || data;
+            const modeEl = document.getElementById('auto-status-mode');
+            const dirEl = document.getElementById('auto-status-direction');
+            const obsEl = document.getElementById('auto-status-obstacles');
+            const tgtEl = document.getElementById('auto-status-target');
+
+            if (modeEl && d.mode) {
+                const modeNames = { 'NONE': 'Idle', 'EXPLORE': 'Exploring', 'FOLLOW': 'Following', 'SENTRY': 'Sentry', 'GESTURE': 'Gesture' };
+                modeEl.textContent = modeNames[d.mode] || d.mode;
+            }
+            if (dirEl && d.direction) {
+                const dirNames = { 'F': '↑ FWD', 'B': '↓ BACK', 'L': '← LEFT', 'R': '→ RIGHT', 'S': '● STOP' };
+                dirEl.textContent = dirNames[d.direction] || d.direction;
+            }
+            if (obsEl && d.obstacles !== undefined) {
+                obsEl.textContent = d.obstacles;
+                obsEl.className = 'value ' + (d.obstacles === 0 ? 'safe' : d.obstacles <= 2 ? 'warning' : 'danger');
+            }
+            if (tgtEl) {
+                if (d.following_locked) {
+                    tgtEl.textContent = '🎯 Locked';
+                    tgtEl.className = 'value safe';
+                } else if (d.mode === 'FOLLOW') {
+                    tgtEl.textContent = '🔍 Searching';
+                    tgtEl.className = 'value warning';
+                } else {
+                    tgtEl.textContent = '—';
+                    tgtEl.className = 'value';
+                }
+            }
+        }
+
+
+    </script>
+</body>
+
+</html>

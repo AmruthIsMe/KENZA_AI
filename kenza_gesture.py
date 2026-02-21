@@ -42,7 +42,7 @@ try:
     HAS_MEDIAPIPE = True
 except ImportError:
     HAS_MEDIAPIPE = False
-    print("⚠ MediaPipe not installed. Run: pip install mediapipe")
+    print("(!) MediaPipe not installed. Run: pip install mediapipe")
 
 
 # =============================================================================
@@ -428,7 +428,7 @@ def test_with_camera():
             time.sleep(0.033)  # ~30 FPS
     
     except KeyboardInterrupt:
-        print("\n\n👋 Stopped")
+        print("\n\n[Stopped]")
     
     finally:
         tracker.close()
@@ -493,7 +493,7 @@ def run_websocket_server(port=8765):
     try:
         import websockets
     except ImportError:
-        print("❌ websockets not installed. Run: pip install websockets")
+        print("[X] websockets not installed. Run: pip install websockets")
         return
     
     print("\n=== Gesture WebSocket Server ===\n")
@@ -526,7 +526,7 @@ def run_websocket_server(port=8765):
         import socket
         local_ip = socket.gethostbyname(socket.gethostname())
         
-        print(f"\n🖐️ Gesture server running!")
+        print(f"\n[+] Gesture server running!")
         print(f"   WebSocket: ws://localhost:{port}")
         print(f"   WebSocket: ws://{local_ip}:{port}")
         print(f"\n   Open gesture_ui.html in browser and connect.\n")
@@ -538,7 +538,7 @@ def run_websocket_server(port=8765):
     try:
         asyncio.run(main_server())
     except KeyboardInterrupt:
-        print("\n\n👋 Server stopped")
+        print("\n\n[Server stopped]")
     finally:
         tracker.close()
         if use_picam:

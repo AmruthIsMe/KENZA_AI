@@ -4,8 +4,7 @@
 # Preferred Provider: 'groq' (fast, reliable) or 'gemini' (multimodal vision)
 preferred_provider: "groq"
 
-# API Keys — load from .env file via environment variables (recommended)
-# Set GEMINI_API_KEY and GROQ_API_KEY in .env, or fill in below as fallback
+# API Keys (can also use environment variables: GEMINI_API_KEY, GROQ_API_KEY)
 api_keys:
   gemini: ""  # Get from https://aistudio.google.com/
   groq: ""    # Get from https://console.groq.com/
@@ -27,11 +26,11 @@ voice:
   
   # Voice presets - say "change voice to {name}"
   presets:
-    kenza: "en-US-AriaNeural"      # Default Friendly
-    glitch: "en-US-ChristopherNeural" # Robotic/Calm
-    kawaii: "en-US-AnaNeural"      # Anime/Child
-    titan: "en-US-EricNeural"      # Deep/Authoritative
-    jarvis: "en-GB-RyanNeural"     # British Butler
+    aria: "en-US-AriaNeural"       # Natural, friendly (default)
+    luna: "en-US-JennyNeural"      # Warm, conversational
+    nova: "en-US-MichelleNeural"   # Professional, clear
+    rex: "en-US-GuyNeural"         # Male, confident  
+    sonia: "en-GB-SoniaNeural"     # British, elegant
   
   wake_word: "kenza"
 
@@ -79,24 +78,3 @@ vision:
   enabled: true
   context_timeout: 60  # seconds to keep image context for follow-ups
 
-# Connectivity (internet check for cloud vs offline switching)
-connectivity:
-  check_interval: 30   # seconds between internet checks (ping 8.8.8.8)
-
-# Speech-to-Text Settings
-stt:
-  offline_model: "base.en"   # faster-whisper model when offline (tiny.en / base.en / small.en)
-  language: "en"
-
-# Text-to-Speech Settings
-tts:
-  prefer_online: true         # Edge-TTS (neural) when internet available; espeak when offline
-
-# AI / LLM Settings
-# Offline LLM fallback chain: Groq (cloud) → Gemini (cloud) → Ollama → LlamaGGUF
-ai:
-  # Active offline model served by Ollama (http://localhost:11434)
-  # Pull models with: ollama pull <model>
-  # Options: gemma3:270m | ministral-3:3b-instruct-2512-q4_K_M | phi3:mini | tinyllama:1.1b | mistral:7b
-  ollama_model: "gemma3:270m"
-  ollama_url: "http://localhost:11434"

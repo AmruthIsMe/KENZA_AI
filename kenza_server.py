@@ -156,6 +156,19 @@ class CommandHandler:
                 return await self._esp32_config(data)
             elif cmd_type == 'get_state':
                 return {'type': 'state', 'data': self.state.to_dict()}
+            # New handlers for expanded app
+            elif cmd_type == 'slam_control':
+                return await self._slam_control(data)
+            elif cmd_type == 'follow_mode':
+                return await self._follow_mode(data)
+            elif cmd_type == 'sentry_mode':
+                return await self._sentry_mode(data)
+            elif cmd_type == 'privacy_mode':
+                return await self._privacy_mode(data)
+            elif cmd_type == 'voice_select':
+                return await self._voice_select(data)
+            elif cmd_type == 'ai_message':
+                return await self._ai_message(data)
             else:
                 print(f"[CMD] Unknown command: {cmd_type}")
                 return None
@@ -304,6 +317,53 @@ class CommandHandler:
                 'connected': self.state.esp32_connected
             }
         }
+    
+    async def _slam_control(self, data: Dict) -> Dict:
+        """Control SLAM exploration"""
+        action = data.get('action', 'status')  # start, stop, status
+        print(f"[SLAM] Action: {action}")
+        # TODO: Connect to actual SLAM system
+        return {'type': 'slam_status', 'data': {'status': 'mapping' if action == 'start' else 'idle'}}
+    
+    async def _follow_mode(self, data: Dict) -> Dict:
+        """Toggle Follow Me mode"""
+        enabled = data.get('enabled', False)
+        print(f"[FOLLOW] {'Enabled' if enabled else 'Disabled'}")
+        # TODO: Connect to person tracking system
+        return {'type': 'follow_status', 'data': {'enabled': enabled}}
+    
+    async def _sentry_mode(self, data: Dict) -> Dict:
+        """Toggle Sentry/Security patrol mode"""
+        enabled = data.get('enabled', False)
+        start_time = data.get('start', '22:00')
+        end_time = data.get('end', '06:00')
+        print(f"[SENTRY] {'Enabled' if enabled else 'Disabled'} ({start_time} - {end_time})")
+        # TODO: Connect to patrol scheduler
+        return {'type': 'sentry_status', 'data': {'enabled': enabled, 'schedule': f'{start_time}-{end_time}'}}
+    
+    async def _privacy_mode(self, data: Dict) -> Dict:
+        """Toggle Privacy Mode (disable camera/mic)"""
+        enabled = data.get('enabled', False)
+        print(f"[PRIVACY] {'🔴 Active - Camera/Mic disabled' if enabled else '🟢 Inactive'}")
+        # TODO: Actually disable camera and mic hardware
+        return {'type': 'privacy_status', 'data': {'enabled': enabled}}
+    
+    async def _voice_select(self, data: Dict) -> Dict:
+        """Select voice avatar for TTS"""
+        voice = data.get('voice', 'default')
+        print(f"[VOICE] Selected: {voice}")
+        # TODO: Connect to TTS system with voice profiles
+        return {'type': 'voice_changed', 'data': {'voice': voice}}
+    
+    async def _ai_message(self, data: Dict) -> Dict:
+        """Process AI chat message"""
+        message = data.get('message', '')
+        print(f"[AI] User: {message}")
+        # TODO: Connect to LLM backend (Qwen/Mistral/Llama)
+        # For now, return a placeholder response
+        response = f"I heard you say: '{message}'. AI backend integration pending."
+        return {'type': 'ai_response', 'data': {'message': response}}
+
 
 
 # =============================================================================

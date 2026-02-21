@@ -312,6 +312,14 @@
     </main>
 
     <script>
+        window.onload = () => {
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('ip')) {
+                document.getElementById('pi-ip').value = params.get('ip');
+                if (params.has('connect')) connect();
+            }
+        };
+
         let ws = null;
         let simulationMode = false;
         let cursorX = window.innerWidth / 2;
