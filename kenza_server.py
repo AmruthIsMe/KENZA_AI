@@ -38,14 +38,22 @@ try:
     HAS_WEBSOCKETS = True
 except ImportError:
     HAS_WEBSOCKETS = False
-    print("⚠ websockets not installed. Run: pip install websockets")
+    print("[!] websockets not installed. Run: pip install websockets")
 
 try:
     import aiohttp
     HAS_AIOHTTP = True
 except ImportError:
     HAS_AIOHTTP = False
-    print("⚠ aiohttp not installed. Run: pip install aiohttp")
+    print("[!] aiohttp not installed. Run: pip install aiohttp")
+
+# Try to import emotion engine
+try:
+    from kenza_conversation import EmotionEngine
+    HAS_EMOTION = True
+except ImportError:
+    HAS_EMOTION = False
+    print("[!] kenza_conversation.EmotionEngine not available")
 
 # Try to import gesture tracker
 try:
@@ -53,7 +61,7 @@ try:
     HAS_GESTURE = True
 except ImportError:
     HAS_GESTURE = False
-    print("⚠ kenza_gesture module not found")
+    print("[!] kenza_gesture module not found")
 
 # Try to import camera
 try:
@@ -359,10 +367,25 @@ class CommandHandler:
         """Process AI chat message"""
         message = data.get('message', '')
         print(f"[AI] User: {message}")
-        # TODO: Connect to LLM backend (Qwen/Mistral/Llama)
-        # For now, return a placeholder response
+        
+        # Detect emotion
+        emotion = "neutral"
+        if HAS_EMOTION:
+            engine = EmotionEngine()
+            emotion = engine.detect(message)
+            print(f"[EMOTION] Detected: {emotion}")
+
+        # Placeholder response
         response = f"I heard you say: '{message}'. AI backend integration pending."
-        return {'type': 'ai_response', 'data': {'message': response}}
+        
+        # Broadcast emotion to UI
+        return {
+            'type': 'ai_response', 
+            'data': {
+                'message': response,
+                'emotion': emotion
+            }
+        }
 
 
 
@@ -411,7 +434,7 @@ class KenzaServer:
         print("  KENZA SERVER RUNNING  ".center(50, "="))
         print("=" * 50)
         print(f"\n  WebSocket: ws://{local_ip}:{port}")
-        print(f"  Gesture:   {'✓ Enabled' if self.enable_gesture else '✗ Disabled'}")
+        print(f"  Gesture:   {'[Enabled]' if self.enable_gesture else '[Disabled]'}")
         print(f"\n  Open kenza_app.html and connect!\n")
         print("=" * 50)
         print("\nPress Ctrl+C to stop.\n")
@@ -512,7 +535,9 @@ class KenzaServer:
                     'data': {
                         'battery': round(self.state.battery),
                         'wifi_rssi': self.state.wifi_rssi,
-                        'motor_temp': self.state.motor_temp
+                        'motor_temp': self.state.motor_temp,
+                        'mode': self.state.mode,
+                        'paired': self.state.paired
                     }
                 }
                 

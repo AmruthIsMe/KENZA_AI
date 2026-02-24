@@ -2066,7 +2066,7 @@ class ConversationEngine:
                     # Check for sleep commands
                     if any(cmd in text for cmd in ["goodbye", "bye", "go to sleep", "stop", "that's all"]):
                         print("[💤 Going to sleep]")
-                        self.eye_bridge.send_emotion("neutral")
+                        self.eye_bridge.send_emotion("sleep")
                         self.speak_with_interrupt("Okay, let me know if you need me.")
                         self.is_sleeping = True
                         continue
@@ -2107,7 +2107,7 @@ class ConversationEngine:
     def stop(self):
         """Stop the conversation loop"""
         self.is_running = False
-        self.eye_bridge.send_emotion("neutral")
+        self.eye_bridge.send_emotion("sleep")
         self.eye_bridge.stop()
         self.tts.clear_and_stop()
         self.vad.stop_monitoring()

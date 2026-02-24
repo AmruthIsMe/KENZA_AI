@@ -1245,7 +1245,7 @@
             eyeShape: 'round',  // Eye shape: round, oval, anime, robot, line, rectangle, diamond, cute, alien
             customColor: { h: 190, s: 100, l: 50 },
             pupilShape: 'round',
-            brightness: 100,
+            brightness: 80,     // Reduced default brightness
             followPerson: true,
             saccadeEnabled: true,
             eyeSwitch: true,
@@ -1285,13 +1285,16 @@
             const eyeCanvases = document.querySelectorAll('.eye-canvas');
             eyeCanvases.forEach(eye => {
                 const adjustedL = l * brightness;
+                // Add feathering to glow using a softer gradient transition
                 eye.style.background = `radial-gradient(circle at 30% 30%, 
                     hsl(${h}, ${s}%, ${Math.min(adjustedL + 30, 100)}%) 0%, 
-                    hsl(${h}, ${s}%, ${adjustedL}%) 50%, 
-                    hsl(${h}, ${s}%, ${Math.max(adjustedL - 20, 10)}%) 100%)`;
+                    hsl(${h}, ${s}%, ${adjustedL}%) 55%, 
+                    hsl(${h}, ${s}%, ${Math.max(adjustedL - 25, 10)}%) 100%)`;
+
+                // Reduce box-shadow multiplier from 40 to 25 contextually
                 eye.style.boxShadow = `
-                    0 0 ${40 * brightness}px hsla(${h}, ${s}%, ${adjustedL}%, 0.4),
-                    inset 0 -10px 30px rgba(0, 0, 0, 0.3)`;
+                    0 0 ${25 * brightness}px hsla(${h}, ${s}%, ${adjustedL}%, 0.35),
+                    inset 0 -10px 30px rgba(0, 0, 0, 0.25)`;
 
                 // Apply opacity based on eye switch
                 eye.style.opacity = state.eyeSwitch ? 1 : 0.3;
@@ -1303,14 +1306,8 @@
             // Update pupil shape
             updatePupilShape();
 
-            // Update saccade
-            document.querySelectorAll('.eye-canvas .pupil').forEach(pupil => {
-                if (state.saccadeEnabled) {
-                    pupil.classList.add('saccade');
-                } else {
-                    pupil.classList.remove('saccade');
-                }
-            });
+            // JS saccades are now managed continuously by the emotion controller interval
+            // that gets triggered when saccadeEnabled is true. CSS 'saccade' class is deprecated.
         }
 
         function applyEyeShape() {
@@ -1323,10 +1320,14 @@
                 eye.style.height = '120px';
                 eye.style.borderRadius = '50%';
                 eye.style.transform = '';
+                eye.style.transition = 'all 0.4s ease-out'; // add smooth shape switching
             });
             pupils.forEach(p => {
-                p.style.width = '50px';
-                p.style.height = '50px';
+                p.style.width = '42px'; // Reduced pupil size
+                p.style.height = '42px';
+                // Reset saccade transforms
+                p.style.transform = 'translate(-50%, -50%)';
+                p.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
             });
 
             switch (state.eyeShape) {
@@ -1435,7 +1436,11 @@
 
                 case 'round':
                 default:
-                    // Default round - already reset above
+                    // Default round - relaxed resting state (75% openness to avoid startled look)
+                    eyeCanvases.forEach(eye => {
+                        eye.style.transform = 'scaleY(0.75) translateY(10%)';
+                        eye.style.borderRadius = '45% 45% 55% 55%';
+                    });
                     break;
             }
         }
@@ -1446,8 +1451,8 @@
                 // Reset all styles first to prevent bugs
                 pupil.style.borderRadius = '50%';
                 pupil.style.transform = 'translate(-50%, -50%)';
-                pupil.style.width = '50px';
-                pupil.style.height = '50px';
+                pupil.style.width = '42px';
+                pupil.style.height = '42px';
                 pupil.innerHTML = '';
                 // Always reset background first
                 pupil.style.background = 'radial-gradient(circle at 40% 40%, #333 0%, #000 100%)';
@@ -1484,17 +1489,84 @@
         function getCurrentPupilContent() {
             switch (state.pupilShape) {
                 case 'cat':
-                    return { type: 'cat', style: 'transform: translate(-50%, -50%) scaleX(0.25); background: radial-gradient(circle at 40% 40%, #222 0%, #000 100%);' };
+                    return { type: 'cat', style: 'transform: translate(-50%, -50%) scaleX(0.25); background: radial-gradient(circle at 40% 40%, #222 0%, #000 100%); width: 42px; height: 42px;' };
                 case 'diamond':
-                    return { type: 'symbol', html: '<span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:34px;color:#000;text-shadow:0 0 5px rgba(0,0,0,0.5);">◆</span>' };
+                    return { type: 'symbol', html: '<span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:34px;color:#000;text-shadow:0 0 5px rgba(0,0,0,0.5);">◆</span>', style: 'width: 42px; height: 42px;' };
                 case 'spiral':
-                    return { type: 'symbol', html: '<span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:36px;filter:drop-shadow(0 0 3px rgba(0,0,0,0.5));">🌀</span>' };
+                    return { type: 'symbol', html: '<span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:36px;filter:drop-shadow(0 0 3px rgba(0,0,0,0.5));">🌀</span>', style: 'width: 42px; height: 42px;' };
                 case 'flower':
-                    return { type: 'symbol', html: '<span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:34px;color:#222;text-shadow:0 0 3px rgba(0,0,0,0.3);">✿</span>' };
+                    return { type: 'symbol', html: '<span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:34px;color:#222;text-shadow:0 0 3px rgba(0,0,0,0.3);">✿</span>', style: 'width: 42px; height: 42px;' };
                 default:
-                    return { type: 'round', style: 'background: radial-gradient(circle at 40% 40%, #333 0%, #000 100%);' };
+                    return { type: 'round', style: 'background: radial-gradient(circle at 40% 40%, #333 0%, #000 100%); width: 42px; height: 42px;' };
             }
         }
+
+        // ============================================
+        // ORGANIC JS SACCADE ENGINE
+        // ============================================
+        let saccadeTimeout = null;
+        let currentPupilX = -50;
+        let currentPupilY = -50;
+
+        function runOrganicSaccade() {
+            if (!state.saccadeEnabled || state.currentAnimation === 'sleep' || !state.eyeSwitch) {
+                if (saccadeTimeout) clearTimeout(saccadeTimeout);
+                return;
+            }
+
+            const pupils = document.querySelectorAll('.eye-canvas .pupil');
+
+            // Determine movement type
+            const moveType = Math.random();
+            let targetX = -50;
+            let targetY = -50;
+            let transitionStr = 'transform 0.15s cubic-bezier(0.1, 0.9, 0.2, 1)'; // Quick dart
+            let nextDelay = 800 + Math.random() * 2000;
+
+            if (moveType < 0.15) {
+                // Pause (stare)
+                nextDelay += 1500;
+            } else if (moveType < 0.25) {
+                // Slow drift
+                targetX = -50 + (Math.random() * 15 - 7.5);
+                targetY = -50 + (Math.random() * 10 - 5);
+                transitionStr = 'transform 1.2s ease-in-out';
+                nextDelay = 1500;
+            } else if (moveType < 0.6) {
+                // Dart Left/Right noticeably
+                targetX = -50 + (Math.random() > 0.5 ? 18 : -18) + (Math.random() * 5 - 2.5);
+                targetY = -50 + (Math.random() * 12 - 6);
+                nextDelay = 400 + Math.random() * 600;
+            } else {
+                // Micro-adjustment dart
+                targetX = currentPupilX + (Math.random() * 6 - 3);
+                targetY = currentPupilY + (Math.random() * 6 - 3);
+            }
+
+            // Constrain
+            targetX = Math.max(-75, Math.min(-25, targetX));
+            targetY = Math.max(-65, Math.min(-35, targetY));
+
+            currentPupilX = targetX;
+            currentPupilY = targetY;
+
+            pupils.forEach(p => {
+                p.style.transition = transitionStr;
+                // Add scale logic based on vertical slit (cat) to maintain pupil shapes
+                if (state.pupilShape === 'cat') {
+                    p.style.transform = `translate(${targetX}%, ${targetY}%) scaleX(0.25)`;
+                } else if (state.pupilShape === 'diamond') {
+                    p.style.transform = `translate(${targetX}%, ${targetY}%) rotate(-45deg)`;
+                } else {
+                    p.style.transform = `translate(${targetX}%, ${targetY}%)`;
+                }
+            });
+
+            saccadeTimeout = setTimeout(runOrganicSaccade, nextDelay);
+        }
+
+        // Start engine
+        setTimeout(runOrganicSaccade, 1000);
 
         // ============================================
         // EMOTION STATE CONTROLLER
@@ -1515,6 +1587,7 @@
             listening: { anim: 'idle', colorOverride: 'green', pulse: true },
             speaking: { anim: 'blink', colorOverride: null, fastBlink: true },
             confused: { anim: 'dizzy', colorOverride: 'pink' },
+            sleep: { anim: 'sleep', colorOverride: null },
         };
 
         // Label overlay for emotion state
@@ -1683,27 +1756,35 @@
                     state.currentAnimation = 'idle';
 
                     // JavaScript-based blink that works with all eye shapes
+                    // Optional parameters can be passed on window/global (speed)
+                    const closeDur = window._blinkCloseDur || (0.05 + Math.random() * 0.05); // 50-100ms
+                    const openDur = window._blinkOpenDur || 0.1; // 100ms
+
                     eyeCanvases.forEach(eye => {
                         // Store current transform
                         const currentTransform = eye.style.transform || '';
                         const baseTransform = currentTransform.replace(/scaleY\([^)]*\)/g, '').trim();
 
-                        // Apply blink (close eyes)
-                        eye.style.transform = baseTransform + ' scaleY(0.1)';
-                        eye.style.transition = 'transform 0.075s ease-in';
+                        // Apply blink (full close scaleY(0))
+                        eye.style.transform = baseTransform + ' scaleY(0)';
+                        eye.style.transition = `transform ${closeDur}s cubic-bezier(0.2, 0.8, 0.2, 1)`;
 
-                        // Open eyes after 75ms
+                        // Open eyes after close duration
                         setTimeout(() => {
-                            eye.style.transform = baseTransform + ' scaleY(1)';
-                            eye.style.transition = 'transform 0.075s ease-out';
+                            eye.style.transform = baseTransform + ' scaleY(0.75)'; // Return to relaxed neutral
+                            eye.style.transition = `transform ${openDur}s cubic-bezier(0.2, 0.8, 0.2, 1)`;
 
-                            // Restore original after animation
+                            // Restore original state
                             setTimeout(() => {
                                 eye.style.transition = '';
                                 applyEyeShape();
-                            }, 80);
-                        }, 75);
+                            }, openDur * 1000 + 10);
+                        }, closeDur * 1000);
                     });
+
+                    // Reset custom blink params if set
+                    window._blinkCloseDur = null;
+                    window._blinkOpenDur = null;
                     break;
 
                 case 'happy':
@@ -1844,8 +1925,47 @@
                     });
                     break;
 
+                case 'sleep':
+                    // True full closure sleep mode
+                    eyeCanvases.forEach(eye => {
+                        // Fully scale text and backgrounds
+                        eye.style.transform = 'scaleY(0)';
+                        eye.style.transition = 'transform 0.8s cubic-bezier(0.4, 0.0, 0.2, 1)';
+
+                        // Breathing box-shadow pulse applied via CSS animation
+                        eye.style.animation = 'zzz-float 4s ease-in-out infinite alternate'; // Uses a custom breathing glow in CSS
+
+                        // Hide pupils
+                        const pupil = eye.querySelector('.pupil');
+                        if (pupil) {
+                            pupil.style.opacity = '0';
+                            pupil.style.transition = 'opacity 0.3s';
+                        }
+                    });
+
+                    // Breathing glow animation style injection
+                    if (!document.getElementById('sleep-breathing-style')) {
+                        const style = document.createElement('style');
+                        style.id = 'sleep-breathing-style';
+                        style.innerHTML = `
+                            @keyframes sleep-breathe {
+                                0% { box-shadow: 0 0 10px rgba(0, 150, 255, 0.1), inset 0 -5px 10px rgba(0, 0, 0, 0.5); }
+                                100% { box-shadow: 0 0 30px rgba(0, 150, 255, 0.3), inset 0 -5px 20px rgba(0, 0, 0, 0.2); }
+                            }
+                        `;
+                        document.head.appendChild(style);
+                    }
+                    eyeCanvases.forEach(eye => {
+                        setTimeout(() => {
+                            if (state.currentAnimation === 'sleep') {
+                                eye.style.animation = 'sleep-breathe 3s ease-in-out infinite alternate';
+                            }
+                        }, 800);
+                    });
+                    break;
+
                 case 'sleepy':
-                    // Closed eyes with floating Zzz animation
+                    // Drowsy closed eyes (not fully sleeping)
                     eyeCanvases.forEach((eye, i) => {
                         eye.style.borderRadius = '50%';
                         eye.style.transform = 'scaleY(0.15)';
@@ -2047,17 +2167,26 @@
 
             setTimeout(() => {
                 if (state.currentAnimation === 'idle' && state.eyeSwitch) {
-                    playAnimation('blink');
 
-                    // Sometimes do a double-blink (20% chance)
-                    if (Math.random() < 0.2) {
-                        setTimeout(() => {
-                            if (state.currentAnimation === 'idle' && state.eyeSwitch) {
-                                playAnimation('blink');
-                            }
-                        }, 200);
+                    const rand = Math.random();
+                    if (rand < 0.15) {
+                        // Soft slow blink
+                        window._blinkCloseDur = 0.25;
+                        window._blinkOpenDur = 0.3;
+                        playAnimation('blink');
+                    } else if (rand > 0.8) {
+                        // Double blink
+                        window._blinkCloseDur = 0.05;
+                        window._blinkOpenDur = 0.08;
+                        playAnimation('blink');
+                        setTimeout(() => playAnimation('blink'), 180);
+                    } else {
+                        // Normal blink
+                        playAnimation('blink');
                     }
                 }
+
+                // Keep scheduling
                 scheduleNextBlink();
             }, nextBlink);
         }

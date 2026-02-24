@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KENZA AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/kenza_display.css">
+</head>
+
+<body>
+
+    <!-- ── BOOT OVERLAY ──────────────────────────────────────── -->
+    <div id="boot">
+        <div id="boot-glow"></div>
+    </div>
+
+    <!-- ── STATUS BAR ────────────────────────────────────────── -->
+    <div id="sb">
+        <div class="g">
+            <div class="itm">🔋 <span id="sb-bat">95%</span></div>
+            <div class="itm">📶 <span id="sb-wifi">Strong</span></div>
+        </div>
+        <div class="g">
+            <div class="badge" id="sb-mode">Auto</div>
+            <div class="badge" id="sb-ai">Online</div>
+        </div>
+        <div class="g">
+            <div class="itm">🎤 <div class="livedot" id="dot-mic"></div>
+            </div>
+            <div class="itm">📷 <div class="livedot" id="dot-cam"
+                    style="background:rgba(255,255,255,0.18);box-shadow:none;animation:none;opacity:0.4;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── SCENE (eyes + status) ─────────────────────────────── -->
+    <div id="scene">
+        <div id="eyes">
+            <div class="eye" id="eye-l">
+                <div class="pupil"></div>
+                <div class="hl1"></div>
+                <div class="hl2"></div>
+                <div class="lt"></div>
+                <div class="lb"></div>
+            </div>
+            <div class="eye" id="eye-r">
+                <div class="pupil"></div>
+                <div class="hl1"></div>
+                <div class="hl2"></div>
+                <div class="lt"></div>
+                <div class="lb"></div>
+            </div>
+        </div>
+        <div id="stxt"></div>
+    </div>
+
+    <!-- ── CONTROL PANEL ──────────────────────────────────────── -->
+    <div id="panel">
+        <div class="handle"></div>
+        <div id="panel-tabs">
+            <div class="ptab active" data-tab="actions" onclick="setTab('actions')">Actions</div>
+            <div class="ptab" data-tab="explore" onclick="setTab('explore')">Explore</div>
+            <div class="ptab" data-tab="settings" onclick="setTab('settings')">Settings</div>
+        </div>
+
+        <!-- Actions Page -->
+        <div class="ppage active" id="page-actions">
+            <div class="btn-grid">
+                <button class="btn" onclick="onBtn('talk')"> <span class="ico">🎤</span>Talk</button>
+                <button class="btn" onclick="onBtn('mode')"> <span class="ico">🔄</span>Switch Mode</button>
+                <button class="btn" onclick="onBtn('ai')"> <span class="ico">🧠</span>AI Mode</button>
+                <button class="btn" onclick="onBtn('tp')"> <span class="ico">🎥</span>Telepresence</button>
+                <button class="btn" onclick="onBtn('home')"> <span class="ico">🏠</span>Return Home</button>
+                <button class="btn" onclick="onBtn('charge')"> <span class="ico">🔌</span>Charge</button>
+            </div>
+        </div>
+
+        <!-- Explore Page -->
+        <div class="ppage" id="page-explore">
+            <div class="btn-grid">
+                <button class="btn" onclick="onBtn('explore')"> <span class="ico">🔍</span>Explore</button>
+                <button class="btn" onclick="onBtn('scan')"> <span class="ico">📡</span>Scan Room</button>
+                <button class="btn" onclick="onBtn('home')"> <span class="ico">📍</span>Go Home</button>
+                <button class="btn" onclick="onBtn('talk')"> <span class="ico">💬</span>AI Chat</button>
+                <button class="btn" onclick="onBtn('mode')"> <span class="ico">🤖</span>Auto Mode</button>
+                <button class="btn" onclick="closePanel()"> <span class="ico">✕</span>Close</button>
+            </div>
+        </div>
+
+        <!-- Settings Page -->
+        <div class="ppage" id="page-settings">
+            <div class="btn-grid">
+                <button class="btn" onclick="onBtn('ai')"> <span class="ico">🧠</span>AI Mode</button>
+                <button class="btn" onclick="onBtn('settings')"> <span class="ico">⚙️</span>Settings</button>
+                <button class="btn" onclick="closePanel()"> <span class="ico">✕</span>Close</button>
+            </div>
+        </div>
+
+        <div class="swipe-hint">swipe left/right to switch tabs · swipe down to close</div>
+    </div>
+
+    <!-- ── RADIAL MENU (long press) ───────────────────────────── -->
+    <div id="radial">
+        <div class="radial-bg"></div>
+        <div class="rbtn" data-idx="0" onclick="onRadial('tp')">
+            <span class="rico">🎥</span>Telepresence
+        </div>
+        <div class="rbtn" data-idx="1" onclick="onRadial('explore')">
+            <span class="rico">🔍</span>Explore
+        </div>
+        <div class="rbtn" data-idx="2" onclick="onRadial('settings')">
+            <span class="rico">⚙️</span>Settings
+        </div>
+        <div class="rbtn" data-idx="3" onclick="onRadial('chat')">
+            <span class="rico">💬</span>AI Chat
+        </div>
+        <div id="radial-close" onclick="closeRadial()">✕</div>
+    </div>
+
+    <!-- ── NOTIFICATION TOAST ─────────────────────────────────── -->
+    <div id="notif"></div>
+
+    <!-- ── ALERT BORDER ───────────────────────────────────────── -->
+    <div id="aborder"></div>
+
+    <!-- ── SLEEP OVERLAY ──────────────────────────────────────── -->
+    <div id="sleep-ovl"></div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+     TELEPRESENCE — Google Meet style
+═══════════════════════════════════════════════════════════ -->
+    <div id="tp">
+        <video id="tp-video" autoplay playsinline muted></video>
+        <div id="tp-rname">Remote User</div>
+
+        <!-- Self PiP -->
+        <div id="tp-pip">
+            <video id="tp-selfvid" autoplay playsinline muted></video>
+            <div class="tp-pip-lbl">You (KENZA)</div>
+        </div>
+
+        <!-- Miniaturized animated eye icon (robot identity stays) -->
+        <div id="tp-eye-icon">
+            <div class="tp-eye-pupil"></div>
+            <div class="tp-eye-hl"></div>
+        </div>
+
+        <!-- Topbar -->
+        <div id="tp-top">
+            <div class="tp-top-l">
+                <span class="qdot"></span>
+                <span id="tp-dur">00:00</span>
+                <span style="color:rgba(255,255,255,0.35);margin:0 4px">|</span>
+                <span>🔒 Encrypted</span>
+            </div>
+            <div class="tp-top-r">
+                <button class="tp-icon-btn">👥</button>
+                <button class="tp-icon-btn">💬</button>
+                <button class="tp-icon-btn">⋮</button>
+            </div>
+        </div>
+
+        <!-- Connecting overlay -->
+        <div id="tp-loading">
+            <div class="tp-avatar">🤖</div>
+            <div class="tp-cname" id="tp-cname">Calling…</div>
+            <div class="tp-csub">Connecting to remote user</div>
+            <div class="tp-spin"></div>
+        </div>
+
+        <!-- Meet-style control bar -->
+        <div id="tp-bar">
+            <button class="tp-ctrl" onclick="onTP('mic')">
+                <div class="tp-ico on" id="tp-ico-mic">🎤</div>
+                <span class="tp-lbl">Mic</span>
+            </button>
+            <button class="tp-ctrl" onclick="onTP('cam')">
+                <div class="tp-ico on" id="tp-ico-cam">📷</div>
+                <span class="tp-lbl">Camera</span>
+            </button>
+            <button class="tp-end-wrap" onclick="onTP('end')">
+                <div class="tp-end-ico">📞</div>
+                <span class="tp-lbl" style="font-size:0.57rem;color:rgba(255,255,255,0.55)">End</span>
+            </button>
+            <button class="tp-ctrl" onclick="onTP('spk')">
+                <div class="tp-ico on" id="tp-ico-spk">🔊</div>
+                <span class="tp-lbl">Speaker</span>
+            </button>
+            <button class="tp-ctrl" onclick="onTP('robot')">
+                <div class="tp-ico" style="background:rgba(60,64,67,0.9)">🤖</div>
+                <span class="tp-lbl">Robot</span>
+            </button>
+        </div>
+    </div>
+
+    <script src="js/kenza_display.js"></script>
+</body>
+
+</html>
