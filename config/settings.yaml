@@ -4,7 +4,7 @@
 # Preferred Provider: 'groq' (fast, reliable) or 'gemini' (multimodal vision)
 preferred_provider: "groq"
 
-# API Keys — load from .env file via environment variables (recommended)
+# API Keys - load from .env file via environment variables (recommended)
 # Set GEMINI_API_KEY and GROQ_API_KEY in .env, or fill in below as fallback
 api_keys:
   gemini: ""  # Get from https://aistudio.google.com/

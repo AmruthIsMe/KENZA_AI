@@ -2330,6 +2330,58 @@
         .ov-call-ctl.end-call:active {
             transform: scale(.88)
         }
+
+        /* Unified HUD Styling within Call */
+        #ov-call .hud-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 5;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 80px 20px 100px;
+            /* Adjust for top pill and bottom bar */
+        }
+
+        #ov-call .hud-overlay>* {
+            pointer-events: auto;
+        }
+
+        #ov-call .joystick-container {
+            bottom: 40px;
+            left: 40px;
+            position: absolute;
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(5px);
+        }
+
+        #ov-call .speed-meter {
+            bottom: 40px;
+            left: 200px;
+            position: absolute;
+        }
+
+        #ov-call .telemetry-bar {
+            top: 100px;
+            right: 20px;
+            position: absolute;
+            flex-direction: column;
+            align-items: flex-end;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px 15px;
+            border-radius: 12px;
+            gap: 10px;
+        }
+
+        #ov-call .direction-hud {
+            top: 40px;
+            left: 20px;
+            position: absolute;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px 15px;
+            border-radius: 12px;
+        }
     </style>
 </head>
 
@@ -2368,15 +2420,15 @@
         <div class="view hidden" id="view-home">
             <h2 class="view-title">Dashboard</h2>
             <div class="dashboard-grid">
-                <div class="hub-card" data-target="view-remote">
-                    <span class="hub-icon">🎮</span>
-                    <h3>Remote Control</h3>
-                    <p>Telepresence & Drive</p>
+                <div class="hub-card pilot" data-target="view-remote-pilot" id="btn-remote-pilot">
+                    <span class="hub-icon">👨‍✈️</span>
+                    <h3>Remote Pilot</h3>
+                    <p>Call & Drive Robot</p>
                 </div>
                 <div class="hub-card" data-target="view-auto">
                     <span class="hub-icon">🤖</span>
                     <h3>Autonomous</h3>
-                    <p>Follow & Sentry</p>
+                    <p>Follow &amp; Sentry</p>
                 </div>
                 <div class="hub-card" data-target="view-ai">
                     <span class="hub-icon">🧠</span>
@@ -2386,52 +2438,20 @@
                 <div class="hub-card" data-target="view-settings">
                     <span class="hub-icon">⚙️</span>
                     <h3>Settings</h3>
-                    <p>Customize & Pair</p>
+                    <p>Customize &amp; Pair</p>
                 </div>
             </div>
         </div>
 
-        <!-- REMOTE CONTROL -->
-        <div class="view hidden" id="view-remote">
-            <div class="hud-container">
-                <video id="remote-video" autoplay playsinline muted></video>
-                <div class="hud-overlay">
-                    <div class="telemetry-bar">
-                        <span>🔋 <span id="hud-battery">95%</span></span>
-                        <span>📶 <span id="hud-wifi">-45dB</span></span>
-                        <span>🌡️ <span id="hud-temp">38°C</span></span>
-                    </div>
-                    <div class="direction-hud">
-                        <div class="direction-text" id="direction-display">STOP</div>
-                        <div style="font-size:0.8rem;color:var(--text-dim);">Speed: <span id="speed-display">0%</span>
-                        </div>
-                        <div class="last-command" id="last-command"
-                            style="font-size:0.7rem;color:var(--text-dim);margin-top:4px;"></div>
-                    </div>
-                    <div class="joystick-container">
-                        <div class="direction-indicator top">▲</div>
-                        <div class="direction-indicator bottom">▼</div>
-                        <div class="direction-indicator left">◀</div>
-                        <div class="direction-indicator right">▶</div>
-                        <div class="joystick-base" id="joystick-base">
-                            <div class="joystick-handle" id="joystick-handle"></div>
-                        </div>
-                    </div>
-                    <div class="speed-meter">
-                        <div class="speed-bar-bg">
-                            <div class="speed-bar-fill" id="speed-bar"></div>
-                        </div>
-                    </div>
-                    <div class="hud-actions">
-                        <button class="hud-btn" id="btn-mic">🎤</button>
-                        <button class="hud-btn" id="btn-video">📹</button>
-                        <button class="hud-btn" id="btn-screenshot">📷</button>
-                    </div>
-                    <!-- Keyboard Hints -->
-                    <div class="keyboard-hints">
-                        <span>W</span><span>A</span><span>S</span><span>D</span> or Arrows | <span>Space</span> Stop
-                    </div>
-                </div>
+        <!-- REMOTE PILOT (DEPRECATED - Moved to Overlay) -->
+        <div class="view hidden" id="view-remote-pilot">
+            <div
+                style="height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px;">
+                <div class="ov-ring-blue" style="margin-bottom: 20px;">👨‍✈️</div>
+                <h2>Initializing Remote Pilot</h2>
+                <p style="color: var(--text-dim); margin-bottom: 30px;">Connecting to robot and starting video feed...
+                </p>
+                <div class="pulse-dot"></div>
             </div>
         </div>
 
@@ -3006,6 +3026,31 @@
     <div class="call-overlay" id="ov-call">
         <video id="ov-remote-video" autoplay playsinline></video>
         <video id="ov-local-video" autoplay playsinline muted></video>
+
+        <!-- HUD ELEMENTS INTEGRATED -->
+        <div class="hud-overlay">
+            <div class="telemetry-bar">
+                <span>🔋 <span id="tp-hud-battery">--%</span></span>
+                <span>📶 <span id="tp-hud-wifi">--dB</span></span>
+                <span>🌡️ <span id="tp-hud-temp">--°C</span></span>
+            </div>
+            <div class="direction-hud">
+                <div class="direction-text" id="tp-direction-display">STOP</div>
+                <div style="font-size:0.8rem;color:rgba(255,255,255,0.6);">Speed: <span id="tp-speed-display">0%</span>
+                </div>
+            </div>
+            <div class="joystick-container">
+                <div class="joystick-base" id="tp-joy-base">
+                    <div class="joystick-handle" id="tp-joy-handle"></div>
+                </div>
+            </div>
+            <div class="speed-meter">
+                <div class="speed-bar-bg">
+                    <div class="speed-bar-fill" id="tp-speed-bar"></div>
+                </div>
+            </div>
+        </div>
+
         <div id="ov-call-quality">📶 <span id="ov-quality-txt">Connecting…</span></div>
         <div id="ov-call-top">
             <div id="ov-call-top-pill">
@@ -3482,6 +3527,10 @@
         // Hub cards navigation
         document.querySelectorAll('.hub-card, .settings-item[data-target]').forEach(card => {
             card.addEventListener('click', () => {
+                if (card.id === 'btn-remote-pilot') {
+                    tpStartCall();
+                    return;
+                }
                 const target = card.dataset.target;
                 if (target) navigateTo(target);
             });
@@ -3501,6 +3550,9 @@
                 statusDot.classList.add('connected');
                 statusText.textContent = 'Connected';
                 localStorage.setItem('kenza_pi_ip', ip);
+                // Register immediately as controller — no timeout needed
+                ws.send(JSON.stringify({ type: 'register', role: 'controller', name: 'Sidharth' }));
+                document.getElementById('pi-ip').value = ip;
             };
             ws.onmessage = e => {
                 const d = JSON.parse(e.data);
@@ -3509,41 +3561,34 @@
                     navigateTo('view-home');
                 }
                 if (d.type === 'telemetry') {
-                    document.getElementById('hud-battery').textContent = d.data.battery + '%';
+                    if (document.getElementById('hud-battery')) document.getElementById('hud-battery').textContent = d.data.battery + '%';
+                    if (document.getElementById('tp-hud-battery')) document.getElementById('tp-hud-battery').textContent = d.data.battery + '%';
+                    if (document.getElementById('tp-hud-wifi') && d.data.wifi) document.getElementById('tp-hud-wifi').textContent = d.data.wifi + 'dB';
+                    if (document.getElementById('tp-hud-temp') && d.data.temp) document.getElementById('tp-hud-temp').textContent = d.data.temp + '°C';
                 }
-                // Voice user speech - display what user said
                 if (d.type === 'voice_user_speech') {
                     addChatMessage(d.data.text, 'user', true);
                     showThinkingIndicator();
                 }
-                // AI response - display LLM response
                 if (d.type === 'ai_response') {
                     hideThinkingIndicator();
                     addChatMessage(d.data.message, 'ai');
                 }
-                // AI thinking indicator
-                if (d.type === 'ai_thinking') {
-                    showThinkingIndicator();
-                }
-                // Voice state changes
-                if (d.type === 'voice_state') {
-                    updateChatStatus(d.data.state);
-                }
-                // Autonomy status updates
-                if (d.type === 'autonomy_status') {
-                    handleAutonomyStatus(d);
-                }
-                // Offline model info response
-                if (d.type === 'offline_models_info') {
-                    updateOfflineModelUI(d.data);
-                }
-                // Offline model switch acknowledgement
-                if (d.type === 'offline_model_ack') {
-                    if (d.data.success) setActiveModelCard(d.data.model);
-                }
+                if (d.type === 'ai_thinking') { showThinkingIndicator(); }
+                if (d.type === 'voice_state') { updateChatStatus(d.data.state); }
+                if (d.type === 'autonomy_status') { handleAutonomyStatus(d); }
+                if (d.type === 'offline_models_info') { updateOfflineModelUI(d.data); }
+                if (d.type === 'offline_model_ack' && d.data.success) { setActiveModelCard(d.data.model); }
+
                 // ── TELEPRESENCE signaling ──
-                if (d.type === 'peer_online' && (d.role === 'robot' || d.data?.role === 'robot')) {
-                    tpSetRobotOnline(true, d.name || d.data?.name || 'KENZA HomeBot');
+                if (d.type === 'peer_online') {
+                    const role = d.role || d.data?.role;
+                    const name = d.name || d.data?.name || 'KENZA HomeBot';
+                    if (role === 'robot') tpSetRobotOnline(true, name);
+                }
+                if (d.type === 'peer_offline') {
+                    const role = d.role || d.data?.role;
+                    if (role === 'robot') tpSetRobotOnline(false);
                 }
                 if (d.type === 'call_offer') tpHandleIncoming(d);
                 if (d.type === 'call_answer') tpHandleAnswer(d);
@@ -3557,6 +3602,9 @@
                 statusDot.classList.remove('connected');
                 statusText.textContent = 'Offline';
                 tpSetRobotOnline(false);
+                // Auto-reconnect after 4s if we have a saved IP
+                const savedIp = localStorage.getItem('kenza_pi_ip');
+                if (savedIp) setTimeout(() => connectWebSocket(savedIp), 4000);
             };
         }
 
@@ -3697,6 +3745,10 @@
             const lv = document.getElementById('ov-local-video'); if (lv) lv.srcObject = null;
             TP.callState = 'idle'; TP.camOn = true; TP.micOn = true;
             tpHideAllOverlays();
+
+            // Return to home dashboard and reset driving state
+            navigateTo('view-home');
+            sendMotorCommand('S');
         }
 
         function tpToggleCam() {
@@ -3710,16 +3762,6 @@
             if (TP.localStream) TP.localStream.getAudioTracks().forEach(t => t.enabled = TP.micOn);
             const b = document.getElementById('ov-btn-mic');
             if (b) { b.classList.toggle('off', !TP.micOn); b.textContent = TP.micOn ? '🎙️' : '🔇'; }
-        }
-
-        // On connect, register as controller
-        const _origConnectWS = connectWebSocket;
-        function connectWebSocket(ipOverride) {
-            _origConnectWS(ipOverride);
-            // Delay to let ws open
-            setTimeout(() => {
-                if (ws?.readyState === 1) tpSend({ type: 'register', role: 'controller', name: 'Sidharth' });
-            }, 600);
         }
 
         function enableSimulation() {
@@ -3740,11 +3782,22 @@
             const port = '8080';
             const names = { 'F': 'FORWARD', 'B': 'BACKWARD', 'L': 'LEFT', 'R': 'RIGHT', 'S': 'STOP' };
 
-            // Update display
-            document.getElementById('direction-display').textContent = names[direction] || 'STOP';
+            // Update displays
+            const dirDisplays = ['direction-display', 'tp-direction-display'];
+            dirDisplays.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = names[direction] || 'STOP';
+            });
+
             if (direction === 'S') {
-                document.getElementById('speed-bar').style.width = '0%';
-                document.getElementById('speed-display').textContent = '0%';
+                ['speed-bar', 'tp-speed-bar'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.width = '0%';
+                });
+                ['speed-display', 'tp-speed-display'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = '0%';
+                });
             }
 
             // Send via WebSocket if connected
@@ -3761,38 +3814,71 @@
         }
 
         // ===== JOYSTICK =====
-        const joyBase = document.getElementById('joystick-base');
-        const joyHandle = document.getElementById('joystick-handle');
         let joyDragging = false, joyRect, joyCenterX, joyCenterY, joyMaxR;
+        let activeJoyBase = null, activeJoyHandle = null;
 
         function updateJoyMetrics() {
-            joyRect = joyBase.getBoundingClientRect();
+            if (!activeJoyBase) return;
+            joyRect = activeJoyBase.getBoundingClientRect();
             joyCenterX = joyRect.width / 2;
             joyCenterY = joyRect.height / 2;
             joyMaxR = joyRect.width / 2 - 28;
         }
 
-        joyHandle.addEventListener('mousedown', e => { e.preventDefault(); joyDragging = true; joyHandle.classList.add('active'); updateJoyMetrics(); });
-        joyHandle.addEventListener('touchstart', e => { e.preventDefault(); joyDragging = true; joyHandle.classList.add('active'); updateJoyMetrics(); });
+        function initJoystick(baseId, handleId) {
+            const base = document.getElementById(baseId);
+            const handle = document.getElementById(handleId);
+            if (!base || !handle) return;
+
+            handle.addEventListener('mousedown', e => {
+                e.preventDefault();
+                joyDragging = true;
+                activeJoyBase = base;
+                activeJoyHandle = handle;
+                handle.classList.add('active');
+                updateJoyMetrics();
+            });
+            handle.addEventListener('touchstart', e => {
+                e.preventDefault();
+                joyDragging = true;
+                activeJoyBase = base;
+                activeJoyHandle = handle;
+                handle.classList.add('active');
+                updateJoyMetrics();
+            });
+        }
+
+        // Initialize both joysticks
+        initJoystick('joystick-base', 'joystick-handle');
+        initJoystick('tp-joy-base', 'tp-joy-handle');
+
         document.addEventListener('mousemove', handleJoyMove);
         document.addEventListener('touchmove', handleJoyMove, { passive: false });
         document.addEventListener('mouseup', handleJoyEnd);
         document.addEventListener('touchend', handleJoyEnd);
 
         function handleJoyMove(e) {
-            if (!joyDragging) return;
+            if (!joyDragging || !activeJoyHandle) return;
             e.preventDefault();
             const t = e.touches ? e.touches[0] : e;
             let x = t.clientX - joyRect.left - joyCenterX;
             let y = t.clientY - joyRect.top - joyCenterY;
             const d = Math.sqrt(x * x + y * y);
             if (d > joyMaxR) { x = (x / d) * joyMaxR; y = (y / d) * joyMaxR; }
-            joyHandle.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+            activeJoyHandle.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
 
             const normalizedD = d / joyMaxR;
             const speed = Math.round(Math.min(normalizedD, 1) * 100);
-            document.getElementById('speed-bar').style.width = speed + '%';
-            document.getElementById('speed-display').textContent = speed + '%';
+
+            // Update both sets of speed indicators
+            ['speed-bar', 'tp-speed-bar'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.width = speed + '%';
+            });
+            ['speed-display', 'tp-speed-display'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = speed + '%';
+            });
 
             let dir = 'S';
             if (normalizedD > MOTOR_CONFIG.deadzone) {
@@ -3804,7 +3890,10 @@
             }
 
             const names = { 'F': 'FORWARD', 'B': 'BACKWARD', 'L': 'LEFT', 'R': 'RIGHT', 'S': 'STOP' };
-            document.getElementById('direction-display').textContent = names[dir];
+            ['direction-display', 'tp-direction-display'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = names[dir];
+            });
 
             // Only send if direction changed
             if (dir !== MOTOR_CONFIG.lastSentDirection) {
@@ -3813,12 +3902,12 @@
         }
 
         function handleJoyEnd() {
-            if (!joyDragging) return;
+            if (!joyDragging || !activeJoyHandle) return;
             joyDragging = false;
-            joyHandle.classList.remove('active');
-            joyHandle.style.transition = 'transform 0.15s';
-            joyHandle.style.transform = 'translate(-50%, -50%)';
-            setTimeout(() => joyHandle.style.transition = '', 150);
+            activeJoyHandle.classList.remove('active');
+            activeJoyHandle.style.transition = 'transform 0.15s';
+            activeJoyHandle.style.transform = 'translate(-50%, -50%)';
+            setTimeout(() => { if (activeJoyHandle) activeJoyHandle.style.transition = ''; }, 150);
             sendMotorCommand('S');
         }
 
@@ -3835,15 +3924,20 @@
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
             // Ignore if key already pressed
             if (keyState[e.key]) return;
-            // Only work in remote view (check if remote view is NOT hidden)
-            const remoteView = document.getElementById('view-remote');
-            if (remoteView && !remoteView.classList.contains('hidden')) {
+
+            // Only work in remote view or active call view
+            const remoteView = document.getElementById('view-remote-pilot'); // Updated ID
+            const callOverlay = document.getElementById('ov-call');
+            const isRemoteActive = remoteView && !remoteView.classList.contains('hidden');
+            const isCallActive = callOverlay && callOverlay.classList.contains('visible');
+
+            if (isRemoteActive || isCallActive) {
                 keyState[e.key] = true;
 
                 let dir = null;
                 switch (e.key) {
                     case 'ArrowUp': case 'w': case 'W': dir = 'F'; break;
-                    case 'ArrowDown': case 's': dir = 'B'; break;
+                    case 'ArrowDown': case 's': case 'S': dir = 'B'; break;
                     case 'ArrowLeft': case 'a': case 'A': dir = 'L'; break;
                     case 'ArrowRight': case 'd': case 'D': dir = 'R'; break;
                     case ' ': sendMotorCommand('S'); e.preventDefault(); return;

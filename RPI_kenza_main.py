@@ -1,25 +1,30 @@
 #!/usr/bin/env python3
 """
-RPI_kenza_main.py - KENZA Robot Main Boot Application
-======================================================
-The main boot service for KENZA robot. This is the entry point that runs on 
-startup and orchestrates all core functionality.
+RPI_kenza_main.py - KENZA Robot Unified Boot Application
+=========================================================
+Single-command boot script for KENZA robot.
+Run this ONE file on boot — it starts everything:
 
-Features:
-- QR Code scanning for WiFi pairing
-- WiFi network connection management
-- WebSocket server for app communication
-- Gesture tracking integration
-- Motor control via ESP32
-- Future: AI, Vision, Audio capabilities
+  ┌─────────────────────────────────────────────────┐
+  │  SERVICES STARTED AUTOMATICALLY ON BOOT         │
+  │                                                 │
+  │  ► WebSocket Server      (port 8765) — control  │
+  │  ► HTTP Motor Server     (port 8080) — motors   │
+  │  ► WebRTC Signaling Relay          — telepres.  │
+  │  ► Chromium Kiosk Display          — robot_ui   │
+  │  ► Conversation/Voice Engine       — AI chat    │
+  │  ► Telemetry Broadcaster           — live data  │
+  └─────────────────────────────────────────────────┘
 
 Usage:
-    python RPI_kenza_main.py              # Start in normal mode
+    python RPI_kenza_main.py              # Normal boot
     python RPI_kenza_main.py --pairing    # Start in pairing mode
     python RPI_kenza_main.py --debug      # Enable debug logging
+    python RPI_kenza_main.py --no-display # Skip Chromium launch
+    python RPI_kenza_main.py --no-voice   # Skip voice mode
 
 Requirements:
-    pip install websockets opencv-python pyzbar
+    pip install websockets opencv-python pyzbar gpiozero
 """
 
 import os
@@ -117,6 +122,9 @@ except ImportError:
     HAS_AUTONOMY = False
     log.warning("kenza_autonomy not available — autonomous features disabled")
 
+# HTTP server for motor fallback (port 8080)
+from http.server import BaseHTTPRequestHandler, HTTPServer as _HTTPServer
+
 
 # ============================================================================
 # ROBOT STATE
@@ -161,6 +169,61 @@ class RobotState:
 
 # Global robot state
 ROBOT_STATE = RobotState()
+
+
+# ============================================================================
+# HTTP MOTOR SERVER (port 8080 — mirrors pi_motor_server.py)
+# ============================================================================
+
+class _HttpMotorHandler(BaseHTTPRequestHandler):
+    """
+    Minimal HTTP handler for motor commands.
+    Accepts GET /<direction> where direction is F/B/L/R/S.
+    Compatible with the web app's HTTP fallback path.
+    """
+    motor_ctrl = None  # Injected by HttpMotorServer after GPIO is ready
+
+    def do_GET(self):
+        direction = self.path.strip('/').upper()
+        if direction in ('F', 'B', 'L', 'R', 'S') and _HttpMotorHandler.motor_ctrl:
+            _HttpMotorHandler.motor_ctrl.send_motor_command(direction, 0 if direction == 'S' else 100)
+            log.debug(f"[HTTP] Motor: {direction}")
+        self.send_response(200)
+        self.send_header('Content-type', 'text/plain')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+        self.wfile.write(b'OK')
+
+    def log_message(self, fmt, *args):
+        pass  # Suppress noisy HTTP logs
+
+
+class HttpMotorServer:
+    """
+    Runs the HTTP motor server on port 8080 in a background daemon thread.
+    This allows the web app to send motor commands via HTTP as well as WebSocket.
+    """
+    def __init__(self, port: int = 8080):
+        self.port = port
+        self._server: Optional[_HTTPServer] = None
+        self._thread: Optional[threading.Thread] = None
+
+    def start(self, motor_ctrl):
+        """Start the HTTP server and inject the motor controller."""
+        _HttpMotorHandler.motor_ctrl = motor_ctrl
+        self._server = _HTTPServer(('', self.port), _HttpMotorHandler)
+
+        def _serve():
+            log.info(f"🌐 HTTP Motor Server started on port {self.port}")
+            self._server.serve_forever()
+
+        self._thread = threading.Thread(target=_serve, daemon=True, name='HttpMotorServer')
+        self._thread.start()
+
+    def stop(self):
+        if self._server:
+            self._server.shutdown()
+            log.info("🌐 HTTP Motor Server stopped")
 
 
 # ============================================================================
@@ -688,59 +751,139 @@ class WiFiManager:
 class KenzaWebSocket:
     """
     WebSocket server for app communication.
-    Handles bidirectional messaging with the companion app.
+    Handles bidirectional messaging AND WebRTC telepresence signaling relay.
+
+    Roles:
+      - 'controller' : laptop / phone running kenza_app_v2.html
+      - 'robot'      : this RPi running robot_display.html
+      - 'display'    : robot_display.html (local browser on RPi)
+
+    Telepresence signaling messages relayed:
+      register, call_offer, call_answer, call_reject, call_end, ice_candidate
     """
-    
+
+    # Role constants
+    ROLE_CONTROLLER = 'controller'
+    ROLE_ROBOT      = 'robot'
+    ROLE_DISPLAY    = 'display'
+
     def __init__(self, host: str = "0.0.0.0", port: int = 8765):
         self.host = host
         self.port = port
         self.clients: Set = set()
+        # role -> set of websockets
+        self._by_role: Dict[str, Set] = {
+            self.ROLE_CONTROLLER: set(),
+            self.ROLE_ROBOT:      set(),
+            self.ROLE_DISPLAY:    set(),
+        }
+        self._client_roles: Dict = {}   # websocket -> role
+        self._client_names: Dict = {}   # websocket -> name
         self.server = None
         self._message_handlers: Dict[str, Callable] = {}
         self._loop = None
-        
+
     def on_message(self, msg_type: str, handler: Callable):
         """Register a handler for a specific message type"""
         self._message_handlers[msg_type] = handler
-        
+
+    async def _relay_to_role(self, role: str, payload: dict, exclude=None):
+        """Send a JSON payload to all clients with a given role."""
+        targets = self._by_role.get(role, set()) - ({exclude} if exclude else set())
+        if targets:
+            msg = json.dumps(payload)
+            await asyncio.gather(*[c.send(msg) for c in targets], return_exceptions=True)
+
+    async def _relay_to_opposite(self, sender_role: str, payload: dict, sender):
+        """Relay a signaling message to the opposite peer."""
+        target_role = self.ROLE_ROBOT if sender_role == self.ROLE_CONTROLLER else self.ROLE_CONTROLLER
+        await self._relay_to_role(target_role, payload)
+
     async def handler(self, websocket, path=None):
-        """Handle a new WebSocket connection"""
+        """Handle a new WebSocket connection."""
         self.clients.add(websocket)
         client_ip = websocket.remote_address[0]
         log.info(f"🔗 Client connected: {client_ip}")
-        
+        role = None
+
         try:
             async for message in websocket:
                 try:
                     data = json.loads(message)
                     msg_type = data.get('type', 'unknown')
-                    
-                    # Call registered handler
+
+                    # ─────────────────────────────────────────────────────
+                    # REGISTER: client announces its role
+                    # ─────────────────────────────────────────────────────
+                    if msg_type == 'register':
+                        role = data.get('role', 'controller')
+                        name = data.get('name', role)
+                        self._client_roles[websocket] = role
+                        self._client_names[websocket] = name
+                        self._by_role.setdefault(role, set()).add(websocket)
+                        log.info(f"📱 Registered [{role}] '{name}' from {client_ip}")
+
+                        # Notify controllers if a robot/display joined
+                        if role in (self.ROLE_ROBOT, self.ROLE_DISPLAY):
+                            await self._relay_to_role(self.ROLE_CONTROLLER, {
+                                'type': 'peer_online', 'role': role, 'name': name
+                            })
+                        # Tell the robot who is online among controllers
+                        elif role == self.ROLE_CONTROLLER:
+                            for rws in self._by_role[self.ROLE_ROBOT]:
+                                rname = self._client_names.get(rws, 'KENZA HomeBot')
+                                await websocket.send(json.dumps({
+                                    'type': 'peer_online', 'role': 'robot', 'name': rname
+                                }))
+                        continue  # no further processing for register
+
+                    # ─────────────────────────────────────────────────────
+                    # TELEPRESENCE SIGNALING — relay between peers
+                    # ─────────────────────────────────────────────────────
+                    SIGNALING = {'call_offer', 'call_answer', 'call_reject',
+                                 'call_end', 'ice_candidate', 'call_busy'}
+                    if msg_type in SIGNALING:
+                        sender_role = self._client_roles.get(websocket, self.ROLE_CONTROLLER)
+                        await self._relay_to_opposite(sender_role, data, sender=websocket)
+                        continue
+
+                    # ─────────────────────────────────────────────────────
+                    # NORMAL APP COMMANDS — handled by registered handlers
+                    # ─────────────────────────────────────────────────────
                     if msg_type in self._message_handlers:
                         response = self._message_handlers[msg_type](data)
                         if response:
                             await websocket.send(json.dumps(response))
-                    
+
                 except json.JSONDecodeError:
                     log.warning(f"Invalid JSON: {message[:100]}")
-                    
+
         except websockets.exceptions.ConnectionClosed:
             pass
         finally:
             self.clients.discard(websocket)
-            log.info(f"🔌 Client disconnected: {client_ip}")
-    
+            # Clean up role tracking
+            role = self._client_roles.pop(websocket, None)
+            name = self._client_names.pop(websocket, None)
+            if role:
+                self._by_role.get(role, set()).discard(websocket)
+                # Notify controllers if the robot went offline
+                if role in (self.ROLE_ROBOT, self.ROLE_DISPLAY):
+                    await self._relay_to_role(self.ROLE_CONTROLLER, {
+                        'type': 'peer_offline', 'role': role, 'name': name
+                    })
+            log.info(f"🔌 Disconnected: [{role or '?'}] '{name or '?'}' ({client_ip})")
+
     async def broadcast(self, data: dict):
         """Send message to all connected clients"""
         if not self.clients:
             return
-            
         message = json.dumps(data)
         await asyncio.gather(
             *[client.send(message) for client in self.clients],
             return_exceptions=True
         )
-    
+
     def broadcast_sync(self, data: dict):
         """Synchronous broadcast (for calling from non-async context)"""
         if self._loop and self.clients:
@@ -748,29 +891,28 @@ class KenzaWebSocket:
                 self.broadcast(data),
                 self._loop
             )
-    
+
     async def start(self):
         """Start the WebSocket server"""
         if not HAS_WEBSOCKETS:
             log.error("websockets module required")
             return
-            
         self._loop = asyncio.get_event_loop()
         self.server = await websockets.serve(
             self.handler,
             self.host,
             self.port
         )
-        
         ip = WiFiManager.get_current_ip() or self.host
         log.info(f"🌐 WebSocket server started: ws://{ip}:{self.port}")
-        
+
     async def stop(self):
         """Stop the WebSocket server"""
         if self.server:
             self.server.close()
             await self.server.wait_closed()
             log.info("🌐 WebSocket server stopped")
+
 
 
 # ============================================================================
@@ -867,33 +1009,41 @@ class PairingService:
 
 class KenzaMain:
     """
-    Main Kenza application that orchestrates all components.
-    This is the boot entry point for the robot.
-    
-    Handles all commands from kenza_app.html:
-    - motor: Joystick control
-    - privacy_mode: Enable/disable privacy
-    - update_settings: Eye color, styles
-    - voice_select: TTS voice selection
-    - toggle_mic: Microphone mute
-    - ai_message: Chat with AI
-    - follow_mode: Toggle follow mode
-    - sentry_mode: Toggle sentry/security mode
-    - get_state: Request current robot state
+    Main Kenza application that orchestrates ALL boot services:
+
+      - WebSocket   server    (port 8765) — real-time control & signaling
+      - HTTP Motor  server    (port 8080) — HTTP fallback for motor cmds
+      - Chromium kiosk display           — robot_display.html full-screen
+      - Conversation/Voice engine        — wake-word AI interaction
+      - Telemetry broadcaster            — live battery, temp, wifi
+      - Autonomy engine (optional)       — follow/explore/sentry modes
+
+    Commands handled via WebSocket from kenza_app_v2.html:
+      motor, privacy_mode, update_settings, voice_select, toggle_mic,
+      ai_message, follow_mode, sentry_mode, autonomous_mode, gesture_nav,
+      get_state, ping, start_voice_mode, stop_voice_mode, interrupt
     """
-    
-    def __init__(self):
+
+    # Path to robot display HTML (relative to this script)
+    DISPLAY_HTML = str(Path(__file__).parent / 'web' / 'robot_display.html')
+
+    def __init__(self, auto_voice: bool = True, auto_display: bool = True):
+        # Boot flags
+        self.auto_voice   = auto_voice
+        self.auto_display = auto_display
+
         # Core services
-        self.ws_server = KenzaWebSocket(CONFIG.ws_host, CONFIG.ws_port)
+        self.ws_server       = KenzaWebSocket(CONFIG.ws_host, CONFIG.ws_port)
+        self.http_motor_srv  = HttpMotorServer(port=8080)
         self.pairing_service = PairingService(self.ws_server)
         self.running = False
-        
+
         # Hardware controllers
         self.motors = GPIOMotorController()
-        self.eyes = EyeController()
-        self.audio = AudioController()
-        self.ai = AIHandler(self.audio, eye_controller=self.eyes)
-        
+        self.eyes   = EyeController()
+        self.audio  = AudioController()
+        self.ai     = AIHandler(self.audio, eye_controller=self.eyes)
+
         # Autonomy engine
         self.autonomy = None
         if HAS_AUTONOMY:
@@ -902,14 +1052,14 @@ class KenzaMain:
                 status_callback=self._autonomy_status_callback,
             )
             log.info("🧠 Autonomy engine initialized")
-        
+
         # Telemetry broadcast interval
         self.telemetry_interval = 2.0  # seconds
         self._telemetry_task = None
-        
+
         # Register message handlers
         self._setup_handlers()
-        
+
         # Wire voice commands → autonomy engine bridge
         self._wire_voice_autonomy()
     
@@ -1344,73 +1494,161 @@ class KenzaMain:
     
     # =========== TELEMETRY ===========
     
+    @staticmethod
+    def _read_cpu_temp() -> float:
+        """Read real CPU temperature from the Pi's thermal zone."""
+        try:
+            with open('/sys/class/thermal/thermal_zone0/temp') as f:
+                return round(int(f.read().strip()) / 1000.0, 1)
+        except Exception:
+            return ROBOT_STATE.cpu_temp
+
+    @staticmethod
+    def _read_wifi_rssi() -> int:
+        """Read WiFi RSSI from iwconfig; returns dBm as a negative int."""
+        try:
+            out = subprocess.check_output(['iwconfig'], stderr=subprocess.DEVNULL).decode()
+            match = re.search(r'Signal level=(-\d+)', out)
+            return int(match.group(1)) if match else ROBOT_STATE.wifi_signal
+        except Exception:
+            return ROBOT_STATE.wifi_signal
+
     async def _broadcast_telemetry(self):
-        """Periodically broadcast telemetry to connected clients"""
+        """Periodically broadcast real telemetry to connected clients"""
         while self.running:
             try:
-                # Read actual telemetry (TODO: implement actual sensors)
+                # Read real values where possible
+                cpu_temp = self._read_cpu_temp()
+                wifi     = self._read_wifi_rssi()
+                ROBOT_STATE.cpu_temp    = cpu_temp
+                ROBOT_STATE.wifi_signal = wifi
+
                 telemetry = {
                     'battery': ROBOT_STATE.battery_percent,
-                    'wifi': ROBOT_STATE.wifi_signal,
-                    'temp': ROBOT_STATE.cpu_temp,
+                    'wifi':    wifi,
+                    'temp':    cpu_temp,
                     'storage': ROBOT_STATE.storage_percent,
-                    'motor_dir': ROBOT_STATE.motor_direction,
-                    'motor_speed': ROBOT_STATE.motor_speed
+                    'motor_dir':   ROBOT_STATE.motor_direction,
+                    'motor_speed': ROBOT_STATE.motor_speed,
                 }
-                
                 await self.ws_server.broadcast({
                     'type': 'telemetry',
                     'data': telemetry
                 })
-                
             except Exception as e:
                 log.error(f"Telemetry broadcast error: {e}")
-            
             await asyncio.sleep(self.telemetry_interval)
     
     # =========== MAIN RUN LOOP ===========
     
+    @staticmethod
+    def _launch_display():
+        """
+        Launch robot_display.html in Chromium kiosk mode (full-screen, no chrome).
+        Runs in a background thread so it does not block startup.
+        Tries chromium-browser first (Pi OS), then chromium (some distros).
+        """
+        html_path = KenzaMain.DISPLAY_HTML
+        if not Path(html_path).exists():
+            log.warning(f"🔭 Display HTML not found at: {html_path}")
+            return
+
+        chromium_bins = ['chromium-browser', 'chromium']
+        for binary in chromium_bins:
+            try:
+                subprocess.Popen([
+                    binary,
+                    '--kiosk',
+                    '--noerrdialogs',
+                    '--disable-infobars',
+                    '--disable-restore-session-state',
+                    '--no-first-run',
+                    '--disable-session-crashed-bubble',
+                    f'file://{html_path}'
+                ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                log.info(f"🖥️  Launched {binary} kiosk: {html_path}")
+                return
+            except FileNotFoundError:
+                continue
+        log.warning("🖥️  Chromium not found — display will not auto-launch. Install with: sudo apt install chromium-browser")
+
     async def run(self, start_pairing: bool = False):
         """
-        Main run loop.
-        
-        Args:
-            start_pairing: If True, immediately start pairing mode
+        Main run loop — starts ALL services on boot.
+
+        Services started:
+          1. GPIO motor controller
+          2. HTTP motor server (port 8080)
+          3. WebSocket server  (port 8765 — includes WebRTC signaling relay)
+          4. Telemetry broadcaster (every 2 s)
+          5. Chromium kiosk display (robot_display.html)
+          6. Voice / conversation engine (wake-word listening)
+          7. Optional pairing mode
         """
         self.running = True
-        log.info("🤖 Kenza starting up...")
-        
-        # Initialize GPIO motor controller
+        log.info("🤖 KENZA booting — starting all services...")
+
+        # 1. GPIO motors
         self.motors.connect()
-        
-        # Start WebSocket server
+
+        # 2. HTTP motor server (port 8080)
+        self.http_motor_srv.start(self.motors)
+
+        # 3. WebSocket server (port 8765)
         await self.ws_server.start()
-        
-        # Start telemetry broadcasting
+
+        # 4. Telemetry broadcaster
         self._telemetry_task = asyncio.create_task(self._broadcast_telemetry())
-        
-        # Optionally start pairing mode
+
+        # 5. Chromium kiosk display
+        if self.auto_display:
+            display_thread = threading.Thread(
+                target=self._launch_display, daemon=True, name='ChromiumDisplay'
+            )
+            display_thread.start()
+        else:
+            log.info("🖥️  Display auto-launch skipped (--no-display)")
+
+        # 6. Voice / conversation engine
+        if self.auto_voice:
+            # Small delay to let WS server settle before mic init
+            await asyncio.sleep(1.5)
+            self.ai.start_voice_mode(use_wake_word=True)
+            log.info("🎤 Voice mode started — say 'Kenza' to begin")
+        else:
+            log.info("🎤 Voice mode skipped (--no-voice)")
+
+        # 7. Pairing mode (optional)
         if start_pairing:
             self.pairing_service.start_pairing_async()
-        
-        log.info("✅ Kenza ready! Waiting for app connection...")
-        
+
+        log.info("\n" + "=" * 52)
+        ip = WiFiManager.get_current_ip() or '0.0.0.0'
+        log.info(f"  ✅  KENZA is ONLINE at {ip}")
+        log.info(f"  🌐  WebSocket : ws://{ip}:8765")
+        log.info(f"  🚗  HTTP Motor: http://{ip}:8080/F|B|L|R|S")
+        log.info(f"  🖥️   Display  : robot_display.html (kiosk)")
+        log.info(f"  🎤  Voice    : listening for 'Kenza'")
+        log.info("=" * 52 + "\n")
+
         # Keep running
         try:
             while self.running:
                 await asyncio.sleep(1)
         except asyncio.CancelledError:
             pass
-        
+
         # Cleanup
         log.info("🛑 Shutting down...")
         if self._telemetry_task:
             self._telemetry_task.cancel()
         if self.autonomy:
             self.autonomy.close()
+        self.ai.stop_voice_mode()
         self.motors.disconnect()
+        self.http_motor_srv.stop()
         await self.ws_server.stop()
-        log.info("🤖 Kenza shutdown complete")
+        log.info("🤖 KENZA shutdown complete")
     
     def stop(self):
         """Signal the application to stop"""
@@ -1422,36 +1660,54 @@ class KenzaMain:
 # ============================================================================
 
 def main():
-    """Main entry point"""
+    """Main boot entry point"""
     import argparse
-    
-    parser = argparse.ArgumentParser(description='Kenza Robot Main Application')
-    parser.add_argument('--pairing', action='store_true', 
-                        help='Start in pairing mode')
+
+    parser = argparse.ArgumentParser(
+        description='KENZA Robot — Unified Boot Script',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Starts all services automatically:
+  WebSocket server (8765)  — control & WebRTC signaling
+  HTTP motor server (8080)  — /F /B /L /R /S endpoints
+  Chromium kiosk display    — robot_display.html full-screen
+  Voice engine              — wake-word AI conversation
+  Telemetry broadcaster     — real battery/temp/wifi data
+        """
+    )
+    parser.add_argument('--pairing', action='store_true',
+                        help='Start in QR pairing mode')
     parser.add_argument('--debug', action='store_true',
                         help='Enable debug logging')
     parser.add_argument('--port', type=int, default=8765,
                         help='WebSocket port (default: 8765)')
-    
+    parser.add_argument('--no-display', action='store_true',
+                        help='Skip Chromium kiosk launch')
+    parser.add_argument('--no-voice', action='store_true',
+                        help='Skip voice / wake-word mode')
+
     args = parser.parse_args()
-    
+
     if args.debug:
         logging.getLogger().setLevel(logging.DEBUG)
-    
+
     CONFIG.ws_port = args.port
-    
-    # Create and run application
-    app = KenzaMain()
-    
-    # Handle shutdown gracefully
+
+    # Create application
+    app = KenzaMain(
+        auto_voice=not args.no_voice,
+        auto_display=not args.no_display,
+    )
+
+    # Graceful shutdown on SIGINT / SIGTERM
     def signal_handler(sig, frame):
         log.info("Received shutdown signal")
         app.stop()
-    
+
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
-    
-    # Run the main loop
+
+    # Run everything
     try:
         asyncio.run(app.run(start_pairing=args.pairing))
     except KeyboardInterrupt:

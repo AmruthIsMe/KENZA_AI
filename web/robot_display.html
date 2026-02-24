@@ -162,6 +162,7 @@
             border-radius: 50%;
             background: rgba(255, 255, 255, .8);
             filter: blur(0.5px);
+            pointer-events: none;
         }
 
         .hl.big {
@@ -1224,6 +1225,77 @@
                 transform: translateX(-50%) translateY(0)
             }
         }
+
+        @keyframes watery-shimmer {
+
+            0%,
+            100% {
+                filter: brightness(0.85) saturate(1.2);
+            }
+
+            50% {
+                filter: brightness(1.1) saturate(1.4);
+            }
+        }
+
+        @keyframes tear-drop {
+            0% {
+                transform: translateX(-50%) translateY(0) scale(1);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 1;
+            }
+
+            80% {
+                transform: translateX(-50%) translateY(40px) scale(0.8);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateX(-50%) translateY(50px) scale(0.5);
+                opacity: 0;
+            }
+        }
+
+        @keyframes zzz-float {
+            0% {
+                transform: translate(0, 0) scale(0.5);
+                opacity: 0;
+            }
+
+            20% {
+                opacity: 1;
+            }
+
+            100% {
+                transform: translate(20px, -40px) scale(1.2);
+                opacity: 0;
+            }
+        }
+
+        @keyframes spin {
+            from {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+
+            to {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        @keyframes heart-beat {
+
+            0%,
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            50% {
+                transform: translate(-50%, -50%) scale(1.15);
+            }
+        }
     </style>
 </head>
 
@@ -1442,6 +1514,251 @@
 
     <script>
         'use strict';
+
+        // ══ EYE STATE (Synchronized from Controller) ══
+        const eyeState = {
+            eyeColor: 'cyan',
+            eyeShape: 'round',
+            customColor: { h: 190, s: 100, l: 50 },
+            brightness: 100,
+            followPerson: true,
+            saccadeEnabled: true,
+            currentAnimation: 'idle'
+        };
+
+        const colorPresets = {
+            cyan: { h: 190, s: 100, l: 50 },
+            orange: { h: 30, s: 100, l: 50 },
+            teal: { h: 160, s: 100, l: 50 },
+            pink: { h: 330, s: 100, l: 65 },
+            purple: { h: 270, s: 100, l: 60 },
+            green: { h: 120, s: 100, l: 50 },
+            red: { h: 0, s: 100, l: 50 },
+            gold: { h: 45, s: 100, l: 50 },
+            white: { h: 0, s: 0, l: 95 }
+        };
+
+        function applyEyeStyle() {
+            const { h, s, l } = eyeState.customColor;
+            const brightness = eyeState.brightness / 100;
+            const eyes = document.querySelectorAll('.eye');
+
+            eyes.forEach(eye => {
+                const adjustedL = l * brightness;
+                eye.style.background = `
+                    radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.08) 0%, transparent 60%),
+                    radial-gradient(circle at 50% 50%, 
+                        hsl(${h}, ${s}%, ${Math.min(adjustedL + 30, 100)}%) 0%, 
+                        hsl(${h}, ${s}%, ${adjustedL}%) 50%, 
+                        hsl(${h}, ${s}%, ${Math.max(adjustedL - 20, 10)}%) 85%,
+                        hsl(${h}, ${s}%, ${Math.max(adjustedL - 40, 5)}%) 100%)
+                `;
+                eye.style.boxShadow = `
+                    0 0 ${70 * brightness}px hsla(${h}, ${s}%, ${adjustedL}%, 0.25),
+                    inset 0 0 40px rgba(0, 0, 0, 0.6),
+                    inset 0 -10px 20px rgba(0, 0, 0, 0.4)
+                `;
+            });
+            applyEyeShape();
+        }
+
+        function applyEyeShape() {
+            const eyes = document.querySelectorAll('.eye');
+            const pupils = document.querySelectorAll('.eye .pupil');
+
+            eyes.forEach(eye => {
+                eye.style.width = ''; eye.style.height = '';
+                eye.style.borderRadius = '44% 44% 50% 50%';
+                eye.style.transform = 'scaleY(.84) translateY(4%)';
+                eye.style.filter = '';
+            });
+            pupils.forEach(p => {
+                p.style.width = '44%'; p.style.height = '44%';
+                p.style.borderRadius = '50%'; p.style.transform = 'translate(-50%, -50%)';
+                p.style.opacity = '1'; p.style.display = 'block';
+            });
+
+            switch (eyeState.eyeShape) {
+                case 'oval':
+                    eyes.forEach(eye => {
+                        eye.style.width = 'clamp(240px, 40vw, 400px)';
+                        eye.style.height = 'clamp(320px, 55vw, 540px)';
+                        eye.style.borderRadius = '50%';
+                    });
+                    break;
+                case 'anime':
+                    eyes.forEach(eye => {
+                        eye.style.width = 'clamp(300px, 50vw, 480px)';
+                        eye.style.height = 'clamp(320px, 55vw, 540px)';
+                        eye.style.borderRadius = '50% 50% 45% 45%';
+                    });
+                    pupils.forEach(p => { p.style.width = '48%'; p.style.height = '48%'; });
+                    break;
+                case 'robot':
+                    eyes.forEach(eye => {
+                        eye.style.width = 'clamp(260px, 45vw, 420px)';
+                        eye.style.height = 'clamp(260px, 45vw, 420px)';
+                        eye.style.borderRadius = '40px';
+                    });
+                    pupils.forEach(p => {
+                        p.style.width = '40%'; p.style.height = '40%';
+                        p.style.borderRadius = '15px';
+                    });
+                    break;
+                case 'line':
+                    eyes.forEach(eye => {
+                        eye.style.width = 'clamp(320px, 60vw, 500px)';
+                        eye.style.height = 'clamp(60px, 12vw, 100px)';
+                        eye.style.borderRadius = '40px';
+                    });
+                    pupils.forEach(p => { p.style.width = '20%'; p.style.height = '50%'; });
+                    break;
+                case 'rectangle':
+                    eyes.forEach(eye => {
+                        eye.style.width = 'clamp(320px, 60vw, 500px)';
+                        eye.style.height = 'clamp(200px, 35vw, 300px)';
+                        eye.style.borderRadius = '24px';
+                    });
+                    break;
+                case 'diamond':
+                    eyes.forEach(eye => {
+                        eye.style.width = 'clamp(260px, 45vw, 420px)';
+                        eye.style.height = 'clamp(260px, 45vw, 420px)';
+                        eye.style.borderRadius = '20px';
+                        eye.style.transform = 'scaleY(.84) translateY(4%) rotate(45deg)';
+                    });
+                    pupils.forEach(p => {
+                        p.style.width = '35%'; p.style.height = '35%';
+                        p.style.transform = 'translate(-50%, -50%) rotate(-45deg)';
+                    });
+                    break;
+                case 'cute':
+                    eyes.forEach(eye => {
+                        eye.style.width = 'clamp(280px, 48vw, 460px)';
+                        eye.style.height = 'clamp(300px, 52vw, 480px)';
+                        eye.style.borderRadius = '50% 50% 48% 48%';
+                    });
+                    pupils.forEach(p => { p.style.width = '55%'; p.style.height = '55%'; });
+                    break;
+                case 'alien':
+                    eyes.forEach(eye => {
+                        eye.style.width = 'clamp(200px, 35vw, 300px)';
+                        eye.style.height = 'clamp(380px, 65vw, 600px)';
+                        eye.style.borderRadius = '45% 45% 50% 50%';
+                    });
+                    pupils.forEach(p => {
+                        p.style.width = '35%'; p.style.height = '45%';
+                        p.style.borderRadius = '45%';
+                    });
+                    break;
+            }
+        }
+
+        let currentAnimationInterval = null;
+        function resetSync() {
+            if (currentAnimationInterval) { clearInterval(currentAnimationInterval); currentAnimationInterval = null; }
+            document.querySelectorAll('.eye').forEach(eye => {
+                eye.style.transform = 'scaleY(.84) translateY(4%)';
+                eye.style.filter = ''; eye.style.animation = '';
+                eye.querySelectorAll('.emotion-extra').forEach(el => el.remove());
+            });
+            document.querySelectorAll('.pupil').forEach(p => {
+                p.style.display = 'block'; p.style.opacity = '1';
+                p.style.transform = 'translate(-50%, -50%)';
+            });
+            applyEyeStyle();
+        }
+
+        function playSync(anim) {
+            const eyes = document.querySelectorAll('.eye');
+            const leftEye = document.getElementById('eye-left');
+            const rightEye = document.getElementById('eye-right');
+            const pupils = document.querySelectorAll('.pupil');
+
+            if (anim !== 'blink') resetSync();
+
+            switch (anim) {
+                case 'blink':
+                    eyes.forEach(e => {
+                        const cur = e.style.transform || 'scaleY(.84) translateY(4%)';
+                        const base = cur.replace(/scaleY\([^)]*\)/g, '').trim();
+                        e.style.transform = base + ' scaleY(0.05)';
+                        e.style.transition = 'transform 0.08s ease-in';
+                        setTimeout(() => {
+                            e.style.transform = cur;
+                            e.style.transition = 'transform 0.08s ease-out';
+                            setTimeout(() => { e.style.transition = ''; applyEyeShape(); }, 100);
+                        }, 80);
+                    });
+                    break;
+                case 'happy':
+                    eyes.forEach(e => {
+                        e.style.borderRadius = '50% 50% 20% 20%';
+                        e.style.transform = 'scaleY(0.4) translateY(20%)';
+                        e.querySelector('.pupil').style.display = 'none';
+                        const b = document.createElement('div');
+                        b.className = 'emotion-extra';
+                        b.style.cssText = `position:absolute;bottom:-30%;left:50%;transform:translateX(-50%);width:40%;height:15%;background:radial-gradient(ellipse,rgba(255,150,150,.6) 0%,transparent 70%);border-radius:50%;`;
+                        e.appendChild(b);
+                    });
+                    break;
+                case 'sad':
+                    eyes.forEach((e, i) => {
+                        e.style.transform = `scaleY(0.75) translateY(5%) rotate(${i === 0 ? '-10deg' : '10deg'})`;
+                        const t = document.createElement('div');
+                        t.className = 'emotion-extra';
+                        t.style.cssText = `position:absolute;bottom:-15%;left:50%;transform:translateX(-50%);width:10%;height:20%;background:linear-gradient(180deg,#4dd2ff 0%,#00aaff 100%);border-radius:50% 50% 50% 50%/30% 30% 70% 70%;animation:tear-drop 2s infinite;`;
+                        e.appendChild(t);
+                    });
+                    pupils.forEach(p => { p.style.transform = 'translate(-50%, -20%)'; p.style.width = '35%'; p.style.height = '35%'; });
+                    break;
+                case 'angry':
+                    eyes.forEach((e, i) => {
+                        e.style.transform = `scaleY(0.55) translateY(15%) rotate(${i === 0 ? '15deg' : '-15deg'})`;
+                        const b = document.createElement('div');
+                        b.className = 'emotion-extra';
+                        b.style.cssText = `position:absolute;top:-15%;left:50%;transform:translateX(-50%) rotate(${i === 0 ? '-20deg' : '20deg'});width:110%;height:15%;background:#111;border-radius:10px;`;
+                        e.appendChild(b);
+                    });
+                    break;
+                case 'surprised':
+                    eyes.forEach(e => e.style.transform = 'scale(1.2) translateY(0)');
+                    pupils.forEach(p => { p.style.width = '24%'; p.style.height = '24%'; });
+                    break;
+                case 'sleepy':
+                    eyes.forEach(e => {
+                        e.style.transform = 'scaleY(0.18) translateY(100%)';
+                        e.querySelector('.pupil').style.display = 'none';
+                    });
+                    break;
+                case 'dizzy':
+                    eyes.forEach(e => {
+                        e.querySelector('.pupil').style.display = 'none';
+                        const s = document.createElement('div');
+                        s.className = 'emotion-extra';
+                        s.style.cssText = `position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:clamp(80px,15vw,150px);animation:spin .8s linear infinite;`;
+                        s.innerHTML = '🌀';
+                        e.appendChild(s);
+                    });
+                    break;
+                case 'love':
+                    eyes.forEach(e => {
+                        e.style.background = 'radial-gradient(circle at 35% 35%, #ffb3d9 0%, #ff69b4 40%, #ff1493 100%)';
+                        e.querySelector('.pupil').style.display = 'none';
+                        const h = document.createElement('div');
+                        h.className = 'emotion-extra';
+                        h.style.cssText = `position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:clamp(100px,20vw,180px);color:#fff;animation:heart-beat 1s infinite;`;
+                        h.innerHTML = '♥';
+                        e.appendChild(h);
+                    });
+                    break;
+                case 'wink':
+                    leftEye.style.transform = 'scaleY(0.15) translateY(120%)';
+                    leftEye.querySelector('.pupil').style.display = 'none';
+                    rightEye.style.transform = 'scale(1.1) translateY(0)';
+                    break;
+            }
+        }
         // ═══════════════════════════════════════════════════════════
         // STATE MACHINE  –  robot_display.html
         // Only ONE state active at a time. All transitions go through
@@ -2160,6 +2477,26 @@
                     else if (S.state === 'idle') startEyes();
                     break;
 
+                case 'update_settings':
+                    if (d.data && d.data.eyes) {
+                        const eyes = d.data.eyes;
+                        if (eyes.shape) eyeState.eyeShape = eyes.shape;
+                        if (eyes.color) {
+                            const preset = colorPresets[eyes.color] || colorPresets.cyan;
+                            eyeState.eyeColor = eyes.color;
+                            eyeState.customColor = { ...preset };
+                        }
+                        if (eyes.follow !== undefined) eyeState.followPerson = eyes.follow;
+                        applyEyeStyle();
+                    }
+                    break;
+
+                case 'eye_animation':
+                    if (d.data && d.data.animation) {
+                        playSync(d.data.animation);
+                    }
+                    break;
+
                 case 'face_track':
                     if (eyesActive) faceTrack(d.x, d.y);
                     break;
@@ -2261,6 +2598,9 @@
 
             // Connect WebSocket
             connectWS();
+
+            // Apply initial eye style
+            applyEyeStyle();
 
             console.log('[KENZA] Boot complete.');
         })();

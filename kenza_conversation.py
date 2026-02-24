@@ -110,9 +110,10 @@ class ConversationConfig:
     # Offline LLM – Ollama backend (preferred) + llama-cpp-python fallback
     # ollama_model can be anything pulled locally: 'gemma3:270m', 'ministral-3:3b-instruct-2512-q4_K_M', 'phi3:mini'
     ollama_model: str = "gemma3:270m"            # Default offline model via Ollama
-    ollama_url: str = "http://localhost:11434"   # Ollama server URL
-    # llama_path is used only if Ollama is unavailable
+    ollama_url: str = "http://localhost:11434"
     llama_path: str = "models/llama-3.2-3b-instruct.Q4_K_M.gguf"
+    llama_context: int = 2048
+    llama_threads: int = 4
     
     # Personality
     creator_name: str = "Amruth"
@@ -170,7 +171,7 @@ class ConversationConfig:
         path = Path(config_path)
         
         if path.exists():
-            with open(path) as f:
+            with open(path, encoding='utf-8') as f:
                 data = yaml.safe_load(f) or {}
             
             # API
@@ -208,12 +209,25 @@ class ConversationConfig:
             # Audio
             audio = data.get("audio", {})
             config.energy_threshold = audio.get("energy_threshold", config.energy_threshold)
+            config.listen_timeout = audio.get("listen_timeout", config.listen_timeout)
+            config.phrase_time_limit = audio.get("phrase_time_limit", config.phrase_time_limit)
             
+            # Models (Advanced)
+            config.llama_path = models.get("llama_path", config.llama_path)
+            config.llama_context = models.get("llama_context", config.llama_context)
+            config.llama_threads = models.get("llama_threads", config.llama_threads)
+
+            # Vision
+            vision = data.get("vision", {})
+            config.vision_context_timeout = vision.get("context_timeout", config.vision_context_timeout)
+
             # Personality
             personality = data.get("personality", {})
             config.creator_name = personality.get("creator", config.creator_name)
             if "acknowledgments" in personality:
                 config.acknowledgments = personality["acknowledgments"]
+            if "thinking_phrases" in personality:
+                config.thinking_phrases = personality["thinking_phrases"]
         else:
             config.gemini_api_key = os.getenv("GEMINI_API_KEY", "")
             config.groq_api_key = os.getenv("GROQ_API_KEY", "")
@@ -367,11 +381,11 @@ class InterruptibleTTS:
             mixer.pre_init(frequency=24000, buffer=2048)
             mixer.init()
             self._mixer = mixer
-            print("✓ TTS mixer (pygame) ready")
+            print("[OK] TTS mixer (pygame) ready")
         except ImportError:
-            print("⚠ pygame not installed, online TTS playback disabled")
+            print("[WARN] pygame not installed, online TTS playback disabled")
         except Exception as e:
-            print(f"⚠ Audio mixer init failed: {e}")
+            print(f"[WARN] Audio mixer init failed: {e}")
 
     def _init_pyttsx(self):
         """Initialize pyttsx3 for offline TTS fallback."""
@@ -381,11 +395,11 @@ class InterruptibleTTS:
             engine.setProperty("rate", self._PYTTSX_BASE_RATE)
             engine.setProperty("volume", 1.0)
             self._pyttsx_engine = engine
-            print("✓ TTS offline fallback (pyttsx3/espeak) ready")
+            print("[OK] TTS offline fallback (pyttsx3/espeak) ready")
         except ImportError:
-            print("⚠ pyttsx3 not installed – run: pip install pyttsx3")
+            print("[WARN] pyttsx3 not installed – run: pip install pyttsx3")
         except Exception as e:
-            print(f"⚠ pyttsx3 init failed: {e}")
+            print(f"[WARN] pyttsx3 init failed: {e}")
 
     def set_voice(self, voice_name: str):
         """Update the Edge-TTS voice name."""
@@ -713,18 +727,18 @@ class VisionAI:
     def _init_gemini(self):
         """Initialize Gemini model for vision"""
         if not self.config.gemini_api_key:
-            print("⚠ Gemini API key not set, vision disabled")
+            print("[WARN] Gemini API key not set, vision disabled")
             return
         
         try:
             import google.generativeai as genai
             genai.configure(api_key=self.config.gemini_api_key)
             self.model = genai.GenerativeModel(self.config.gemini_model)
-            print("✓ Vision AI initialized")
+            print("[OK] Vision AI initialized")
         except ImportError:
-            print("⚠ google-generativeai not installed")
+            print("[WARN] google-generativeai not installed")
         except Exception as e:
-            print(f"⚠ Vision AI init failed: {e}")
+            print(f"[WARN] Vision AI init failed: {e}")
     
     def set_camera(self, camera):
         """Set camera source"""
@@ -733,7 +747,7 @@ class VisionAI:
     def capture_frame(self):
         """Capture a frame from the camera"""
         if self.camera is None:
-            print("⚠ No camera set for VisionAI")
+            print("[WARN] No camera set for VisionAI")
             return None
         
         try:
@@ -1264,9 +1278,9 @@ class SpeechToText:
             self.recognizer = sr.Recognizer()
             self.recognizer.dynamic_energy_threshold = True
             self.recognizer.energy_threshold = self.config.energy_threshold
-            print("✓ STT cloud (Google) ready")
+            print("[OK] STT cloud (Google) ready")
         except ImportError:
-            print("⚠ speech_recognition not installed")
+            print("[WARN] speech_recognition not installed")
 
     def _load_whisper(self):
         """Lazy-load faster-whisper model on first offline use."""
@@ -1277,11 +1291,11 @@ class SpeechToText:
             model_name = self.config.stt_offline_model  # e.g., 'base.en'
             print(f"[STT-offline] Loading faster-whisper '{model_name}' (first run downloads ~145MB)...")
             self._whisper_model = WhisperModel(model_name, device="cpu", compute_type="int8")
-            print("✓ STT offline (faster-whisper) ready")
+            print("[OK] STT offline (faster-whisper) ready")
         except ImportError:
-            print("⚠ faster-whisper not installed – run: pip install faster-whisper")
+            print("[WARN] faster-whisper not installed – run: pip install faster-whisper")
         except Exception as e:
-            print(f"⚠ faster-whisper init failed: {e}")
+            print(f"[WARN] faster-whisper init failed: {e}")
         self._whisper_loaded = True
         return self._whisper_model
 
@@ -1402,7 +1416,7 @@ class GeminiChat:
     
     def _init(self):
         if not self.config.gemini_api_key:
-            print("⚠ Gemini API key not configured")
+            print("[WARN] Gemini API key not configured")
             return
         
         try:
@@ -1413,11 +1427,11 @@ class GeminiChat:
                 system_instruction=self.personality.get_system_prompt()
             )
             self.chat = self.model.start_chat(history=[])
-            print(f"✓ Gemini chat initialized ({self.config.gemini_model})")
+            print(f"[OK] Gemini chat initialized ({self.config.gemini_model})")
         except ImportError:
-            print("⚠ google-generativeai not installed")
+            print("[WARN] google-generativeai not installed")
         except Exception as e:
-            print(f"⚠ Gemini init failed: {e}")
+            print(f"[WARN] Gemini init failed: {e}")
     
     def is_available(self) -> bool:
         return self.chat is not None
@@ -1473,17 +1487,17 @@ class GroqChat:
     
     def _init(self):
         if not self.config.groq_api_key:
-            print("⚠ Groq API key not configured")
+            print("[WARN] Groq API key not configured")
             return
         
         try:
             from groq import Groq
             self.client = Groq(api_key=self.config.groq_api_key)
-            print(f"✓ Groq chat initialized ({self.config.groq_model})")
+            print(f"[OK] Groq chat initialized ({self.config.groq_model})")
         except ImportError:
-            print("⚠ groq not installed. Run: pip install groq")
+            print("[WARN] groq not installed. Run: pip install groq")
         except Exception as e:
-            print(f"⚠ Groq init failed: {e}")
+            print(f"[WARN] Groq init failed: {e}")
     
     def is_available(self) -> bool:
         return self.client is not None
@@ -1586,11 +1600,11 @@ class LlamaChat:
                 n_threads=threads,
                 verbose=False,
             )
-            print("✓ Llama offline LLM ready")
+            print("[OK] Llama offline LLM ready")
         except ImportError:
-            print("⚠ llama-cpp-python not installed – run: pip install llama-cpp-python")
+            print("[WARN] llama-cpp-python not installed – run: pip install llama-cpp-python")
         except Exception as e:
-            print(f"⚠ Llama load failed: {e}")
+            print(f"[WARN] Llama load failed: {e}")
 
     def is_available(self) -> bool:
         self._load()
@@ -1646,11 +1660,11 @@ class ObjectDetector:
             # yolo11n.pt is the latest nano model (smallest, fastest)
             self._model = YOLO("yolo11n.pt")
             self._model.fuse()  # Optimise for inference speed
-            print("✓ ObjectDetector (YOLO11n) ready")
+            print("[OK] ObjectDetector (YOLO11n) ready")
         except ImportError:
-            print("⚠ ultralytics not installed – run: pip install ultralytics")
+            print("[WARN] ultralytics not installed – run: pip install ultralytics")
         except Exception as e:
-            print(f"⚠ YOLO init failed: {e}")
+            print(f"[WARN] YOLO init failed: {e}")
 
     def is_available(self) -> bool:
         self._load()
@@ -1982,7 +1996,7 @@ class ConversationEngine:
         self.ollama.set_model(model_name)
         self.config.ollama_model = model_name
         available = self.ollama.is_available()
-        print(f"[Engine] Offline model set to '{model_name}' (Ollama {'✓' if available else '✗'})")
+        print(f"[Engine] Offline model set to '{model_name}' (Ollama {'[OK]' if available else '[FAIL]'})")
         return {
             "model": model_name,
             "available": available,
@@ -2019,7 +2033,7 @@ class ConversationEngine:
         max_errors = 5
         
         print("\n" + "=" * 50)
-        print("🎙️  KENZA Voice Mode")
+        print("[V]  KENZA Voice Mode")
         print("=" * 50)
         if use_wake_word:
             print(f"   Say '{self.config.wake_word.title()}' to start")
@@ -2031,7 +2045,7 @@ class ConversationEngine:
                 if self.is_sleeping:
                     # Waiting for wake word
                     self._notify_state("sleeping")
-                    print(f"💤 Waiting for '{self.config.wake_word}'...", end="\r")
+                    print(f"[SLEEP] Waiting for '{self.config.wake_word}'...", end="\r")
                     
                     text = self.stt.listen_for_wake_word()
                     
@@ -2153,13 +2167,13 @@ def main():
                     try:
                         audio = recognizer.listen(source, timeout=10, phrase_time_limit=5)
                         text = recognizer.recognize_google(audio)
-                        print(f"✓ Heard: '{text}'")
+                        print(f"[OK] Heard: '{text}'")
                     except sr.WaitTimeoutError:
-                        print("✗ Timeout - no speech detected")
+                        print("[FAIL] Timeout - no speech detected")
                     except sr.UnknownValueError:
-                        print("✗ Could not understand audio")
+                        print("[FAIL] Could not understand audio")
                     except Exception as e:
-                        print(f"✗ Error: {e}")
+                        print(f"[FAIL] Error: {e}")
         except Exception as e:
             print(f"Microphone error: {e}")
         return
