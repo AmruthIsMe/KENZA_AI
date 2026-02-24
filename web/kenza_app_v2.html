@@ -1901,6 +1901,435 @@
             border-color: var(--accent);
             color: var(--accent);
         }
+
+        /* ====== TELEPRESENCE ====== */
+        .tp-hero {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px 32px;
+            text-align: center;
+        }
+
+        .tp-robot-avatar {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(79, 195, 247, .3), rgba(0, 180, 220, .15));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            margin-bottom: 20px;
+            position: relative;
+            box-shadow: 0 0 0 1px rgba(79, 195, 247, .2), 0 0 40px rgba(79, 195, 247, .1);
+        }
+
+        .tp-robot-status {
+            position: absolute;
+            bottom: 6px;
+            right: 6px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #444;
+            border: 2px solid #0a0a0f;
+        }
+
+        .tp-robot-status.online {
+            background: var(--green);
+            box-shadow: 0 0 10px var(--green);
+            animation: pulse 2s infinite;
+        }
+
+        .tp-robot-name {
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: -.02em;
+            margin-bottom: 6px;
+        }
+
+        .tp-robot-state {
+            font-size: .85rem;
+            color: var(--text-dim);
+            margin-bottom: 36px;
+        }
+
+        .tp-call-btn {
+            width: 100%;
+            max-width: 300px;
+            padding: 18px;
+            border: none;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #43a047, #00c853);
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform .2s, box-shadow .2s;
+            box-shadow: 0 6px 28px rgba(76, 175, 80, .4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .tp-call-btn:active {
+            transform: scale(.96);
+            box-shadow: none
+        }
+
+        .tp-call-btn:disabled {
+            background: rgba(60, 60, 60, .5);
+            box-shadow: none;
+            cursor: not-allowed;
+            opacity: .5;
+        }
+
+        /* ====== CALL OVERLAYS (common) ====== */
+        .call-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 999;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .call-overlay.visible {
+            display: flex
+        }
+
+        /* Outgoing */
+        #ov-calling {
+            background: radial-gradient(ellipse at 50% 22%, rgba(15, 25, 55, 1), #050810 60%);
+            gap: 20px;
+            text-align: center;
+            padding: 40px 32px;
+        }
+
+        .ov-ring-blue {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: rgba(79, 195, 247, .18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            position: relative;
+            box-shadow: 0 0 0 1px rgba(79, 195, 247, .2);
+        }
+
+        .ov-ring-blue::before,
+        .ov-ring-blue::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            border: 1.5px solid rgba(79, 195, 247, .25);
+        }
+
+        .ov-ring-blue::before {
+            inset: -18px;
+            animation: ovRing 2.2s ease-out infinite;
+        }
+
+        .ov-ring-blue::after {
+            inset: -38px;
+            animation: ovRing 2.2s ease-out .7s infinite;
+            border-color: rgba(79, 195, 247, .12);
+        }
+
+        @keyframes ovRing {
+            0% {
+                transform: scale(.85);
+                opacity: .9
+            }
+
+            100% {
+                transform: scale(1.25);
+                opacity: 0
+            }
+        }
+
+        .ov-caller-name {
+            font-size: 1.9rem;
+            font-weight: 900;
+            letter-spacing: -.03em
+        }
+
+        .ov-sub {
+            font-size: .82rem;
+            opacity: .45;
+            letter-spacing: .04em
+        }
+
+        .ov-cancel-btn {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #e53935, #b71c1c);
+            color: #fff;
+            font-size: 1.6rem;
+            cursor: pointer;
+            box-shadow: 0 6px 28px rgba(244, 67, 54, .55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 12px;
+            transition: transform .15s;
+        }
+
+        .ov-cancel-btn:active {
+            transform: scale(.88)
+        }
+
+        /* Incoming */
+        #ov-incoming {
+            background: radial-gradient(ellipse at 50% 20%, rgba(10, 38, 18, 1), #05100a 60%);
+            gap: 0;
+            text-align: center;
+            padding: 50px 32px;
+        }
+
+        .ov-ring-green {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(76, 175, 80, .3), rgba(0, 220, 130, .2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.6rem;
+            position: relative;
+            margin-bottom: 34px;
+            box-shadow: 0 0 0 1px rgba(76, 175, 80, .25), 0 0 60px rgba(76, 175, 80, .12);
+        }
+
+        .ov-ring-green::before,
+        .ov-ring-green::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            border: 1.5px solid rgba(76, 175, 80, .3);
+        }
+
+        .ov-ring-green::before {
+            inset: -20px;
+            animation: ovRingGreen 1.8s ease-out infinite;
+        }
+
+        .ov-ring-green::after {
+            inset: -42px;
+            animation: ovRingGreen 1.8s ease-out .6s infinite;
+            border-color: rgba(76, 175, 80, .15);
+        }
+
+        @keyframes ovRingGreen {
+            0% {
+                transform: scale(.88);
+                opacity: 1
+            }
+
+            100% {
+                transform: scale(1.25);
+                opacity: 0
+            }
+        }
+
+        .ov-inc-name {
+            font-size: 2.1rem;
+            font-weight: 900;
+            letter-spacing: -.03em;
+            margin-bottom: 8px
+        }
+
+        .ov-inc-sub {
+            font-size: .82rem;
+            opacity: .4;
+            letter-spacing: .06em;
+            margin-bottom: 50px
+        }
+
+        .ov-inc-btns {
+            display: flex;
+            gap: 52px;
+            align-items: flex-start
+        }
+
+        .ov-btn-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px
+        }
+
+        .ov-accept-btn,
+        .ov-reject-btn {
+            width: 84px;
+            height: 84px;
+            border-radius: 50%;
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform .15s, box-shadow .2s;
+        }
+
+        .ov-accept-btn {
+            background: linear-gradient(135deg, #43a047, #00c853);
+            box-shadow: 0 6px 32px rgba(76, 175, 80, .6);
+        }
+
+        .ov-reject-btn {
+            background: linear-gradient(135deg, #e53935, #c62828);
+            box-shadow: 0 6px 32px rgba(244, 67, 54, .6);
+        }
+
+        .ov-accept-btn:active,
+        .ov-reject-btn:active {
+            transform: scale(.88)
+        }
+
+        .ov-btn-label {
+            font-size: .75rem;
+            font-weight: 600;
+            opacity: .55;
+            letter-spacing: .03em
+        }
+
+        /* Active call */
+        #ov-call {
+            background: #000;
+            flex-direction: column;
+        }
+
+        #ov-remote-video {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background: #111;
+        }
+
+        #ov-local-video {
+            position: absolute;
+            bottom: 100px;
+            right: 16px;
+            width: 130px;
+            height: 96px;
+            border-radius: 14px;
+            border: 2px solid rgba(255, 255, 255, .2);
+            object-fit: cover;
+            z-index: 2;
+            background: #1a1a2e;
+        }
+
+        #ov-call-top {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 44px 0 20px;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, .75) 0%, transparent);
+        }
+
+        #ov-call-top-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 20px;
+            background: rgba(0, 0, 0, .5);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            font-size: .85rem;
+            font-weight: 600;
+        }
+
+        .ov-live-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            animation: pulse 2s infinite;
+        }
+
+        #ov-call-quality {
+            position: absolute;
+            top: 44px;
+            left: 16px;
+            z-index: 3;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            background: rgba(0, 0, 0, .5);
+            backdrop-filter: blur(6px);
+            border-radius: 20px;
+            font-size: .75rem;
+            font-weight: 600;
+        }
+
+        #ov-call-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 22px;
+            padding: 22px 28px 38px;
+            background: linear-gradient(to top, rgba(0, 0, 0, .92) 0%, rgba(0, 0, 0, .4) 70%, transparent);
+        }
+
+        .ov-call-ctl {
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, .18);
+            backdrop-filter: blur(10px);
+            color: #fff;
+            font-size: 1.3rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .2s;
+        }
+
+        .ov-call-ctl:active {
+            background: rgba(255, 255, 255, .3)
+        }
+
+        .ov-call-ctl.off {
+            background: rgba(60, 60, 80, .6);
+            opacity: .6
+        }
+
+        .ov-call-ctl.end-call {
+            background: linear-gradient(135deg, #f44336, #c62828);
+            width: 72px;
+            height: 72px;
+            font-size: 1.6rem;
+            box-shadow: 0 6px 28px rgba(244, 67, 54, .6);
+        }
+
+        .ov-call-ctl.end-call:active {
+            transform: scale(.88)
+        }
     </style>
 </head>
 
@@ -2528,6 +2957,68 @@
                 </div>
             </div>
         </div>
+
+        <!-- TELEPRESENCE VIEW -->
+        <div class="view hidden" id="view-telepresence">
+            <h2 class="view-title">Telepresence</h2>
+            <div class="tp-hero">
+                <div class="tp-robot-avatar">
+                    🤖
+                    <div class="tp-robot-status" id="tp-status-dot"></div>
+                </div>
+                <div class="tp-robot-name">KENZA HomeBot</div>
+                <div class="tp-robot-state" id="tp-robot-state">Offline — connect to robot first</div>
+                <button class="tp-call-btn" id="tp-call-btn" disabled onclick="tpStartCall()">
+                    📞 Call Robot
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== CALL OVERLAYS ====== -->
+
+    <!-- Outgoing call overlay -->
+    <div class="call-overlay" id="ov-calling">
+        <div class="ov-ring-blue">📞</div>
+        <div class="ov-caller-name" id="ov-calling-name">KENZA HomeBot</div>
+        <div class="ov-sub">CALLING…</div>
+        <button class="ov-cancel-btn" onclick="tpCancelCall()">📵</button>
+    </div>
+
+    <!-- Incoming call overlay -->
+    <div class="call-overlay" id="ov-incoming">
+        <div class="ov-ring-green">📹</div>
+        <div class="ov-inc-name" id="ov-incoming-name">KENZA HomeBot</div>
+        <div class="ov-inc-sub">INCOMING VIDEO CALL</div>
+        <div class="ov-inc-btns">
+            <div class="ov-btn-wrap">
+                <button class="ov-accept-btn" onclick="tpAcceptCall()">✓</button>
+                <div class="ov-btn-label">Accept</div>
+            </div>
+            <div class="ov-btn-wrap">
+                <button class="ov-reject-btn" onclick="tpRejectCall()">✕</button>
+                <div class="ov-btn-label">Decline</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active call overlay -->
+    <div class="call-overlay" id="ov-call">
+        <video id="ov-remote-video" autoplay playsinline></video>
+        <video id="ov-local-video" autoplay playsinline muted></video>
+        <div id="ov-call-quality">📶 <span id="ov-quality-txt">Connecting…</span></div>
+        <div id="ov-call-top">
+            <div id="ov-call-top-pill">
+                <div class="ov-live-dot"></div>
+                <span id="ov-peer-label">KENZA HomeBot</span>
+                <span id="ov-timer" style="opacity:.5;font-weight:400;margin-left:4px">0:00</span>
+            </div>
+        </div>
+        <div id="ov-call-bar">
+            <button class="ov-call-ctl" id="ov-btn-cam" onclick="tpToggleCam()">📷</button>
+            <button class="ov-call-ctl end-call" onclick="tpEndCall()">📵</button>
+            <button class="ov-call-ctl" id="ov-btn-mic" onclick="tpToggleMic()">🎙️</button>
+        </div>
     </div>
 
     <!-- Dev Panel -->
@@ -3050,16 +3541,185 @@
                 if (d.type === 'offline_model_ack') {
                     if (d.data.success) setActiveModelCard(d.data.model);
                 }
+                // ── TELEPRESENCE signaling ──
+                if (d.type === 'peer_online' && (d.role === 'robot' || d.data?.role === 'robot')) {
+                    tpSetRobotOnline(true, d.name || d.data?.name || 'KENZA HomeBot');
+                }
+                if (d.type === 'call_offer') tpHandleIncoming(d);
+                if (d.type === 'call_answer') tpHandleAnswer(d);
+                if (d.type === 'call_reject') tpCleanup();
+                if (d.type === 'call_end') tpCleanup();
+                if (d.type === 'ice_candidate') tpAddIce(d);
+                if (d.type === 'call_busy') { alert('Robot is busy on another call.'); tpCleanup(); }
             };
 
             ws.onclose = () => {
                 statusDot.classList.remove('connected');
                 statusText.textContent = 'Offline';
+                tpSetRobotOnline(false);
             };
         }
 
         function sendCmd(type, data) {
             if (ws?.readyState === 1) ws.send(JSON.stringify({ type, data }));
+        }
+
+        // ====== TELEPRESENCE / WebRTC ======
+        const TP = {
+            pc: null, localStream: null,
+            callState: 'idle',   // idle|calling|incoming|active
+            camOn: true, micOn: true,
+            timerInterval: null, timerSec: 0,
+            robotName: 'KENZA HomeBot'
+        };
+        const TP_ICE = [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }];
+
+        function tpSend(obj) {
+            if (ws?.readyState === 1) ws.send(JSON.stringify(obj));
+        }
+
+        function tpSetRobotOnline(online, name) {
+            const dot = document.getElementById('tp-status-dot');
+            const state = document.getElementById('tp-robot-state');
+            const btn = document.getElementById('tp-call-btn');
+            TP.robotName = name || TP.robotName;
+            if (dot) dot.classList.toggle('online', online);
+            if (state) state.textContent = online ? '🟢 Online — ready to call' : 'Offline — connect to robot first';
+            if (btn) btn.disabled = !online;
+            document.getElementById('ov-calling-name').textContent = TP.robotName;
+            document.getElementById('ov-incoming-name').textContent = TP.robotName;
+            document.getElementById('ov-peer-label').textContent = TP.robotName;
+        }
+
+        function tpShowOverlay(id) {
+            ['ov-calling', 'ov-incoming', 'ov-call'].forEach(oid => {
+                document.getElementById(oid).classList.toggle('visible', oid === id);
+            });
+        }
+        function tpHideAllOverlays() {
+            document.querySelectorAll('.call-overlay').forEach(o => o.classList.remove('visible'));
+        }
+
+        async function tpStartCall() {
+            if (TP.callState !== 'idle') return;
+            TP.callState = 'calling';
+            tpShowOverlay('ov-calling');
+            try { TP.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true }); } catch (e) { TP.localStream = null; }
+            TP.pc = new RTCPeerConnection({ iceServers: TP_ICE });
+            if (TP.localStream) TP.localStream.getTracks().forEach(t => TP.pc.addTrack(t, TP.localStream));
+            TP.pc.onicecandidate = e => { if (e.candidate) tpSend({ type: 'ice_candidate', candidate: e.candidate, to: 'robot' }); };
+            TP.pc.ontrack = e => { const rv = document.getElementById('ov-remote-video'); if (rv) rv.srcObject = e.streams[0]; };
+            TP.pc.onconnectionstatechange = () => {
+                const txt = { connected: 'Connected', connecting: 'Connecting…', disconnected: 'Disconnected', failed: 'Failed' }[TP.pc.connectionState] || TP.pc.connectionState;
+                const q = document.getElementById('ov-quality-txt'); if (q) q.textContent = txt;
+                if (TP.pc.connectionState === 'failed') tpCleanup();
+            };
+            const offer = await TP.pc.createOffer({ offerToReceiveVideo: true, offerToReceiveAudio: true });
+            await TP.pc.setLocalDescription(offer);
+            tpSend({ type: 'call_offer', sdp: offer, callerName: 'Sidharth', to: 'robot' });
+            TP._callTimeout = setTimeout(() => { if (TP.callState === 'calling') tpCancelCall(); }, 45000);
+        }
+
+        async function tpHandleIncoming(d) {
+            if (TP.callState !== 'idle') { tpSend({ type: 'call_busy', to: 'robot' }); return; }
+            TP.callState = 'incoming';
+            window._tpPendingOffer = d.sdp;
+            document.getElementById('ov-incoming-name').textContent = d.callerName || TP.robotName;
+            tpShowOverlay('ov-incoming');
+        }
+
+        async function tpAcceptCall() {
+            if (TP.callState !== 'incoming') return;
+            TP.callState = 'active';
+            tpHideAllOverlays();
+            try { TP.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true }); } catch (e) { TP.localStream = null; }
+            TP.pc = new RTCPeerConnection({ iceServers: TP_ICE });
+            if (TP.localStream) TP.localStream.getTracks().forEach(t => TP.pc.addTrack(t, TP.localStream));
+            TP.pc.onicecandidate = e => { if (e.candidate) tpSend({ type: 'ice_candidate', candidate: e.candidate, to: 'robot' }); };
+            TP.pc.ontrack = e => { const rv = document.getElementById('ov-remote-video'); if (rv) rv.srcObject = e.streams[0]; };
+            await TP.pc.setRemoteDescription(new RTCSessionDescription(window._tpPendingOffer));
+            const answer = await TP.pc.createAnswer();
+            await TP.pc.setLocalDescription(answer);
+            tpSend({ type: 'call_answer', sdp: answer, to: 'robot' });
+            tpStartCallScreen();
+        }
+
+        async function tpHandleAnswer(d) {
+            if (TP.pc && TP.callState === 'calling') {
+                clearTimeout(TP._callTimeout);
+                await TP.pc.setRemoteDescription(new RTCSessionDescription(d.sdp));
+                TP.callState = 'active';
+                tpStartCallScreen();
+            }
+        }
+
+        async function tpAddIce(d) {
+            if (TP.pc && d.candidate) { try { await TP.pc.addIceCandidate(new RTCIceCandidate(d.candidate)); } catch (_) { } }
+        }
+
+        function tpStartCallScreen() {
+            const lv = document.getElementById('ov-local-video');
+            if (lv && TP.localStream) lv.srcObject = TP.localStream;
+            tpShowOverlay('ov-call');
+            // start timer
+            TP.timerSec = 0;
+            clearInterval(TP.timerInterval);
+            TP.timerInterval = setInterval(() => {
+                TP.timerSec++;
+                const m = Math.floor(TP.timerSec / 60), s = TP.timerSec % 60;
+                const t = document.getElementById('ov-timer');
+                if (t) t.textContent = m + ':' + String(s).padStart(2, '0');
+            }, 1000);
+        }
+
+        function tpRejectCall() {
+            tpSend({ type: 'call_reject', to: 'robot' });
+            tpCleanup();
+        }
+
+        function tpCancelCall() {
+            clearTimeout(TP._callTimeout);
+            tpSend({ type: 'call_reject', to: 'robot' });
+            tpCleanup();
+        }
+
+        function tpEndCall() {
+            tpSend({ type: 'call_end', to: 'robot' });
+            tpCleanup();
+        }
+
+        function tpCleanup() {
+            clearInterval(TP.timerInterval);
+            clearTimeout(TP._callTimeout);
+            if (TP.pc) { TP.pc.close(); TP.pc = null; }
+            if (TP.localStream) { TP.localStream.getTracks().forEach(t => t.stop()); TP.localStream = null; }
+            const rv = document.getElementById('ov-remote-video'); if (rv) rv.srcObject = null;
+            const lv = document.getElementById('ov-local-video'); if (lv) lv.srcObject = null;
+            TP.callState = 'idle'; TP.camOn = true; TP.micOn = true;
+            tpHideAllOverlays();
+        }
+
+        function tpToggleCam() {
+            TP.camOn = !TP.camOn;
+            if (TP.localStream) TP.localStream.getVideoTracks().forEach(t => t.enabled = TP.camOn);
+            const b = document.getElementById('ov-btn-cam');
+            if (b) { b.classList.toggle('off', !TP.camOn); b.textContent = TP.camOn ? '📷' : '🚫'; }
+        }
+        function tpToggleMic() {
+            TP.micOn = !TP.micOn;
+            if (TP.localStream) TP.localStream.getAudioTracks().forEach(t => t.enabled = TP.micOn);
+            const b = document.getElementById('ov-btn-mic');
+            if (b) { b.classList.toggle('off', !TP.micOn); b.textContent = TP.micOn ? '🎙️' : '🔇'; }
+        }
+
+        // On connect, register as controller
+        const _origConnectWS = connectWebSocket;
+        function connectWebSocket(ipOverride) {
+            _origConnectWS(ipOverride);
+            // Delay to let ws open
+            setTimeout(() => {
+                if (ws?.readyState === 1) tpSend({ type: 'register', role: 'controller', name: 'Sidharth' });
+            }, 600);
         }
 
         function enableSimulation() {

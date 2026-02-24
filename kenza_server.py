@@ -49,11 +49,13 @@ except ImportError:
 
 # Try to import emotion engine
 try:
-    from kenza_conversation import EmotionEngine
+    from kenza_conversation import EmotionEngine, ConversationEngine, ConversationConfig
     HAS_EMOTION = True
+    HAS_CONVERSATION = True
 except ImportError:
     HAS_EMOTION = False
-    print("[!] kenza_conversation.EmotionEngine not available")
+    HAS_CONVERSATION = False
+    print("[!] kenza_conversation not available")
 
 # Try to import gesture tracker
 try:
@@ -177,6 +179,8 @@ class CommandHandler:
                 return await self._voice_select(data)
             elif cmd_type == 'ai_message':
                 return await self._ai_message(data)
+            elif cmd_type == 'set_volume':
+                return await self._set_volume(cmd)
             else:
                 print(f"[CMD] Unknown command: {cmd_type}")
                 return None
@@ -387,6 +391,49 @@ class CommandHandler:
             }
         }
 
+    async def _set_volume(self, cmd: Dict) -> Optional[Dict]:
+        """Set RPi speaker volume via ALSA amixer or PulseAudio pactl"""
+        level = int(cmd.get('level', 80))
+        level = max(0, min(100, level))
+        self.state.voice_volume = level
+        print(f"[VOLUME] Setting system volume → {level}%")
+
+        success = False
+        try:
+            # Try ALSA amixer first (most common on RPi)
+            result = await asyncio.create_subprocess_shell(
+                f"amixer -q sset Master {level}%",
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL
+            )
+            await result.wait()
+            success = (result.returncode == 0)
+            if success:
+                print(f"[VOLUME] amixer OK ({level}%)")
+        except Exception as e:
+            print(f"[VOLUME] amixer failed: {e}")
+
+        if not success:
+            try:
+                # Fallback: PulseAudio pactl
+                result = await asyncio.create_subprocess_shell(
+                    f"pactl set-sink-volume @DEFAULT_SINK@ {level}%",
+                    stdout=asyncio.subprocess.DEVNULL,
+                    stderr=asyncio.subprocess.DEVNULL
+                )
+                await result.wait()
+                success = (result.returncode == 0)
+                if success:
+                    print(f"[VOLUME] pactl OK ({level}%)")
+            except Exception as e:
+                print(f"[VOLUME] pactl failed: {e}")
+
+        return {
+            'type': 'volume_set',
+            'level': level,
+            'ok': success
+        }
+
 
 
 # =============================================================================
@@ -400,10 +447,22 @@ class KenzaServer:
         self.state = RobotState()
         self.handler = CommandHandler(self.state)
         self.clients: Set = set()
+        # Role-indexed clients for call signaling
+        self.clients_by_role: Dict[str, Set] = {'robot': set(), 'controller': set()}
         self.enable_gesture = enable_gesture and HAS_GESTURE
         self.tracker = None
         self.camera = None
         self.running = False
+        # Call signaling message types that should be relayed verbatim
+        self._relay_types = {
+            'call_offer', 'call_answer', 'call_reject',
+            'call_end', 'ice_candidate', 'call_busy', 'call_ping'
+        }
+
+        # Conversation engine (started when robot enters AI mode)
+        self._conv_engine: Optional[ConversationEngine] = None
+        self._conv_thread: Optional[threading.Thread] = None
+        self._loop: Optional[asyncio.AbstractEventLoop] = None  # Set when server starts
         
     async def start(self, port: int = CONFIG.PORT):
         """Start the WebSocket server"""
@@ -440,30 +499,52 @@ class KenzaServer:
         print("\nPress Ctrl+C to stop.\n")
         
         async with websockets.serve(self._handle_client, "0.0.0.0", port):
+            self._loop = asyncio.get_event_loop()
             await asyncio.Future()  # Run forever
     
     def _init_camera(self):
         """Initialize camera for gesture tracking"""
+        print("[CAMERA] Initializing...")
+        
         if HAS_PICAMERA:
             try:
+                # Picamera2 for Libcamera-based systems (Cam Mod 3)
+                print("[CAMERA] Attempting PiCamera2 initialization...")
                 self.camera = Picamera2()
-                config = self.camera.create_video_configuration(main={"size": (640, 480)})
+                
+                # Try to list cameras if available
+                try:
+                    cams = self.camera.available_cameras
+                    print(f"[CAMERA] Available libcamera devices: {cams}")
+                except:
+                    pass
+
+                config = self.camera.create_video_configuration(
+                    main={"size": (640, 480), "format": "RGB888"}
+                )
                 self.camera.configure(config)
                 self.camera.start()
-                print("[CAMERA] PiCamera2 initialized")
+                print("[CAMERA] PiCamera2 successfully started")
             except Exception as e:
                 print(f"[CAMERA] PiCamera2 failed: {e}")
                 self.camera = None
         
         if self.camera is None and HAS_OPENCV:
             try:
+                print("[CAMERA] Attempting OpenCV fallback (Camera 0)...")
                 self.camera = cv2.VideoCapture(0)
+                if not self.camera.isOpened():
+                    raise RuntimeError("Could not open video device 0")
+                
                 self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
                 self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
                 print("[CAMERA] OpenCV camera initialized")
             except Exception as e:
-                print(f"[CAMERA] OpenCV failed: {e}")
+                print(f"[CAMERA] OpenCV fallback failed: {e}")
                 self.camera = None
+        
+        if self.camera is None:
+            print("[CAMERA] ❌ ALL CAMERA SYSTEMS FAILED. Check connections and permissions.")
     
     async def _handle_client(self, websocket):
         """Handle a WebSocket client connection"""
@@ -488,15 +569,73 @@ class KenzaServer:
             pass
         finally:
             self.clients.discard(websocket)
+            # Remove from role registry
+            for role_set in self.clients_by_role.values():
+                role_set.discard(websocket)
             print(f"[WS] Client disconnected ({len(self.clients)} total)")
     
     async def _receive_loop(self, websocket):
         """Receive and process commands from client"""
+        client_role = 'unknown'
         try:
             async for message in websocket:
-                response = await self.handler.handle(message, websocket)
-                if response:
-                    await websocket.send(json.dumps(response))
+                try:
+                    msg = json.loads(message)
+                    msg_type = msg.get('type', '')
+
+                    # Role registration
+                    if msg_type == 'register':
+                        client_role = msg.get('role', 'unknown')
+                        self.clients_by_role.get(client_role, set()).add(websocket)
+                        print(f"[WS] Client registered as: {client_role}")
+                        # Notify the other side that this client is online
+                        peer_role = 'controller' if client_role == 'robot' else 'robot'
+                        peer_name = msg.get('name', client_role)
+                        presence = json.dumps({
+                            'type': 'peer_online',
+                            'role': client_role,
+                            'name': peer_name
+                        })
+                        for peer in self.clients_by_role.get(peer_role, set()):
+                            try:
+                                await peer.send(presence)
+                            except:
+                                pass
+                        await websocket.send(json.dumps({'type': 'registered', 'role': client_role}))
+                        continue
+
+                    # WebRTC call signaling relay
+                    if msg_type in self._relay_types:
+                        target_role = msg.get('to', None)
+                        if not target_role:
+                            # Relay to the opposite role automatically
+                            target_role = 'controller' if client_role == 'robot' else 'robot'
+                        targets = self.clients_by_role.get(target_role, set())
+                        relay_msg = json.dumps(msg)
+                        for target in targets:
+                            try:
+                                await target.send(relay_msg)
+                            except:
+                                pass
+                        print(f"[CALL] Relayed '{msg_type}' from {client_role} → {target_role} ({len(targets)} recipients)")
+                        continue
+
+                    # ── AI Mode: start/stop conversation engine ──
+                    if msg_type == 'ai_mode_enter':
+                        self._start_conversation_engine()
+                        continue
+
+                    if msg_type == 'ai_mode_exit':
+                        self._stop_conversation_engine()
+                        continue
+
+                    # Standard command handling
+                    response = await self.handler.handle(message, websocket)
+                    if response:
+                        await websocket.send(json.dumps(response))
+
+                except json.JSONDecodeError:
+                    pass
         except websockets.exceptions.ConnectionClosed:
             pass
     
@@ -546,6 +685,91 @@ class KenzaServer:
         except websockets.exceptions.ConnectionClosed:
             pass
     
+    async def _broadcast_to_robots(self, msg: dict):
+        """Broadcast a message to all registered robot clients."""
+        payload = json.dumps(msg)
+        for ws in list(self.clients_by_role.get('robot', set())):
+            try:
+                await ws.send(payload)
+            except Exception:
+                pass
+
+    def _broadcast_from_thread(self, msg: dict):
+        """Thread-safe broadcast — schedules on the main event loop."""
+        if self._loop and not self._loop.is_closed():
+            asyncio.run_coroutine_threadsafe(
+                self._broadcast_to_robots(msg), self._loop
+            )
+
+    def _start_conversation_engine(self):
+        """Start ConversationEngine in a background thread when AI mode is entered."""
+        if not HAS_CONVERSATION:
+            print("[AI] ConversationEngine not available — skipping")
+            return
+        if self._conv_thread and self._conv_thread.is_alive():
+            print("[AI] Engine already running")
+            return
+
+        print("[AI] Starting ConversationEngine...")
+
+        # Capture loop reference for threadsafe broadcast
+        self._loop = asyncio.get_event_loop()
+
+        def on_user_speech(text: str):
+            print(f"[AI] User: {text}")
+            self._broadcast_from_thread({
+                'type': 'ai_message',
+                'role': 'user',
+                'text': text
+            })
+
+        def on_ai_response(text: str):
+            print(f"[AI] Kenza: {text}")
+            self._broadcast_from_thread({
+                'type': 'ai_message',
+                'role': 'kenza',
+                'text': text
+            })
+
+        def on_state_change(state: str):
+            self._broadcast_from_thread({
+                'type': 'ai_state',
+                'state': state
+            })
+
+        config = ConversationConfig.load()
+        self._conv_engine = ConversationEngine(
+            config=config,
+            on_user_speech=on_user_speech,
+            on_ai_response=on_ai_response,
+            on_state_change=on_state_change,
+        )
+
+        def _run():
+            try:
+                # No wake word in AI Mode — listen continuously
+                self._conv_engine.run_voice_loop(use_wake_word=False)
+            except Exception as e:
+                print(f"[AI] Engine stopped: {e}")
+
+        self._conv_thread = threading.Thread(target=_run, daemon=True, name="ConversationEngine")
+        self._conv_thread.start()
+        print("[AI] ConversationEngine started")
+
+    def _stop_conversation_engine(self):
+        """Stop the ConversationEngine when AI mode is exited."""
+        if self._conv_engine:
+            print("[AI] Stopping ConversationEngine...")
+            self._conv_engine.is_running = False
+            if hasattr(self._conv_engine, 'tts'):
+                try:
+                    self._conv_engine.tts.clear_and_stop()
+                except Exception:
+                    pass
+            self._conv_engine = None
+        self._conv_thread = None
+        print("[AI] ConversationEngine stopped")
+
     def _capture_frame(self):
         """Capture a frame from camera"""
         if self.camera is None:

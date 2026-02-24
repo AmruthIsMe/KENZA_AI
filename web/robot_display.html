@@ -3,9 +3,10 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
     <title>KENZA Robot Display</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -16,13 +17,11 @@
         :root {
             --bg: #070710;
             --accent: #4fc3f7;
-            --accent2: #00e5ff;
             --green: #4caf50;
             --orange: #ffaa00;
             --red: #f44336;
             --glass: rgba(255, 255, 255, 0.07);
             --border: rgba(255, 255, 255, 0.1);
-            --text: rgba(255, 255, 255, 0.9);
             --dim: rgba(255, 255, 255, 0.45);
         }
 
@@ -32,48 +31,51 @@
             width: 100vw;
             height: 100vh;
             overflow: hidden;
-            color: var(--text);
-            touch-action: none;
+            color: #fff;
             user-select: none
         }
 
-        /* ── TOP BAR ── */
+        /* TOP BAR */
         #top-bar {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            height: 36px;
+            height: 38px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 16px;
-            z-index: 200;
-            background: linear-gradient(to bottom, rgba(7, 7, 16, 0.9), transparent);
+            z-index: 300;
             pointer-events: none;
+            background: linear-gradient(to bottom, rgba(7, 7, 16, .98), transparent);
         }
 
-        .tb-left,
-        .tb-right {
+        .tb-item {
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 0.72rem;
-            font-weight: 500
+            gap: 6px;
+            font-size: .85rem;
+            font-weight: 700;
+            opacity: .85;
+            letter-spacing: .02em
         }
 
-        .tb-icon {
-            font-size: 0.9rem;
-            opacity: .7
+        #tb-wifi {
+            font-size: 1.1rem
         }
 
-        #alert-icon {
+        #alert-dot {
             display: none;
-            color: var(--orange);
-            animation: alertPulse 1s infinite
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--orange);
+            box-shadow: 0 0 6px var(--orange);
+            animation: pulse 1.2s infinite
         }
 
-        @keyframes alertPulse {
+        @keyframes pulse {
 
             0%,
             100% {
@@ -81,576 +83,296 @@
             }
 
             50% {
-                opacity: .4
+                opacity: .3
             }
         }
 
-        #person-badge {
-            display: none;
-            position: fixed;
-            top: 44px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 170, 0, 0.18);
-            border: 1px solid var(--orange);
-            border-radius: 20px;
-            padding: 5px 14px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--orange);
-            z-index: 201;
-            letter-spacing: .04em;
-            animation: slideDown .3s ease
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateX(-50%) translateY(-10px)
-            }
-
-            to {
-                opacity: 1;
-                transform: translateX(-50%) translateY(0)
-            }
-        }
-
-        /* ── EYE CANVAS LAYER ── */
+        /* EYE LAYER */
         #eye-layer {
             position: fixed;
             inset: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: clamp(40px, 8vw, 100px);
+            gap: clamp(60px, 12vw, 140px);
             z-index: 1;
-            transition: opacity .4s ease;
+            cursor: pointer;
+            transition: opacity .4s ease, filter .4s;
         }
 
-        .eye-wrap {
-            position: relative;
+        /* EYE LAYER - Massive & Organic */
+        #eye-layer {
+            position: fixed;
+            inset: 0;
             display: flex;
-            flex-direction: column;
-            align-items: center
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            /* Tighter gap for massive eyes */
+            z-index: 1;
+            cursor: pointer;
+            transition: opacity .4s ease, filter .4s;
         }
 
         .eye {
-            width: clamp(100px, 16vw, 180px);
-            height: clamp(100px, 16vw, 180px);
-            border-radius: 50%;
+            width: clamp(280px, 48vw, 460px);
+            height: clamp(280px, 48vw, 460px);
+            /* Organic elliptical shape */
+            border-radius: 44% 44% 50% 50%;
             position: relative;
             overflow: hidden;
-            background: radial-gradient(circle at 30% 30%, #6dd9ff 0%, #2aaad4 45%, #0a6680 100%);
-            box-shadow: 0 0 30px rgba(77, 210, 255, .3), inset 0 -8px 24px rgba(0, 0, 0, .25);
-            transform: scaleY(.75) translateY(10%);
+            /* Limbus Ring + Iris Gradient */
+            background:
+                radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.08) 0%, transparent 60%),
+                /* iris shine layer */
+                radial-gradient(circle at 50% 50%, #2aaad4 0%, #1a88aa 40%, #0a6680 85%, #053340 100%);
+            /* Depth Iris */
+
+            /* Soft, deep shadow for a lens look (less "popped up") */
+            box-shadow:
+                0 0 70px rgba(77, 210, 255, .25),
+                inset 0 0 40px rgba(0, 0, 0, 0.6),
+                inset 0 -10px 20px rgba(0, 0, 0, 0.4);
+
+            /* Calibrated transform for a more natural gaze */
+            transform: scaleY(.84) translateY(4%);
             transition: transform .5s cubic-bezier(.25, 1, .5, 1), box-shadow .5s, filter .4s;
+            border: 2px solid rgba(0, 0, 0, 0.4);
+            /* Subtle lid definition */
         }
 
         .pupil {
             position: absolute;
-            width: 38%;
-            height: 38%;
-            background: radial-gradient(circle at 38% 38%, #2a2a2a, #000);
+            width: 44%;
+            /* Larger, more expressive pupil */
+            height: 44%;
+            background: radial-gradient(circle at 40% 40%, #1a1a1a 0%, #000 70%);
             border-radius: 50%;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            transition: transform .2s cubic-bezier(.25, 1, .5, 1);
+            transition: transform .18s cubic-bezier(.25, 1, .5, 1);
+            filter: blur(0.5px);
+            /* Softer human-like edge */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
         }
 
-        .highlight {
+        .hl {
             position: absolute;
-            width: 22%;
-            height: 22%;
-            background: rgba(255, 255, 255, .85);
             border-radius: 50%;
-            top: 18%;
-            left: 58%
+            background: rgba(255, 255, 255, .8);
+            filter: blur(0.5px);
         }
 
-        .highlight-sm {
-            position: absolute;
-            width: 12%;
-            height: 12%;
-            background: rgba(255, 255, 255, .5);
-            border-radius: 50%;
+        .hl.big {
+            width: 20%;
+            height: 20%;
+            top: 15%;
+            left: 55%;
+            opacity: 0.9;
+        }
+
+        .hl.sm {
+            width: 10%;
+            height: 10%;
             top: 42%;
-            left: 28%
+            left: 25%;
+            opacity: .4
         }
 
-        /* ── MODE OVERLAYS ── */
-        .overlay {
+        /* SCREENS (full-screen overlays) */
+        .screen {
             position: fixed;
             inset: 0;
-            z-index: 10;
-            display: flex;
+            z-index: 20;
+            display: none;
             flex-direction: column;
+            background: var(--bg);
             opacity: 0;
             pointer-events: none;
-            transition: opacity .35s ease;
+            transition: opacity .3s ease;
         }
 
-        .overlay.active {
+        .screen.visible {
+            display: flex;
             opacity: 1;
-            pointer-events: all
+            pointer-events: all;
         }
 
-        /* AI CHAT MODE */
-        #overlay-ai {
-            background: rgba(7, 7, 16, .97);
-            padding: 44px 0 0
+        .screen.anim-in {
+            animation: screenIn .3s ease forwards
         }
 
-        .chat-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 20px;
-            font-size: .8rem;
-            font-weight: 500;
-            color: var(--dim);
-            background: rgba(0, 0, 0, .3);
-            margin: 8px 16px;
-            border-radius: 10px;
-            transition: all .3s
+        .screen.anim-out {
+            animation: screenOut .25s ease forwards
         }
 
-        .chat-status.listening {
-            color: var(--accent);
-            background: rgba(79, 195, 247, .12)
-        }
-
-        .chat-status.thinking {
-            color: var(--orange);
-            background: rgba(255, 170, 0, .12)
-        }
-
-        .chat-status.speaking {
-            color: var(--green);
-            background: rgba(76, 175, 80, .12)
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: currentColor;
-            flex-shrink: 0
-        }
-
-        .chat-status.listening .status-dot,
-        .chat-status.thinking .status-dot,
-        .chat-status.speaking .status-dot {
-            animation: sDot 1.4s infinite
-        }
-
-        @keyframes sDot {
-
-            0%,
-            100% {
-                opacity: 1;
-                transform: scale(1)
-            }
-
-            50% {
-                opacity: .4;
-                transform: scale(.7)
-            }
-        }
-
-        #chat-msgs {
-            flex: 1;
-            overflow-y: auto;
-            padding: 16px 16px 80px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            scrollbar-width: none;
-        }
-
-        #chat-msgs::-webkit-scrollbar {
-            display: none
-        }
-
-        .msg {
-            padding: 13px 16px;
-            border-radius: 18px;
-            max-width: 80%;
-            font-size: clamp(.85rem, 2.2vw, 1rem);
-            line-height: 1.5;
-            animation: msgIn .25s ease
-        }
-
-        @keyframes msgIn {
+        @keyframes screenIn {
             from {
                 opacity: 0;
-                transform: translateY(8px)
+                transform: translateX(30px)
             }
 
             to {
                 opacity: 1;
-                transform: translateY(0)
+                transform: none
             }
         }
 
-        .msg.user {
-            background: linear-gradient(135deg, var(--accent), #00a8cc);
-            color: #000;
-            margin-left: auto;
-            border-bottom-right-radius: 5px
-        }
-
-        .msg.ai {
-            background: rgba(50, 50, 70, .7);
-            border-bottom-left-radius: 5px
-        }
-
-        .msg.thinking-dot {
-            background: rgba(50, 50, 70, .5);
-            display: flex;
-            gap: 5px;
-            align-items: center
-        }
-
-        .dot-bounce {
-            width: 9px;
-            height: 9px;
-            border-radius: 50%;
-            background: var(--accent);
-            animation: bounce 1.4s infinite
-        }
-
-        .dot-bounce:nth-child(2) {
-            animation-delay: .16s
-        }
-
-        .dot-bounce:nth-child(3) {
-            animation-delay: .32s
-        }
-
-        @keyframes bounce {
-
-            0%,
-            80%,
-            100% {
-                transform: scale(.6);
-                opacity: .5
+        @keyframes screenOut {
+            from {
+                opacity: 1;
+                transform: none
             }
 
-            40% {
-                transform: scale(1);
-                opacity: 1
+            to {
+                opacity: 0;
+                transform: translateX(-20px)
             }
         }
 
-        .ai-exit-btn {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            padding: 18px;
-            border: none;
-            border-radius: 0;
-            background: rgba(20, 12, 12, .97);
-            color: var(--red);
-            font-weight: 600;
-            font-size: .95rem;
-            cursor: pointer;
-            z-index: 20;
-            border-top: 1px solid rgba(244, 67, 54, .2);
-            transition: background .2s
-        }
-
-        .ai-exit-btn:hover,
-        .ai-exit-btn:active {
-            background: rgba(40, 12, 12, .98)
-        }
-
-        /* TELEPRESENCE */
-        #overlay-tp {
-            background: #000
-        }
-
-        #remote-video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover
-        }
-
-        .tp-overlay {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
+        /* MAIN MENU – card list */
+        #screen-menu {
+            z-index: 50;
+            background: rgba(7, 7, 16, .98);
+            padding: 0;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            padding: 20px;
         }
 
-        .tp-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start
-        }
-
-        .tp-badge {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 7px 14px;
-            background: rgba(0, 0, 0, .6);
-            backdrop-filter: blur(8px);
-            border-radius: 20px;
-            font-size: .8rem;
-        }
-
-        .tp-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--green);
-            box-shadow: 0 0 8px var(--green);
-            animation: sDot 2s infinite
-        }
-
-        .tp-end-btn {
-            pointer-events: all;
-            padding: 11px 22px;
-            border: none;
-            border-radius: 22px;
-            background: rgba(244, 67, 54, .85);
-            color: #fff;
+        .menu-title-bar {
+            padding: 48px 28px 20px;
+            font-size: .7rem;
             font-weight: 700;
-            font-size: .9rem;
-            cursor: pointer;
-            transition: all .2s;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            opacity: .35;
         }
 
-        .tp-end-btn:hover {
-            background: var(--red);
-            transform: scale(1.04)
-        }
-
-        /* EXPLORE */
-        #explore-badge {
-            display: none;
-            position: fixed;
-            bottom: 28px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(7, 7, 16, .8);
-            border: 1px solid rgba(79, 195, 247, .3);
-            border-radius: 24px;
-            padding: 8px 20px;
-            font-size: .8rem;
-            font-weight: 600;
-            color: var(--accent);
-            z-index: 50;
-            letter-spacing: .05em;
-            display: none;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .explore-pulse {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--accent);
-            animation: sDot 1.5s infinite
-        }
-
-        /* ── MENU SHEET ── */
-        #menu-bg {
-            position: fixed;
-            inset: 0;
-            z-index: 90;
-            background: rgba(0, 0, 0, 0);
-            pointer-events: none;
-            transition: background .4s;
-        }
-
-        #menu-bg.open {
-            background: rgba(0, 0, 0, .55);
-            pointer-events: all
-        }
-
-        #menu-sheet {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            z-index: 100;
-            background: rgba(12, 12, 22, .97);
-            border-radius: 28px 28px 0 0;
-            border-top: 1px solid var(--border);
-            padding: 0 0 40px;
-            transform: translateY(100%);
-            transition: transform .42s cubic-bezier(.25, 1, .35, 1);
-            max-height: 88vh;
+        .menu-cards {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 0 18px;
             overflow-y: auto;
         }
 
-        #menu-sheet.open {
-            transform: translateY(0)
-        }
-
-        .sheet-handle {
-            width: 40px;
-            height: 4px;
-            border-radius: 2px;
-            background: rgba(255, 255, 255, .2);
-            margin: 14px auto 20px;
-        }
-
-        .sheet-section {
-            margin-bottom: 8px
-        }
-
-        .sheet-section-title {
-            font-size: .7rem;
-            font-weight: 600;
-            color: var(--dim);
-            text-transform: uppercase;
-            letter-spacing: .08em;
-            padding: 4px 20px 10px;
-        }
-
-        .menu-item {
+        .big-btn {
             display: flex;
             align-items: center;
-            gap: 16px;
-            padding: 16px 20px;
+            gap: 22px;
+            padding: 24px 26px;
+            background: rgba(255, 255, 255, .04);
+            border: 1px solid rgba(255, 255, 255, .07);
+            border-radius: 24px;
             cursor: pointer;
-            transition: background .2s;
-            position: relative;
+            transition: background .18s, border-color .18s;
+            -webkit-tap-highlight-color: transparent;
+            flex-shrink: 0;
         }
 
-        .menu-item:hover,
-        .menu-item:active {
-            background: var(--glass)
+        .big-btn:active {
+            background: rgba(255, 255, 255, .10);
+            border-color: rgba(255, 255, 255, .14);
         }
 
-        .menu-item-icon {
-            width: 46px;
-            height: 46px;
-            border-radius: 14px;
+        .big-btn-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.4rem;
+            font-size: 2.2rem;
             flex-shrink: 0;
         }
 
-        .icon-ai {
-            background: linear-gradient(135deg, rgba(79, 195, 247, .25), rgba(0, 229, 255, .15))
-        }
-
-        .icon-tp {
-            background: linear-gradient(135deg, rgba(255, 102, 170, .2), rgba(170, 50, 200, .15))
+        .icon-actions {
+            background: linear-gradient(135deg, rgba(79, 195, 247, .35), rgba(0, 229, 255, .18));
+            box-shadow: 0 4px 18px rgba(79, 195, 247, .22)
         }
 
         .icon-explore {
-            background: linear-gradient(135deg, rgba(76, 175, 80, .2), rgba(0, 200, 100, .1))
+            background: linear-gradient(135deg, rgba(76, 175, 80, .32), rgba(0, 200, 100, .16));
+            box-shadow: 0 4px 18px rgba(76, 175, 80, .22)
         }
 
-        .icon-qr {
-            background: linear-gradient(135deg, rgba(255, 255, 255, .1), rgba(200, 200, 200, .05))
+        .icon-settings {
+            background: linear-gradient(135deg, rgba(255, 255, 255, .14), rgba(150, 150, 180, .1));
+            box-shadow: 0 4px 18px rgba(150, 150, 200, .12)
         }
 
-        .menu-item-text h3 {
-            font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: 2px
+        .big-btn-text {
+            flex: 1;
+            min-width: 0;
         }
 
-        .menu-item-text p {
-            font-size: .75rem;
-            color: var(--dim)
+        .big-btn-text h2 {
+            font-size: 1.45rem;
+            font-weight: 800;
+            letter-spacing: -.02em;
         }
 
-        .menu-chevron {
-            margin-left: auto;
-            color: var(--dim);
-            font-size: 1.1rem
+        .big-btn-text p {
+            font-size: .95rem;
+            font-weight: 400;
+            opacity: .4;
+            margin-top: 4px;
         }
 
-        .menu-toggle {
-            width: 50px;
-            height: 28px;
-            background: rgba(60, 60, 80, .8);
-            border-radius: 14px;
-            position: relative;
-            cursor: pointer;
-            transition: background .3s;
-            margin-left: auto;
+        .big-btn-arrow {
+            font-size: 1.1rem;
+            opacity: .25;
             flex-shrink: 0;
         }
 
-        .menu-toggle.on {
-            background: linear-gradient(90deg, #00c9ff, var(--accent))
-        }
-
-        .menu-toggle::after {
-            content: '';
-            position: absolute;
-            width: 22px;
-            height: 22px;
-            background: #fff;
-            border-radius: 50%;
-            top: 3px;
-            left: 3px;
-            transition: transform .3s;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, .3);
-        }
-
-        .menu-toggle.on::after {
-            transform: translateX(22px)
-        }
-
-        .sheet-divider {
-            height: 1px;
-            background: var(--border);
-            margin: 4px 20px
-        }
-
-        /* SETTINGS PANEL */
-        #settings-panel {
-            position: fixed;
-            inset: 0;
-            z-index: 110;
-            background: rgba(10, 10, 18, .98);
-            transform: translateX(100%);
-            transition: transform .38s cubic-bezier(.25, 1, .35, 1);
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-        }
-
-        #settings-panel.open {
-            transform: translateX(0)
-        }
-
-        .panel-header {
+        /* Close / back-to-idle row at bottom of menu */
+        .menu-close-btn {
             display: flex;
             align-items: center;
-            gap: 14px;
-            padding: 20px 20px 12px;
+            justify-content: center;
+            gap: 10px;
+            padding: 28px;
+            border: none;
+            border-top: 1px solid rgba(255, 255, 255, .07);
+            background: transparent;
+            color: rgba(255, 255, 255, .38);
+            font-size: 1.05rem;
+            font-weight: 600;
+            letter-spacing: .04em;
+            cursor: pointer;
+            transition: color .2s;
+            margin-top: 8px;
+            flex-shrink: 0;
+        }
+
+        .menu-close-btn:active {
+            color: rgba(255, 255, 255, .7);
+        }
+
+        /* Sub-screens */
+        .sub-header {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            padding: 48px 24px 20px;
             border-bottom: 1px solid var(--border);
         }
 
         .back-btn {
-            width: 36px;
-            height: 36px;
+            width: 52px;
+            height: 52px;
             border: none;
             background: var(--glass);
-            border-radius: 10px;
+            border-radius: 16px;
             color: #fff;
-            font-size: 1.1rem;
+            font-size: 1.6rem;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-shrink: 0;
             transition: background .2s;
         }
 
@@ -658,28 +380,188 @@
             background: rgba(255, 255, 255, .15)
         }
 
-        .panel-header h2 {
-            font-size: 1.1rem;
-            font-weight: 700
+        .sub-header h2 {
+            font-size: 1.5rem;
+            font-weight: 800
         }
 
-        .qr-wrap {
-            padding: 24px 20px;
+        /* Actions sub-screen – same full-screen tiles */
+        .action-item {
+            flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 20px
+            justify-content: center;
+            gap: 14px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+            transition: background .18s;
+            -webkit-tap-highlight-color: transparent;
+            min-height: 0;
+        }
+
+        .action-item:last-child {
+            border-bottom: none
+        }
+
+        .action-item:active {
+            background: rgba(255, 255, 255, .07)
+        }
+
+        .ai-icon {
+            width: 100px;
+            height: 100px;
+            border-radius: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            flex-shrink: 0
+        }
+
+        .action-item-text h3 {
+            font-size: 2.2rem;
+            font-weight: 900;
+            letter-spacing: -.03em;
+            text-align: center
+        }
+
+        .action-item-text p {
+            font-size: 1rem;
+            opacity: .4;
+            margin-top: 6px;
+            text-align: center
+        }
+
+        /* Explore sub-screen */
+        #explore-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            padding: 32px
+        }
+
+        .explore-toggle-wrap {
+            width: 100%;
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 24px 28px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            cursor: pointer;
+            transition: background .2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .explore-toggle-wrap.active {
+            background: rgba(76, 175, 80, .12);
+            border-color: rgba(76, 175, 80, .4)
+        }
+
+        .explore-toggle-icon {
+            font-size: 2.5rem;
+            width: 64px;
+            text-align: center
+        }
+
+        .explore-toggle-text {
+            flex: 1
+        }
+
+        .explore-toggle-text h3 {
+            font-size: 1.4rem;
+            font-weight: 800
+        }
+
+        .explore-toggle-text p {
+            font-size: .95rem;
+            opacity: .45;
+            margin-top: 4px
+        }
+
+        .tog {
+            width: 68px;
+            height: 38px;
+            background: rgba(60, 60, 80, .8);
+            border-radius: 19px;
+            position: relative;
+            flex-shrink: 0;
+            transition: background .3s
+        }
+
+        .tog.on {
+            background: linear-gradient(90deg, #00c9a7, var(--green))
+        }
+
+        .tog::after {
+            content: '';
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: #fff;
+            border-radius: 50%;
+            top: 4px;
+            left: 4px;
+            transition: transform .3s;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, .3)
+        }
+
+        .tog.on::after {
+            transform: translateX(30px)
+        }
+
+        #explore-badge {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 20px;
+            background: rgba(7, 7, 16, .85);
+            border: 1px solid rgba(79, 195, 247, .35);
+            border-radius: 24px;
+            font-size: .8rem;
+            font-weight: 600;
+            color: var(--accent);
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 55;
+        }
+
+        .exp-pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: pulse 1.5s infinite
+        }
+
+        /* Settings sub-screen */
+        #settings-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            padding: 24px 20px;
+            overflow-y: auto;
+            touch-action: pan-y
         }
 
         .qr-box {
-            width: 200px;
-            height: 200px;
+            width: 190px;
+            height: 190px;
             background: #fff;
             border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 12px;
+            padding: 10px
         }
 
         #qr-canvas {
@@ -687,44 +569,45 @@
             height: 100%
         }
 
-        .qr-info {
+        .qr-label {
             text-align: center
         }
 
-        .qr-info h3 {
+        .qr-label h3 {
             font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: 6px
+            font-weight: 600
         }
 
-        .qr-info p {
-            font-size: .8rem;
-            color: var(--dim);
+        .qr-label p {
+            font-size: .78rem;
+            opacity: .45;
+            margin-top: 4px;
             line-height: 1.5
         }
 
-        .conn-status {
+        .conn-row {
+            width: 100%;
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 14px 20px;
+            gap: 12px;
+            padding: 14px 18px;
             background: var(--glass);
             border: 1px solid var(--border);
             border-radius: 16px;
-            width: 100%;
         }
 
-        .conn-dot {
+        .cdot {
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            background: #666
+            background: #444;
+            flex-shrink: 0
         }
 
-        .conn-dot.connected {
+        .cdot.on {
             background: var(--green);
             box-shadow: 0 0 8px var(--green);
-            animation: sDot 2s infinite
+            animation: pulse 2s infinite
         }
 
         .conn-info {
@@ -738,10 +621,10 @@
 
         .conn-info p {
             font-size: .75rem;
-            color: var(--dim)
+            opacity: .45
         }
 
-        .disconnect-btn {
+        .disc-btn {
             padding: 7px 14px;
             border: none;
             border-radius: 10px;
@@ -750,16 +633,595 @@
             font-size: .8rem;
             font-weight: 600;
             cursor: pointer;
+            display: none
         }
 
-        /* ── ANIMATIONS AND KEYFRAMES ── */
-        @keyframes sleepBreathe {
+        /* Contacts for telepresence - 2x2 Grid (Compact) */
+        #contacts-body {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            overflow: hidden;
+            /* Prevent scrolling */
+        }
+
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            width: 100%;
+            max-width: 440px;
+            /* Center and constrain */
+        }
+
+        .contact-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all .2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .contact-card:active {
+            transform: scale(0.92);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .contact-card .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 24px;
+            background: linear-gradient(135deg, var(--accent), #0077aa);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #000;
+            box-shadow: 0 4px 15px rgba(0, 150, 255, 0.2);
+        }
+
+        .contact-card h3 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .contact-card .status-row {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .contact-card .status-txt {
+            font-size: .85rem;
+            font-weight: 700;
+            opacity: 0.4;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .contact-card .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #444;
+        }
+
+        .contact-card .status-dot.online {
+            background: var(--green);
+            box-shadow: 0 0 8px var(--green);
+        }
+
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #444;
+            margin-top: 4px
+        }
+
+        .status-dot.online {
+            background: var(--green);
+            box-shadow: 0 0 6px var(--green)
+        }
+
+        .call-btn {
+            margin-left: auto;
+            padding: 9px 18px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--green), #00c9a7);
+            color: #fff;
+            font-weight: 700;
+            font-size: .85rem;
+            cursor: pointer;
+            transition: transform .15s;
+        }
+
+        .call-btn:active {
+            transform: scale(.95)
+        }
+
+        .no-contacts {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            opacity: .4;
+            padding: 40px
+        }
+
+        .no-contacts .icon {
+            font-size: 2.5rem
+        }
+
+        .no-contacts p {
+            font-size: .85rem;
+            text-align: center
+        }
+
+        /* ── CALL SCREENS ── */
+        /* Outgoing call */
+        #screen-calling {
+            background: radial-gradient(ellipse at 50% 25%, rgba(20, 30, 60, .95), var(--bg));
+            text-align: center;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            z-index: 80;
+            padding: 40px 32px
+        }
+
+        .call-ring {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(79, 195, 247, .22), rgba(0, 180, 220, .12));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            position: relative;
+            box-shadow: 0 0 0 1px rgba(79, 195, 247, .2)
+        }
+
+        .call-ring::before,
+        .call-ring::after,
+        .call-ring .ring3 {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            border: 1.5px solid rgba(79, 195, 247, .25);
+            animation: ringPulse 2.4s ease-out infinite;
+        }
+
+        .call-ring::before {
+            inset: -16px
+        }
+
+        .call-ring::after {
+            inset: -34px;
+            animation-delay: .6s;
+            border-color: rgba(79, 195, 247, .14)
+        }
+
+        @keyframes ringPulse {
             0% {
-                box-shadow: 0 0 8px rgba(0, 150, 255, .1), inset 0 -5px 10px rgba(0, 0, 0, .5)
+                transform: scale(.85);
+                opacity: .8
             }
 
             100% {
-                box-shadow: 0 0 25px rgba(0, 150, 255, .25), inset 0 -5px 18px rgba(0, 0, 0, .2)
+                transform: scale(1.2);
+                opacity: 0
+            }
+        }
+
+        .call-name {
+            font-size: 2.4rem;
+            font-weight: 900;
+            letter-spacing: -.03em
+        }
+
+        .call-status {
+            font-size: .82rem;
+            opacity: .45;
+            letter-spacing: .04em
+        }
+
+        .call-end-round {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #f44336, #c62828);
+            color: #fff;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: transform .15s, box-shadow .2s;
+            box-shadow: 0 6px 24px rgba(244, 67, 54, .55);
+            margin-top: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .call-end-round:active {
+            transform: scale(.88)
+        }
+
+        /* Incoming call – Google Meet style */
+        #screen-incoming {
+            background: radial-gradient(ellipse at 50% 20%, rgba(10, 38, 18, 1), #05100a 60%, var(--bg));
+            text-align: center;
+            justify-content: center;
+            align-items: center;
+            gap: 0;
+            z-index: 80;
+            padding: 40px 24px
+        }
+
+        .inc-ring {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(76, 175, 80, .3), rgba(0, 220, 130, .2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.4rem;
+            position: relative;
+            margin-bottom: 32px;
+            box-shadow: 0 0 0 1px rgba(76, 175, 80, .25), 0 0 50px rgba(76, 175, 80, .12)
+        }
+
+        .inc-ring::before,
+        .inc-ring::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            border: 1.5px solid rgba(76, 175, 80, .32);
+        }
+
+        .inc-ring::before {
+            inset: -18px;
+            animation: incRing 1.8s ease-out infinite
+        }
+
+        .inc-ring::after {
+            inset: -38px;
+            animation: incRing 1.8s ease-out .6s infinite;
+            border-color: rgba(76, 175, 80, .18)
+        }
+
+        @keyframes incRing {
+            0% {
+                transform: scale(.88);
+                opacity: 1
+            }
+
+            100% {
+                transform: scale(1.22);
+                opacity: 0
+            }
+        }
+
+        .inc-caller {
+            font-size: 2rem;
+            font-weight: 900;
+            letter-spacing: -.03em;
+            margin-bottom: 6px
+        }
+
+        .inc-sub {
+            font-size: .82rem;
+            opacity: .45;
+            letter-spacing: .04em;
+            margin-bottom: 44px
+        }
+
+        .inc-btns {
+            display: flex;
+            gap: 44px;
+            align-items: flex-start
+        }
+
+        .inc-btn-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px
+        }
+
+        .inc-accept,
+        .inc-reject {
+            width: 78px;
+            height: 78px;
+            border-radius: 50%;
+            border: none;
+            font-size: 1.7rem;
+            cursor: pointer;
+            transition: transform .15s, box-shadow .2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .inc-accept {
+            background: linear-gradient(135deg, #43a047, #00c853);
+            box-shadow: 0 6px 28px rgba(76, 175, 80, .55)
+        }
+
+        .inc-reject {
+            background: linear-gradient(135deg, #e53935, #c62828);
+            box-shadow: 0 6px 28px rgba(244, 67, 54, .55)
+        }
+
+        .inc-accept:active,
+        .inc-reject:active {
+            transform: scale(.88)
+        }
+
+        /* Menu close/back to idle button */
+        .menu-close-btn {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            border: none;
+            border-top: 1px solid rgba(255, 255, 255, .08);
+            background: rgba(7, 7, 16, .97);
+            color: rgba(255, 255, 255, .45);
+            font-size: .85rem;
+            font-weight: 600;
+            letter-spacing: .05em;
+            cursor: pointer;
+            z-index: 2;
+            transition: color .2s;
+        }
+
+        .menu-close-btn:active {
+            color: rgba(255, 255, 255, .8);
+        }
+
+        /* Volume slider in Settings */
+        .vol-section {
+            padding: 28px 24px 20px;
+            width: 100%;
+        }
+
+        .vol-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .vol-header h3 {
+            font-size: 1.4rem;
+            font-weight: 800;
+        }
+
+        .vol-level {
+            font-size: 2rem;
+            font-weight: 900;
+            color: var(--accent);
+            min-width: 80px;
+            text-align: right;
+        }
+
+        .vol-icons {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            margin-bottom: 20px;
+        }
+
+        .vol-icon {
+            font-size: 1.8rem;
+            opacity: .65;
+            flex-shrink: 0;
+        }
+
+        input[type=range].vol-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 12px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, .12);
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type=range].vol-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 16px rgba(77, 210, 255, .5);
+            cursor: pointer;
+        }
+
+        input[type=range].vol-slider::-webkit-slider-runnable-track {
+            border-radius: 4px;
+        }
+
+        .inc-label {
+            font-size: .72rem;
+            font-weight: 600;
+            opacity: .6;
+            text-align: center;
+            letter-spacing: .02em
+        }
+
+        /* Active call */
+        #screen-call {
+            z-index: 70;
+            background: #000
+        }
+
+        #remote-video {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover
+        }
+
+        #local-video {
+            position: absolute;
+            bottom: 90px;
+            right: 16px;
+            width: 110px;
+            height: 80px;
+            border-radius: 12px;
+            border: 2px solid rgba(255, 255, 255, .2);
+            object-fit: cover;
+            z-index: 2;
+            background: #111;
+        }
+
+        /* Active call name+timer overlay */
+        #call-name-bar {
+            position: absolute;
+            top: 36px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 18px;
+            background: rgba(0, 0, 0, .5);
+            backdrop-filter: blur(8px);
+            border-radius: 24px;
+            font-size: .82rem;
+            font-weight: 600;
+            white-space: nowrap
+        }
+
+        #call-name-bar .cdot-live {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--green);
+            animation: pulse 2s infinite
+        }
+
+        #call-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px 24px 32px;
+            background: linear-gradient(to top, rgba(0, 0, 0, .92) 0%, rgba(0, 0, 0, .4) 70%, transparent);
+        }
+
+        .call-ctl {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, .18);
+            backdrop-filter: blur(10px);
+            color: #fff;
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: all .2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .call-ctl:active {
+            background: rgba(255, 255, 255, .3)
+        }
+
+        .call-ctl.off {
+            background: rgba(80, 80, 100, .5);
+            opacity: .6
+        }
+
+        .call-ctl.end {
+            background: linear-gradient(135deg, #f44336, #c62828);
+            width: 66px;
+            height: 66px;
+            font-size: 1.5rem;
+            box-shadow: 0 6px 28px rgba(244, 67, 54, .6)
+        }
+
+        .call-ctl.end:active {
+            transform: scale(.88)
+        }
+
+        #call-quality {
+            position: absolute;
+            top: 40px;
+            left: 16px;
+            z-index: 3;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            background: rgba(0, 0, 0, .55);
+            backdrop-filter: blur(6px);
+            border-radius: 20px;
+            font-size: .75rem;
+            font-weight: 600;
+        }
+
+        /* Person alert badge */
+        #person-badge {
+            display: none;
+            position: fixed;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 170, 0, .18);
+            border: 1px solid var(--orange);
+            border-radius: 20px;
+            padding: 5px 14px;
+            font-size: .75rem;
+            font-weight: 600;
+            color: var(--orange);
+            z-index: 201;
+            animation: slideDown .3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-10px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0)
             }
         }
     </style>
@@ -767,234 +1229,429 @@
 
 <body>
 
-    <!-- TOP BAR -->
+    <!-- TOP BAR: only battery + wifi -->
     <div id="top-bar">
-        <div class="tb-left">
-            <span id="tb-wifi" class="tb-icon">📶</span>
-            <span id="tb-mic" class="tb-icon" style="color:var(--accent)">🎤</span>
-        </div>
-        <div class="tb-right">
-            <span id="alert-icon">⚠️</span>
-            <span id="tb-battery" style="font-size:.72rem;font-weight:600">--<span
-                    style="font-size:.6rem;opacity:.6">%</span></span>
+        <div class="tb-item"><span id="tb-wifi">📶</span></div>
+        <div class="tb-item">
+            <span id="alert-dot"></span>
+            <span id="tb-battery">--<span style="font-size:.6rem;opacity:.55">%</span></span>
         </div>
     </div>
+
     <div id="person-badge">👁 PERSON DETECTED</div>
 
-    <!-- EYE LAYER (tap to open menu) -->
-    <div id="eye-layer" onclick="openMenu()">
-        <div class="eye-wrap">
-            <div class="eye" id="eye-left">
-                <div class="pupil" id="pupil-left"></div>
-                <div class="highlight"></div>
-                <div class="highlight-sm"></div>
-            </div>
+    <!-- EYE LAYER -->
+    <div id="eye-layer" onclick="goScreen('menu')">
+        <div class="eye" id="eye-left">
+            <div class="pupil" id="pupil-left"></div>
+            <div class="hl big"></div>
+            <div class="hl sm"></div>
         </div>
-        <div class="eye-wrap">
-            <div class="eye" id="eye-right">
-                <div class="pupil" id="pupil-right"></div>
-                <div class="highlight"></div>
-                <div class="highlight-sm"></div>
-            </div>
+        <div class="eye" id="eye-right">
+            <div class="pupil" id="pupil-right"></div>
+            <div class="hl big"></div>
+            <div class="hl sm"></div>
         </div>
     </div>
 
-    <!-- EXPLORE BADGE (fixed, shows during explore) -->
+    <!-- EXPLORE BADGE -->
     <div id="explore-badge" style="display:none">
-        <span class="explore-pulse"></span>EXPLORING
+        <span class="exp-pulse"></span>EXPLORING
     </div>
 
-    <!-- AI CHAT OVERLAY -->
-    <div class="overlay" id="overlay-ai">
-        <div class="chat-status" id="chat-status">
-            <div class="status-dot"></div>
-            <span id="chat-status-text">AI Mode · Idle</span>
+    <!-- ══ MAIN MENU ══ -->
+    <div class="screen" id="screen-menu">
+        <div class="menu-title-bar">Menu</div>
+        <div class="menu-cards">
+            <div class="big-btn" onclick="enterState('actions')">
+                <div class="big-btn-icon icon-actions">🤖</div>
+                <div class="big-btn-text">
+                    <h2>Actions</h2>
+                    <p>AI Mode · Telepresence</p>
+                </div>
+                <span class="big-btn-arrow">›</span>
+            </div>
+            <div class="big-btn" onclick="enterState('explore')">
+                <div class="big-btn-icon icon-explore">🧭</div>
+                <div class="big-btn-text">
+                    <h2>Explore</h2>
+                    <p>Autonomous · Sentry Mode</p>
+                </div>
+                <span class="big-btn-arrow">›</span>
+            </div>
+            <div class="big-btn" onclick="enterState('settings')">
+                <div class="big-btn-icon icon-settings">⚙️</div>
+                <div class="big-btn-text">
+                    <h2>Settings</h2>
+                    <p>Speaker Volume</p>
+                </div>
+                <span class="big-btn-arrow">›</span>
+            </div>
         </div>
-        <div id="chat-msgs"></div>
-        <button class="ai-exit-btn" onclick="exitMode('ai')">✕ Exit AI Mode</button>
+        <button class="menu-close-btn" onclick="enterState('idle')">
+            ✕&ensp;Close Menu
+        </button>
     </div>
 
-    <!-- TELEPRESENCE OVERLAY -->
-    <div class="overlay" id="overlay-tp">
-        <video id="remote-video" autoplay muted playsinline></video>
-        <div class="tp-overlay">
-            <div class="tp-top">
-                <div class="tp-badge">
-                    <div class="tp-dot"></div> Live
-                </div>
-                <div style="display:flex;gap:10px">
-                    <div class="tp-badge">📶</div>
-                    <div class="tp-badge" id="tp-mic-badge">🎤</div>
-                </div>
+    <!-- ══ ACTIONS SUB-MENU ══ -->
+    <div class="screen" id="screen-actions">
+        <div class="sub-header">
+            <button class="back-btn" onclick="goBack()">‹</button>
+            <h2>Actions</h2>
+        </div>
+        <div class="action-item" onclick="enterAIMode()">
+            <div class="ai-icon"
+                style="background:linear-gradient(135deg,rgba(79,195,247,.3),rgba(0,229,255,.18));box-shadow:0 4px 22px rgba(79,195,247,.22)">
+                🤖
             </div>
-            <div style="display:flex;justify-content:center">
-                <button class="tp-end-btn" onclick="exitMode('tp')">End Session</button>
+            <div class="action-item-text">
+                <h3>AI Mode</h3>
+                <p>Chat with KENZA · Voice enabled</p>
+            </div>
+        </div>
+        <div class="action-item" onclick="enterState('contacts')">
+            <div class="ai-icon"
+                style="background:linear-gradient(135deg,rgba(100,200,255,.25),rgba(50,100,255,.18));box-shadow:0 4px 22px rgba(100,180,255,.2)">
+                📡
+            </div>
+            <div class="action-item-text">
+                <h3>Telepresence</h3>
+                <p>Video call a remote user</p>
             </div>
         </div>
     </div>
 
-    <!-- MENU BACKGROUND -->
-    <div id="menu-bg" onclick="closeMenu()"></div>
+    <!-- ══ AI MODE OVERLAY ══ -->
+    <div class="screen" id="screen-ai" style="z-index:60">
+        <div class="sub-header">
+            <button class="back-btn" onclick="exitAIMode()">‹</button>
+            <h2 id="ai-status-text">AI Mode · Idle</h2>
+        </div>
+        <div id="chat-msgs"
+            style="flex:1;overflow-y:auto;padding:14px 16px 80px;display:flex;flex-direction:column;gap:10px;scrollbar-width:none;touch-action:pan-y">
+        </div>
+        <button onclick="exitAIMode()"
+            style="position:fixed;bottom:0;left:0;right:0;padding:18px;border:none;background:rgba(15,8,8,.97);color:var(--red);font-weight:700;font-size:.95rem;cursor:pointer;border-top:1px solid rgba(244,67,54,.2);z-index:61">✕
+            Exit AI Mode</button>
+    </div>
 
-    <!-- MENU SHEET -->
-    <div id="menu-sheet">
-        <div class="sheet-handle"></div>
-
-        <!-- ACTIONS -->
-        <div class="sheet-section">
-            <div class="sheet-section-title">Actions</div>
-            <div class="menu-item" onclick="enterMode('ai')">
-                <div class="menu-item-icon icon-ai">🤖</div>
-                <div class="menu-item-text">
-                    <h3>AI Mode</h3>
-                    <p>Conversational AI chatbot</p>
-                </div>
-                <span class="menu-chevron">›</span>
+    <!-- ══ CONTACTS (Telepresence) ══ -->
+    <div class="screen" id="screen-contacts">
+        <div class="sub-header">
+            <button class="back-btn" onclick="goBack()">‹</button>
+            <h2>Call Someone</h2>
+        </div>
+        <div id="contacts-body">
+            <div class="contact-grid" id="contact-grid">
+                <!-- Contacts will be injected here -->
             </div>
-            <div class="menu-item" onclick="enterMode('tp')">
-                <div class="menu-item-icon icon-tp">📡</div>
-                <div class="menu-item-text">
-                    <h3>Telepresence</h3>
-                    <p>Full-screen live video</p>
-                </div>
-                <span class="menu-chevron">›</span>
+            <div class="no-contacts" id="no-contacts" style="display:none">
+                <div class="icon">📡</div>
+                <p>No controllers connected.<br>Waiting for remote user…</p>
             </div>
         </div>
+    </div>
 
-        <div class="sheet-divider"></div>
-
-        <!-- EXPLORE -->
-        <div class="sheet-section">
-            <div class="sheet-section-title">Explore</div>
-            <div class="menu-item">
-                <div class="menu-item-icon icon-explore">🧭</div>
-                <div class="menu-item-text">
+    <!-- ══ EXPLORE ══ -->
+    <div class="screen" id="screen-explore">
+        <div class="sub-header">
+            <button class="back-btn" onclick="goBack()">‹</button>
+            <h2>Explore</h2>
+        </div>
+        <div id="explore-body">
+            <div class="explore-toggle-wrap" id="explore-wrap" onclick="toggleExplore()">
+                <div class="explore-toggle-icon">🧭</div>
+                <div class="explore-toggle-text">
                     <h3>Autonomous Explore</h3>
-                    <p>Sentry mode activates automatically</p>
+                    <p id="explore-desc">Sentry mode activates automatically</p>
                 </div>
-                <div class="menu-toggle" id="explore-toggle" onclick="toggleExplore(event)"></div>
-            </div>
-        </div>
-
-        <div class="sheet-divider"></div>
-
-        <!-- SETTINGS -->
-        <div class="sheet-section">
-            <div class="sheet-section-title">Settings</div>
-            <div class="menu-item" onclick="openSettings()">
-                <div class="menu-item-icon icon-qr">📲</div>
-                <div class="menu-item-text">
-                    <h3>Connection</h3>
-                    <p>QR pairing &amp; device management</p>
-                </div>
-                <span class="menu-chevron">›</span>
+                <div class="tog" id="explore-tog"></div>
             </div>
         </div>
     </div>
 
-    <!-- SETTINGS PANEL -->
-    <div id="settings-panel">
-        <div class="panel-header">
-            <button class="back-btn" onclick="closeSettings()">‹</button>
-            <h2>Connection</h2>
+    <!-- ══ SETTINGS ══ -->
+    <div class="screen" id="screen-settings">
+        <div class="sub-header">
+            <button class="back-btn" onclick="goBack()">‹</button>
+            <h2>Settings</h2>
         </div>
-        <div class="qr-wrap">
-            <div class="qr-box">
-                <canvas id="qr-canvas" width="176" height="176"></canvas>
-            </div>
-            <div class="qr-info">
-                <h3>Scan to Connect</h3>
-                <p>Open the KENZA app and scan this code<br>to link your controller to this robot.</p>
-            </div>
-            <div class="conn-status" id="conn-status">
-                <div class="conn-dot" id="conn-dot"></div>
-                <div class="conn-info">
-                    <h4 id="conn-name">No Device Linked</h4>
-                    <p id="conn-detail">Waiting for controller scan…</p>
+        <div id="settings-body">
+
+            <!-- Speaker Volume -->
+            <div class="vol-section">
+                <div class="vol-header">
+                    <h3>🔊 Speaker Volume</h3>
+                    <span class="vol-level" id="vol-level-txt">80%</span>
                 </div>
-                <button class="disconnect-btn" id="disconnect-btn" onclick="disconnectDevice()"
-                    style="display:none">Disconnect</button>
+                <div class="vol-icons">
+                    <span class="vol-icon">🔇</span>
+                    <input type="range" class="vol-slider" id="vol-slider" min="0" max="100" value="80"
+                        oninput="setVolume(this.value)">
+                    <span class="vol-icon">🔊</span>
+                </div>
             </div>
+
+            <!-- Connection status removed -->
+
+
+        </div>
+    </div>
+
+    <!-- ══ OUTGOING CALL ══ -->
+    <div class="screen" id="screen-calling">
+        <div class="call-ring">📞</div>
+        <div class="call-name" id="calling-name">Calling…</div>
+        <div class="call-status">RINGING</div>
+        <button class="call-end-round" onclick="cancelCall()" title="Cancel">📵</button>
+    </div>
+
+    <!-- ══ INCOMING CALL ══ -->
+    <div class="screen" id="screen-incoming">
+        <div class="inc-ring">📹</div>
+        <div class="inc-caller" id="incoming-name">Incoming Call</div>
+        <div class="inc-sub">INCOMING VIDEO CALL</div>
+        <div class="inc-btns">
+            <div class="inc-btn-wrap">
+                <button class="inc-accept" onclick="acceptCall()">✓</button>
+                <div class="inc-label">Accept</div>
+            </div>
+            <div class="inc-btn-wrap">
+                <button class="inc-reject" onclick="rejectCall()">✕</button>
+                <div class="inc-label">Decline</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ ACTIVE CALL ══ -->
+    <div class="screen" id="screen-call">
+        <video id="remote-video" autoplay playsinline></video>
+        <video id="local-video" autoplay playsinline muted></video>
+        <div id="call-quality">📶 <span id="call-quality-txt">Connecting…</span></div>
+        <div id="call-name-bar">
+            <div class="cdot-live"></div>
+            <span id="call-peer-name">Remote</span>
+            <span id="call-timer" style="opacity:.5;font-weight:400">0:00</span>
+        </div>
+        <div id="call-bar">
+            <button class="call-ctl" id="btn-cam" onclick="toggleCam()" title="Camera">📷</button>
+            <button class="call-ctl end" onclick="endCall()" title="End call">📵</button>
+            <button class="call-ctl" id="btn-mic" onclick="toggleMic()" title="Mic">🎙️</button>
         </div>
     </div>
 
     <script>
-        // ============================================================
-        // STATE
-        // ============================================================
+        'use strict';
+        // ═══════════════════════════════════════════════════════════
+        // STATE MACHINE  –  robot_display.html
+        // Only ONE state active at a time. All transitions go through
+        // enterState(name, payload).  Console-logged for debugging.
+        // ═══════════════════════════════════════════════════════════
+
         const S = {
-            mode: 'idle',       // idle | ai | tp | explore | sleep
+            state: 'idle',          // current named state
+            callState: 'idle',      // idle | calling | incoming | active
+            callerName: '',
+            camOn: true,
+            micOn: true,
+            localStream: null,
             exploreOn: false,
-            sentryAlert: false,
-            battery: null,
-            connected: false,
-            linkedDevice: null,
-            eyesActive: true,
+            connectedPeers: {},     // name → {role}
         };
 
-        // ============================================================
+        // Where "Back" goes from each state
+        const BACK_MAP = {
+            menu: 'idle',
+            actions: 'menu',
+            ai: 'menu',
+            contacts: 'actions',
+            explore: 'menu',
+            settings: 'menu',
+            // call states return to idle via their own buttons
+        };
+
+        // ─── Core dispatcher ───────────────────────────────────────
+        function enterState(name, payload = {}) {
+            console.log(`[KENZA] ▶ ${S.state} → ${name}`, payload);
+
+            // 1. Exit outgoing state cleanly
+            _exitState(S.state);
+
+            // 2. Force-hide ALL screens (reset any leftover display:flex)
+            document.querySelectorAll('.screen').forEach(s => {
+                s.classList.remove('visible');
+                s.style.display = 'none';
+            });
+
+            // 3. Update state
+            S.state = name;
+
+            // 4. Enter new state
+            switch (name) {
+
+                case 'idle':
+                    startEyes();
+                    document.getElementById('explore-badge').style.display =
+                        S.exploreOn ? 'flex' : 'none';
+                    break;
+
+                case 'menu':
+                    hideEyes();
+                    _showScreen('menu');
+                    break;
+
+                case 'actions':
+                    hideEyes();
+                    _showScreen('actions');
+                    break;
+
+                case 'ai':
+                    hideEyes();
+                    clearChat();
+                    setAIStatus('idle');
+                    _showScreen('ai');
+                    // Add welcome message so the screen is never blank
+                    setTimeout(() => {
+                        addMsg('kenza', "Hi! I'm listening. What can I help you with?");
+                        setAIStatus('listening');
+                    }, 300);
+                    sendWS({ type: 'ai_mode_enter' });
+                    break;
+
+                case 'contacts':
+                    hideEyes();
+                    _showScreen('contacts');
+                    renderContacts();
+                    break;
+
+                case 'calling':
+                    hideEyes();
+                    document.getElementById('calling-name').textContent =
+                        payload.name || S.callerName || 'Calling…';
+                    _showScreen('calling');
+                    break;
+
+                case 'incoming':
+                    hideEyes();
+                    document.getElementById('incoming-name').textContent =
+                        payload.callerName || S.callerName || 'Incoming Call';
+                    _showScreen('incoming');
+                    break;
+
+                case 'call':
+                    hideEyes();
+                    {
+                        const lv = document.getElementById('local-video');
+                        if (lv && S.localStream) lv.srcObject = S.localStream;
+                    }
+                    {
+                        const pn = document.getElementById('call-peer-name');
+                        if (pn) pn.textContent = S.callerName || 'Remote';
+                    }
+                    // reset quality text
+                    {
+                        const q = document.getElementById('call-quality-txt');
+                        if (q) q.textContent = 'Connecting…';
+                    }
+                    _showScreen('call');
+                    startCallTimer();
+                    break;
+
+                case 'explore':
+                    hideEyes();
+                    _showScreen('explore');
+                    // Sync toggle UI with current explore state
+                    document.getElementById('explore-tog')
+                        .classList.toggle('on', S.exploreOn);
+                    document.getElementById('explore-wrap')
+                        .classList.toggle('active', S.exploreOn);
+                    document.getElementById('explore-desc').textContent =
+                        S.exploreOn
+                            ? 'Sentry mode ACTIVE — scanning for people'
+                            : 'Sentry mode activates automatically';
+                    break;
+
+                case 'settings':
+                    hideEyes();
+                    _showScreen('settings');
+                    drawQR();
+                    break;
+
+                default:
+                    console.warn('[KENZA] Unknown state:', name);
+                    enterState('idle');
+            }
+        }
+
+        // Called just before leaving a state — clean up side-effects
+        function _exitState(name) {
+            switch (name) {
+                case 'ai':
+                    sendWS({ type: 'ai_mode_exit' });
+                    break;
+                case 'explore':
+                    // Leaving explore screen: stop exploration if running
+                    if (S.exploreOn) {
+                        S.exploreOn = false;
+                        document.getElementById('explore-badge').style.display = 'none';
+                        sendWS({ type: 'explore', active: false });
+                        clearPersonAlert();
+                    }
+                    break;
+            }
+        }
+
+        // Show a screen element (force display:flex then animate)
+        function _showScreen(id) {
+            const el = document.getElementById('screen-' + id);
+            if (!el) { console.error('[KENZA] Screen not found:', id); return; }
+            el.style.display = 'flex';
+            // Trigger reflow for CSS transition to fire
+            void el.offsetHeight;
+            el.classList.add('visible');
+        }
+
+        // Navigate back using the back-map
+        function goBack() {
+            const target = BACK_MAP[S.state] || 'menu';
+            console.log(`[KENZA] ‹ Back: ${S.state} → ${target}`);
+            enterState(target);
+        }
+
+        // Convenience alias
+        function goHome() { enterState('idle'); }
+
+        // ═══════════════════════════════════════════════════════════
         // EYE ENGINE
-        // ============================================================
+        // ═══════════════════════════════════════════════════════════
         const eyes = [document.getElementById('eye-left'), document.getElementById('eye-right')];
         const pupils = [document.getElementById('pupil-left'), document.getElementById('pupil-right')];
-
-        // Values as % relative to center (translate)
         let pupX = -50, pupY = -50;
-        let targetX = -50, targetY = -50;
-        let saccadeTimer = null;
-        let blinkTimer = null;
+        let saccTm = null, blinkTm = null;
+        let eyesActive = false;
 
-        function setEyeEmotion(emo) {
-            if (!S.eyesActive) return;
+        function setEmotion(emo) {
             const map = {
-                neutral: { scaleY: .75, filter: 'none', shadow: '0 0 28px rgba(77,210,255,.28)' },
-                happy: { scaleY: .35, filter: 'brightness(1.15)', shadow: '0 0 40px rgba(77,210,255,.5)' },
-                sad: { scaleY: .6, filter: 'brightness(.8) saturate(1.2)', shadow: '0 0 20px rgba(100,180,255,.3)' },
-                thinking: { scaleY: .7, filter: 'none', shadow: '0 0 35px rgba(170,100,255,.5)' },
-                listening: { scaleY: .75, filter: 'none', shadow: '0 0 35px rgba(100,255,150,.45)' },
-                speaking: { scaleY: .75, filter: 'brightness(1.05)', shadow: '0 0 28px rgba(77,210,255,.32)' },
-                excited: { scaleY: .85, filter: 'brightness(1.2)', shadow: '0 0 50px rgba(77,210,255,.7)' },
-                confused: { scaleY: .65, filter: 'hue-rotate(20deg)', shadow: '0 0 25px rgba(255,170,0,.4)' },
-                alert: { scaleY: .55, filter: 'brightness(1.1)', shadow: '0 0 30px rgba(255,170,0,.5)' },
-                sleep: { scaleY: 0, filter: 'brightness(.3)', shadow: 'none' },
+                neutral: { sy: .78, sh: '0 0 50px rgba(77,210,255,.35)' },
+                happy: { sy: .35, sh: '0 0 65px rgba(77,210,255,.6)' },
+                thinking: { sy: .70, sh: '0 0 50px rgba(170,100,255,.5)' },
+                listening: { sy: .78, sh: '0 0 50px rgba(100,255,150,.45)' },
+                speaking: { sy: .78, sh: '0 0 50px rgba(77,210,255,.4)' },
+                excited: { sy: .95, sh: '0 0 70px rgba(77,210,255,.8)' },
+                alert: { sy: .52, sh: '0 0 50px rgba(255,170,0,.55)' },
+                sleep: { sy: 0, sh: 'none' },
             };
             const e = map[emo] || map.neutral;
             eyes.forEach(eye => {
-                eye.style.transform = `scaleY(${e.scaleY}) translateY(10%)`;
-                eye.style.filter = e.filter;
-                eye.style.boxShadow = e.shadow === 'none' ? e.shadow
-                    : e.shadow + ', inset 0 -8px 24px rgba(0,0,0,.25)';
+                eye.style.transform = `scaleY(${e.sy}) translateY(8%)`;
+                eye.style.boxShadow = e.sh + (e.sh !== 'none'
+                    ? ', inset 0 -12px 30px rgba(0,0,0,.25)' : '');
             });
         }
 
-        function setPupils(x, y) {
-            // x,y are %, e.g. -50 = centered, range roughly -70 to -30
-            pupils.forEach(p => {
-                p.style.transition = 'transform .18s cubic-bezier(.25,1,.5,1)';
-                p.style.transform = `translate(${x}%, ${y}%)`;
-            });
-        }
-
-        // Organic saccade loop
-        function runSaccade() {
-            if (!S.eyesActive || S.mode === 'sleep') return;
-            const r = Math.random();
-            let nx = -50, ny = -50, dur = 900 + Math.random() * 1800, ease = 'transform .15s cubic-bezier(.1,.9,.2,1)';
-            if (r < .12) { /* stare pause */ }
-            else if (r < .22) { nx = -50 + (Math.random() * 14 - 7); ny = -50 + (Math.random() * 8 - 4); ease = 'transform 1.1s ease-in-out'; dur = 1400; }
-            else if (r < .6) { nx = -50 + (Math.random() > .5 ? 18 : -18) + (Math.random() * 4 - 2); ny = -50 + (Math.random() * 10 - 5); }
-            else { nx = pupX + (Math.random() * 6 - 3); ny = pupY + (Math.random() * 5 - 2.5); }
-            nx = Math.max(-72, Math.min(-28, nx));
-            ny = Math.max(-64, Math.min(-36, ny));
-            pupX = nx; pupY = ny;
-            pupils.forEach(p => { p.style.transition = ease; p.style.transform = `translate(${nx}%,${ny}%)`; });
-            saccadeTimer = setTimeout(runSaccade, dur);
-        }
-
-        // Face tracking: call this with normalized x,y ∈ [0,1]
         function faceTrack(nx, ny) {
-            const tx = -50 + (nx - .5) * 44;  // map center=–50, edges = ±22
-            const ty = -50 + (ny - .5) * 28;
+            if (!eyesActive) return;
+            const tx = -50 + (nx - .5) * 44, ty = -50 + (ny - .5) * 28;
             pupils.forEach(p => {
                 p.style.transition = 'transform .22s cubic-bezier(.25,1,.5,1)';
                 p.style.transform = `translate(${tx}%,${ty}%)`;
@@ -1002,308 +1659,614 @@
             pupX = tx; pupY = ty;
         }
 
-        // Blink system
+        function runSaccade() {
+            if (!eyesActive) return;
+            const r = Math.random();
+            let nx = -50, ny = -50,
+                dur = 900 + Math.random() * 1800,
+                ease = 'transform .15s cubic-bezier(.1,.9,.2,1)';
+            if (r > .6) {
+                nx = -50 + (Math.random() > .5 ? 18 : -18) + (Math.random() * 4 - 2);
+                ny = -50 + (Math.random() * 10 - 5);
+            } else if (r > .2) {
+                nx = pupX + (Math.random() * 6 - 3);
+                ny = pupY + (Math.random() * 5 - 2.5);
+                ease = 'transform 1s ease-in-out';
+            }
+            nx = Math.max(-72, Math.min(-28, nx));
+            ny = Math.max(-64, Math.min(-36, ny));
+            pupX = nx; pupY = ny;
+            pupils.forEach(p => { p.style.transition = ease; p.style.transform = `translate(${nx}%,${ny}%)`; });
+            saccTm = setTimeout(runSaccade, dur);
+        }
+
         function doBlink(slow = false) {
-            const dur = slow ? .28 : (.05 + Math.random() * .05);
-            const open = slow ? .32 : .1;
+            if (!eyesActive) return;
+            const c = slow ? .28 : .06, o = slow ? .34 : .12;
             eyes.forEach(eye => {
-                const base = eye.style.transform.replace(/\s*scaleY\([^)]*\)/, '').replace(/\s*translate[^)]*\)/, '').trim();
-                eye.style.transition = `transform ${dur}s cubic-bezier(.2,.8,.2,1)`;
-                eye.style.transform = base + ' scaleY(0) translateY(10%)';
+                eye.style.transition = `transform ${c}s cubic-bezier(.2,.8,.2,1)`;
+                eye.style.transform = 'scaleY(0) translateY(8%)';
                 setTimeout(() => {
-                    eye.style.transition = `transform ${open}s cubic-bezier(.2,.8,.2,1)`;
-                    eye.style.transform = base + ' scaleY(.75) translateY(10%)';
-                    setTimeout(() => { eye.style.transition = ''; setEyeEmotion('neutral'); }, open * 1000 + 20);
-                }, dur * 1000);
+                    eye.style.transition = `transform ${o}s cubic-bezier(.2,.8,.2,1)`;
+                    eye.style.transform = 'scaleY(.78) translateY(8%)';
+                }, c * 1000);
             });
         }
 
         function schedBlink() {
-            const d = 2200 + Math.random() * 4000;
-            blinkTimer = setTimeout(() => {
-                if (S.eyesActive && S.mode !== 'sleep') {
+            blinkTm = setTimeout(() => {
+                if (eyesActive) {
                     const r = Math.random();
                     if (r < .15) doBlink(true);
-                    else { doBlink(false); if (r > .82) setTimeout(() => doBlink(false), 200); }
+                    else { doBlink(); if (r > .82) setTimeout(doBlink, 200); }
                 }
                 schedBlink();
-            }, d);
+            }, 2200 + Math.random() * 3800);
         }
 
         function startEyes() {
-            S.eyesActive = true;
+            eyesActive = true;
             document.getElementById('eye-layer').style.opacity = '1';
-            setEyeEmotion('neutral');
-            if (saccadeTimer) clearTimeout(saccadeTimer);
+            setEmotion('neutral');
+            if (saccTm) clearTimeout(saccTm);
             setTimeout(runSaccade, 800);
         }
 
-        function stopEyes() {
-            S.eyesActive = false;
+        function pauseEyes() {
+            eyesActive = false;
+            document.getElementById('eye-layer').style.opacity = '0.15';
+            if (saccTm) { clearTimeout(saccTm); saccTm = null; }
+        }
+
+        function hideEyes() {
+            eyesActive = false;
             document.getElementById('eye-layer').style.opacity = '0';
-            if (saccadeTimer) { clearTimeout(saccadeTimer); saccadeTimer = null; }
+            if (saccTm) { clearTimeout(saccTm); saccTm = null; }
         }
 
-        // ============================================================
-        // MODE SWITCHING
-        // ============================================================
-        function enterMode(mode) {
-            closeMenu();
-            S.mode = mode;
-            document.getElementById('overlay-ai').classList.toggle('active', mode === 'ai');
-            document.getElementById('overlay-tp').classList.toggle('active', mode === 'tp');
-            if (mode === 'ai' || mode === 'tp') {
-                stopEyes();
-            } else {
-                startEyes();
-            }
-            // Telepresence: start camera
-            if (mode === 'tp') startTelep();
+        // ═══════════════════════════════════════════════════════════
+        // AI MODE
+        // ═══════════════════════════════════════════════════════════
+        function enterAIMode() {
+            console.log('[KENZA] enterAIMode clicked');
+            enterState('ai');
         }
 
-        function exitMode(mode) {
-            document.getElementById(`overlay-${mode}`).classList.remove('active');
-            if (mode === 'tp') stopTelep();
-            S.mode = S.exploreOn ? 'explore' : 'idle';
-            startEyes();
+        function exitAIMode() {
+            console.log('[KENZA] exitAIMode clicked');
+            enterState('menu');
         }
 
-        // ============================================================
-        // TELEPRESENCE
-        // ============================================================
-        let tpStream = null;
-        function startTelep() {
-            const v = document.getElementById('remote-video');
-            if (navigator.mediaDevices?.getUserMedia) {
-                navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(s => {
-                    tpStream = s; v.srcObject = s;
-                }).catch(() => {
-                    v.style.background = 'linear-gradient(135deg,#12121a,#0a1520)';
-                });
-            }
-        }
-        function stopTelep() {
-            if (tpStream) { tpStream.getTracks().forEach(t => t.stop()); tpStream = null; }
-            document.getElementById('remote-video').srcObject = null;
+        function addMsg(role, text) {
+            const msgs = document.getElementById('chat-msgs');
+            const d = document.createElement('div');
+            const isUser = (role === 'user');
+            const isKenza = (role === 'kenza');
+            d.style.cssText = `
+                padding:13px 16px;
+                border-radius:18px;
+                max-width:85%;
+                font-size:1rem;
+                line-height:1.55;
+                animation:fadeUp .28s ease;
+                word-break:break-word;
+                ${isUser
+                    ? 'background:linear-gradient(135deg,#4fc3f7,#0077aa);color:#000;margin-left:auto;border-bottom-right-radius:4px;align-self:flex-end;'
+                    : 'background:linear-gradient(135deg,rgba(80,50,120,.85),rgba(50,30,90,.9));border:1px solid rgba(150,100,255,.2);border-bottom-left-radius:4px;align-self:flex-start;'
+                }`;
+            // Label row
+            const label = document.createElement('div');
+            label.style.cssText = `font-size:.72rem;font-weight:700;opacity:.6;margin-bottom:4px;letter-spacing:.04em;text-transform:uppercase;`;
+            label.textContent = isUser ? '🎙 You' : '🤖 KENZA';
+            d.appendChild(label);
+            // Text
+            const txt = document.createElement('div');
+            txt.textContent = text;
+            d.appendChild(txt);
+            msgs.appendChild(d);
+            msgs.scrollTop = msgs.scrollHeight;
         }
 
-        // ============================================================
-        // EXPLORE / SENTRY
-        // ============================================================
-        function toggleExplore(e) {
-            e.stopPropagation();
+        function clearChat() {
+            const msgs = document.getElementById('chat-msgs');
+            if (msgs) msgs.innerHTML = '';
+        }
+
+        function setAIStatus(st) {
+            const labels = {
+                idle: '🤖 AI Mode',
+                listening: '👂 Listening…',
+                thinking: '💭 Thinking…',
+                speaking: '🔊 Speaking',
+                sleeping: '💤 Sleeping',
+            };
+            const el = document.getElementById('ai-status-text');
+            if (el) el.textContent = labels[st] || st;
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // EXPLORE
+        // ═══════════════════════════════════════════════════════════
+        function toggleExplore() {
+            console.log('[KENZA] toggleExplore clicked, was:', S.exploreOn);
             S.exploreOn = !S.exploreOn;
-            const tog = document.getElementById('explore-toggle');
-            tog.classList.toggle('on', S.exploreOn);
-            const badge = document.getElementById('explore-badge');
-            if (S.exploreOn) {
-                badge.style.display = 'flex';
-                if (S.mode === 'idle') { S.mode = 'explore'; startEyes(); }
-                sendWS({ type: 'explore', active: true });
-            } else {
-                badge.style.display = 'none';
+
+            document.getElementById('explore-tog').classList.toggle('on', S.exploreOn);
+            document.getElementById('explore-wrap').classList.toggle('active', S.exploreOn);
+            document.getElementById('explore-desc').textContent = S.exploreOn
+                ? 'Sentry mode ACTIVE — scanning for people'
+                : 'Sentry mode activates automatically';
+            document.getElementById('explore-badge').style.display =
+                S.exploreOn ? 'flex' : 'none';
+
+            sendWS({ type: 'explore', active: S.exploreOn });
+
+            if (!S.exploreOn) {
                 clearPersonAlert();
-                S.mode = 'idle';
-                sendWS({ type: 'explore', active: false });
+                // Return to idle after short delay so user sees toggle snap off
+                setTimeout(() => enterState('idle'), 500);
             }
         }
 
         function showPersonAlert() {
-            S.sentryAlert = true;
             document.getElementById('person-badge').style.display = 'block';
-            document.getElementById('alert-icon').style.display = 'inline';
-            setEyeEmotion('alert');
+            document.getElementById('alert-dot').style.display = 'block';
+            setEmotion('alert');
             sendWS({ type: 'sentry_alert', detected: true });
         }
 
         function clearPersonAlert() {
-            S.sentryAlert = false;
-            document.getElementById('person-badge').style.display = 'none';
-            document.getElementById('alert-icon').style.display = 'none';
-            if (S.eyesActive) setEyeEmotion('neutral');
+            const pb = document.getElementById('person-badge');
+            const ad = document.getElementById('alert-dot');
+            if (pb) pb.style.display = 'none';
+            if (ad) ad.style.display = 'none';
+            if (eyesActive) setEmotion('neutral');
         }
 
-        // ============================================================
-        // MENU
-        // ============================================================
-        function openMenu() {
-            if (S.mode === 'ai' || S.mode === 'tp') return;
-            document.getElementById('menu-bg').classList.add('open');
-            document.getElementById('menu-sheet').classList.add('open');
-        }
-        function closeMenu() {
-            document.getElementById('menu-bg').classList.remove('open');
-            document.getElementById('menu-sheet').classList.remove('open');
-        }
-
-        // ============================================================
+        // ═══════════════════════════════════════════════════════════
         // SETTINGS / QR
-        // ============================================================
-        function openSettings() {
-            closeMenu();
-            document.getElementById('settings-panel').classList.add('open');
-            drawQR();
-        }
-        function closeSettings() {
-            document.getElementById('settings-panel').classList.remove('open');
-        }
-        function disconnectDevice() {
-            S.connected = false; S.linkedDevice = null;
-            updateConnStatus(false, null);
-            sendWS({ type: 'disconnect' });
-        }
-        function updateConnStatus(connected, name) {
-            document.getElementById('conn-dot').classList.toggle('connected', connected);
-            document.getElementById('conn-name').textContent = connected ? (name || 'Controller') : 'No Device Linked';
-            document.getElementById('conn-detail').textContent = connected ? 'Connected and active' : 'Waiting for controller scan…';
-            document.getElementById('disconnect-btn').style.display = connected ? 'block' : 'none';
-        }
-
-        // Simple QR painter (draws a placeholder matrix; replace with qrcode.js if desired)
+        // ═══════════════════════════════════════════════════════════
         function drawQR() {
             const canvas = document.getElementById('qr-canvas');
+            if (!canvas) return;
             const ctx = canvas.getContext('2d');
-            const size = canvas.width;
-            const modules = 21; // version 1
-            const cell = Math.floor(size / modules);
-            // Generate placeholder QR pattern representation
-            const ip = location.hostname || '192.168.x.x';
-            const data = `http://${ip}:8765`;
-            // Simple visual QR placeholder (3 finder patterns + random modules)
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(0, 0, size, size);
+            const sz = canvas.width, cell = Math.floor(sz / 21);
+            ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, sz, sz);
             ctx.fillStyle = '#000';
-            function rect(col, row, w = 1, h = 1) { ctx.fillRect(col * cell, row * cell, w * cell, h * cell); }
-            function finder(c, r) {
-                rect(c, r, 7, 7); ctx.fillStyle = '#fff'; rect(c + 1, r + 1, 5, 5);
+            const rect = (c, r, w = 1, h = 1) =>
+                ctx.fillRect(c * cell, r * cell, w * cell, h * cell);
+            const finder = (c, r) => {
+                rect(c, r, 7, 7);
+                ctx.fillStyle = '#fff'; rect(c + 1, r + 1, 5, 5);
                 ctx.fillStyle = '#000'; rect(c + 2, r + 2, 3, 3);
-            }
+            };
             finder(0, 0); finder(14, 0); finder(0, 14);
-            // Random data modules (decorative)
-            const seed = data.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-            for (let y = 0; y < modules; y++) for (let x = 0; x < modules; x++) {
-                const inFinder = (x < 8 && y < 8) || (x > 12 && y < 8) || (x < 8 && y > 12);
-                if (!inFinder && ((seed * x * 71 + y * 113) % 5 < 2)) { ctx.fillStyle = '#000'; rect(x, y); }
+            const ip = location.hostname || 'robot.local';
+            const seed = (ip + '8765').split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+            for (let y = 0; y < 21; y++) for (let x = 0; x < 21; x++) {
+                if (!((x < 8 && y < 8) || (x > 12 && y < 8) || (x < 8 && y > 12))) {
+                    if ((seed * x * 71 + y * 113) % 5 < 2) { ctx.fillStyle = '#000'; rect(x, y); }
+                }
             }
         }
 
-        // ============================================================
-        // CHAT MESSAGES
-        // ============================================================
-        function addMsg(role, text) {
-            const msgs = document.getElementById('chat-msgs');
-            const div = document.createElement('div');
-            div.className = `msg ${role}`;
-            div.textContent = text;
-            msgs.appendChild(div);
-            msgs.scrollTop = msgs.scrollHeight;
+        function updateConnStatus(conn, name) {
+            const dot = document.getElementById('conn-dot');
+            const nm = document.getElementById('conn-name');
+            const det = document.getElementById('conn-detail');
+            const disc = document.getElementById('disc-btn');
+            if (dot) dot.classList.toggle('on', !!conn);
+            if (nm) nm.textContent = conn ? (name || 'Controller') : 'No Device Linked';
+            if (det) det.textContent = conn ? 'Connected and active' : 'Waiting for controller scan…';
+            if (disc) disc.style.display = conn ? 'block' : 'none';
         }
 
-        function setAiStatus(st) {
-            const bar = document.getElementById('chat-status');
-            const labels = { idle: 'AI Mode · Idle', listening: 'Listening…', thinking: 'Thinking…', speaking: 'Speaking' };
-            bar.className = 'chat-status ' + st;
-            document.getElementById('chat-status-text').textContent = labels[st] || st;
+        function disconnectDevice() {
+            console.log('[KENZA] disconnectDevice clicked');
+            sendWS({ type: 'disconnect' });
+            updateConnStatus(false, null);
+            enterState('idle');
         }
 
-        function showThinkingDots() {
-            const msgs = document.getElementById('chat-msgs');
-            const div = document.createElement('div');
-            div.className = 'msg thinking-dot'; div.id = 'thinking-msg';
-            for (let i = 0; i < 3; i++) { const d = document.createElement('div'); d.className = 'dot-bounce'; div.appendChild(d); }
-            msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
-        }
-        function removeThinkingDots() {
-            const t = document.getElementById('thinking-msg');
-            if (t) t.remove();
-        }
-
-        // ============================================================
-        // TOP BAR UPDATES
-        // ============================================================
-        function updateBattery(pct) {
-            document.getElementById('tb-battery').innerHTML = pct + '<span style="font-size:.6rem;opacity:.6">%</span>';
-        }
-        function updateWifi(signal) {
-            const icons = ['📵', '📶', '📶', '📶'];
-            document.getElementById('tb-wifi').textContent = icons[Math.min(signal, 3)] || '📶';
-        }
-        function updateMic(active) {
-            document.getElementById('tb-mic').style.color = active ? 'var(--accent)' : 'var(--dim)';
+        function setVolume(level) {
+            level = Math.round(level);
+            const txt = document.getElementById('vol-level-txt');
+            if (txt) txt.textContent = level + '%';
+            // Dynamic slider gradient fill
+            const slider = document.getElementById('vol-slider');
+            if (slider) {
+                slider.style.background =
+                    `linear-gradient(to right, var(--accent) 0%, var(--accent) ${level}%, rgba(255,255,255,.12) ${level}%, rgba(255,255,255,.12) 100%)`;
+            }
+            console.log('[KENZA] setVolume:', level);
+            sendWS({ type: 'set_volume', level });
         }
 
-        // ============================================================
+        // ═══════════════════════════════════════════════════════════
+        // CONTACTS (Telepresence user selection)
+        // ═══════════════════════════════════════════════════════════
+        const STATIC_CONTACTS = ["Amruth", "Sabil", "Shamnas", "Sidharth"];
+
+        function renderContacts() {
+            const grid = document.getElementById('contact-grid');
+            if (!grid) return;
+
+            grid.innerHTML = '';
+
+            STATIC_CONTACTS.forEach(name => {
+                const isOnline = !!S.connectedPeers[name.toLowerCase()] || !!S.connectedPeers[name];
+                const card = document.createElement('div');
+                card.className = 'contact-card';
+                card.dataset.action = "call";
+                card.dataset.name = name;
+
+                card.innerHTML = `
+                    <div class="avatar">${name[0].toUpperCase()}</div>
+                    <h3>${name}</h3>
+                    <div class="status-row">
+                        <div class="status-dot ${isOnline ? 'online' : ''}"></div>
+                        <span class="status-txt">${isOnline ? 'Online' : 'Offline'}</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Single event delegate — no inline onclick on dynamic DOM
+        document.getElementById('contacts-body').addEventListener('click', e => {
+            const btn = e.target.closest('[data-action="call"]');
+            if (btn) {
+                console.log('[KENZA] Call contact:', btn.dataset.name);
+                startCall(btn.dataset.name);
+            }
+        });
+
+        // ═══════════════════════════════════════════════════════════
+        // WebRTC CALL SYSTEM
+        // ═══════════════════════════════════════════════════════════
+        let pc = null;
+        let callTimeout = null;
+        const iceServers = [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' }
+        ];
+
+        async function startCall(name) {
+            if (S.callState !== 'idle') {
+                console.warn('[KENZA] startCall ignored — callState:', S.callState);
+                return;
+            }
+            console.log('[KENZA] startCall:', name);
+            S.callState = 'calling';
+            S.callerName = name;
+            enterState('calling', { name });
+
+            try {
+                S.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            } catch (e) {
+                console.warn('[KENZA] Media access denied:', e.message);
+                S.localStream = null;
+            }
+
+            pc = new RTCPeerConnection({ iceServers });
+
+            if (S.localStream)
+                S.localStream.getTracks().forEach(t => pc.addTrack(t, S.localStream));
+
+            pc.onicecandidate = e => {
+                if (e.candidate)
+                    sendWS({ type: 'ice_candidate', candidate: e.candidate, to: 'controller' });
+            };
+            pc.ontrack = e => {
+                const rv = document.getElementById('remote-video');
+                if (rv) rv.srcObject = e.streams[0];
+            };
+            pc.onconnectionstatechange = () => {
+                console.log('[KENZA] PC state:', pc.connectionState);
+                const txt = {
+                    connected: 'Connected', connecting: 'Connecting…',
+                    disconnected: 'Disconnected', failed: 'Connection failed'
+                }[pc.connectionState] || pc.connectionState;
+                const q = document.getElementById('call-quality-txt');
+                if (q) q.textContent = txt;
+                if (pc.connectionState === 'failed') endCall();
+            };
+
+            const offer = await pc.createOffer({ offerToReceiveVideo: true, offerToReceiveAudio: true });
+            await pc.setLocalDescription(offer);
+            sendWS({ type: 'call_offer', sdp: offer, callerName: 'Robot', to: 'controller' });
+
+            // Auto-cancel if no answer within 45 s
+            callTimeout = setTimeout(() => {
+                if (S.callState === 'calling') {
+                    console.log('[KENZA] Call timeout — cancelling');
+                    cancelCall();
+                }
+            }, 45000);
+        }
+
+        async function handleIncomingCall(data) {
+            if (S.callState !== 'idle') {
+                console.warn('[KENZA] Incoming call rejected — busy:', S.callState);
+                sendWS({ type: 'call_busy', to: 'controller' });
+                return;
+            }
+            console.log('[KENZA] Incoming call from:', data.callerName);
+            S.callState = 'incoming';
+            S.callerName = data.callerName || 'Remote User';
+            window._pendingOffer = data.sdp;
+            enterState('incoming', { callerName: S.callerName });
+        }
+
+        async function acceptCall() {
+            console.log('[KENZA] acceptCall clicked');
+            if (S.callState !== 'incoming') return;
+            S.callState = 'active';
+
+            try {
+                S.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            } catch (e) {
+                console.warn('[KENZA] Media access denied on accept:', e.message);
+                S.localStream = null;
+            }
+
+            pc = new RTCPeerConnection({ iceServers });
+            if (S.localStream)
+                S.localStream.getTracks().forEach(t => pc.addTrack(t, S.localStream));
+            pc.onicecandidate = e => {
+                if (e.candidate)
+                    sendWS({ type: 'ice_candidate', candidate: e.candidate, to: 'controller' });
+            };
+            pc.ontrack = e => {
+                const rv = document.getElementById('remote-video');
+                if (rv) rv.srcObject = e.streams[0];
+            };
+            pc.onconnectionstatechange = () => {
+                console.log('[KENZA] PC state (accepted):', pc.connectionState);
+                if (pc.connectionState === 'failed') endCall();
+            };
+
+            await pc.setRemoteDescription(new RTCSessionDescription(window._pendingOffer));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            sendWS({ type: 'call_answer', sdp: answer, to: 'controller' });
+
+            enterState('call');
+        }
+
+        function rejectCall() {
+            console.log('[KENZA] rejectCall clicked');
+            sendWS({ type: 'call_reject', to: 'controller' });
+            S.callState = 'idle';
+            enterState('idle');
+        }
+
+        function cancelCall() {
+            console.log('[KENZA] cancelCall clicked');
+            if (callTimeout) { clearTimeout(callTimeout); callTimeout = null; }
+            sendWS({ type: 'call_reject', to: 'controller' });
+            cleanupCall();
+        }
+
+        function endCall() {
+            console.log('[KENZA] endCall clicked');
+            sendWS({ type: 'call_end', to: 'controller' });
+            cleanupCall();
+        }
+
+        function cleanupCall() {
+            console.log('[KENZA] cleanupCall');
+            stopCallTimer();
+            if (pc) { pc.close(); pc = null; }
+            if (S.localStream) {
+                S.localStream.getTracks().forEach(t => t.stop());
+                S.localStream = null;
+            }
+            const rv = document.getElementById('remote-video'); if (rv) rv.srcObject = null;
+            const lv = document.getElementById('local-video'); if (lv) lv.srcObject = null;
+
+            // Reset call controls to defaults
+            S.callState = 'idle'; S.camOn = true; S.micOn = true;
+            const bc = document.getElementById('btn-cam');
+            const bm = document.getElementById('btn-mic');
+            if (bc) { bc.textContent = '📷'; bc.classList.remove('off'); }
+            if (bm) { bm.textContent = '🎙️'; bm.classList.remove('off'); }
+
+            // ← THE CRITICAL FIX: always return to idle
+            enterState('idle');
+        }
+
+        // Call timer
+        let callTimerInterval = null, callSeconds = 0;
+        function startCallTimer() {
+            callSeconds = 0;
+            clearInterval(callTimerInterval);
+            const t = document.getElementById('call-timer');
+            if (t) t.textContent = '0:00';
+            callTimerInterval = setInterval(() => {
+                callSeconds++;
+                const m = Math.floor(callSeconds / 60), s = callSeconds % 60;
+                if (t) t.textContent = m + ':' + String(s).padStart(2, '0');
+            }, 1000);
+        }
+        function stopCallTimer() {
+            clearInterval(callTimerInterval);
+            callTimerInterval = null;
+        }
+
+        function toggleCam() {
+            console.log('[KENZA] toggleCam clicked');
+            S.camOn = !S.camOn;
+            if (S.localStream)
+                S.localStream.getVideoTracks().forEach(t => t.enabled = S.camOn);
+            const b = document.getElementById('btn-cam');
+            if (b) { b.classList.toggle('off', !S.camOn); b.textContent = S.camOn ? '📷' : '🚫'; }
+        }
+
+        function toggleMic() {
+            console.log('[KENZA] toggleMic clicked');
+            S.micOn = !S.micOn;
+            if (S.localStream)
+                S.localStream.getAudioTracks().forEach(t => t.enabled = S.micOn);
+            const b = document.getElementById('btn-mic');
+            if (b) { b.classList.toggle('off', !S.micOn); b.textContent = S.micOn ? '🎙️' : '🔇'; }
+        }
+
+        // ═══════════════════════════════════════════════════════════
         // WEBSOCKET
-        // ============================================================
-        let ws = null;
-        let wsReconnectTimer = null;
+        // ═══════════════════════════════════════════════════════════
+        let ws = null, wsReconn = null;
 
         function connectWS() {
             const host = location.hostname || 'localhost';
-            const url = `ws://${host}:8765`;
+            console.log(`[KENZA] WS connecting → ws://${host}:8765`);
             try {
-                ws = new WebSocket(url);
-                ws.onopen = () => { console.log('[WS] connected'); clearTimeout(wsReconnectTimer); };
-                ws.onclose = () => { ws = null; wsReconnectTimer = setTimeout(connectWS, 3000); };
-                ws.onerror = () => { };
-                ws.onmessage = (e) => {
-                    try { handleMsg(JSON.parse(e.data)); } catch (_) { }
+                ws = new WebSocket(`ws://${host}:8765`);
+                ws.onopen = () => {
+                    console.log('[KENZA] WS open');
+                    clearTimeout(wsReconn);
+                    sendWS({ type: 'register', role: 'robot', name: 'KENZA Robot' });
+                    // Update top-bar wifi icon
+                    const w = document.getElementById('tb-wifi');
+                    if (w) w.textContent = '📶';
                 };
-            } catch (_) { }
-        }
-
-        function sendWS(obj) {
-            if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
-        }
-
-        function handleMsg(d) {
-            switch (d.type) {
-                case 'emotion':
-                    if (S.eyesActive) setEyeEmotion(d.state);
-                    if (d.state === 'sleep') { S.mode = 'sleep'; stopEyes(); }
-                    else if (S.mode === 'sleep' && d.state !== 'sleep') { S.mode = 'idle'; startEyes(); }
-                    break;
-                case 'face_track':
-                    if (S.eyesActive && S.mode !== 'ai' && S.mode !== 'tp') faceTrack(d.x, d.y);
-                    break;
-                case 'person_detected':
-                    if (S.exploreOn) { d.detected ? showPersonAlert() : clearPersonAlert(); }
-                    break;
-                case 'ai_state':
-                    if (S.mode === 'ai') setAiStatus(d.state);
-                    if (d.state === 'thinking') showThinkingDots();
-                    else removeThinkingDots();
-                    break;
-                case 'ai_message':
-                    if (S.mode === 'ai') { removeThinkingDots(); addMsg(d.role, d.text); }
-                    break;
-                case 'battery':
-                    updateBattery(d.level);
-                    break;
-                case 'wifi':
-                    updateWifi(d.signal);
-                    break;
-                case 'mic':
-                    updateMic(d.active);
-                    break;
-                case 'controller_connected':
-                    S.connected = true; S.linkedDevice = d.name || 'Controller';
-                    updateConnStatus(true, S.linkedDevice);
-                    break;
-                // Legacy gesture cursor (from older server)
-                default:
-                    if (d.x !== undefined) { /* gesture ignored on robot side */ }
+                ws.onclose = () => {
+                    console.log('[KENZA] WS closed — reconnecting…');
+                    ws = null;
+                    const w = document.getElementById('tb-wifi');
+                    if (w) w.textContent = '❌';
+                    wsReconn = setTimeout(connectWS, 3000);
+                };
+                ws.onerror = err => console.warn('[KENZA] WS error', err);
+                ws.onmessage = e => { try { handleMsg(JSON.parse(e.data)); } catch (_) { } };
+            } catch (err) {
+                console.warn('[KENZA] WS failed to init:', err);
             }
         }
 
-        // ============================================================
+        function sendWS(obj) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify(obj));
+            }
+        }
+
+        async function handleMsg(d) {
+            console.log('[KENZA] ← msg:', d.type, d);
+            switch (d.type) {
+
+                case 'emotion':
+                    if (eyesActive) setEmotion(d.state);
+                    if (d.state === 'sleep') hideEyes();
+                    else if (S.state === 'idle') startEyes();
+                    break;
+
+                case 'face_track':
+                    if (eyesActive) faceTrack(d.x, d.y);
+                    break;
+
+                case 'person_detected':
+                    if (S.exploreOn) d.detected ? showPersonAlert() : clearPersonAlert();
+                    break;
+
+                case 'ai_state':
+                    if (S.state === 'ai') setAIStatus(d.state);
+                    break;
+
+                case 'ai_message':
+                    if (S.state === 'ai') addMsg(d.role, d.text);
+                    break;
+
+                case 'battery':
+                    const b = document.getElementById('tb-battery');
+                    if (b) b.innerHTML = d.level + '<span style="font-size:.6rem;opacity:.55">%</span>';
+                    break;
+
+                case 'wifi':
+                    const icons = ['❌', '📶', '📶', '📶'];
+                    const w = document.getElementById('tb-wifi');
+                    if (w) w.textContent = icons[Math.min(d.signal, 3)] || '📶';
+                    break;
+
+                case 'peer_online':
+                    console.log('[KENZA] Peer online:', d.name, d.role);
+                    S.connectedPeers[d.name] = { role: d.role };
+                    updateConnStatus(true, d.name);
+                    // Re-announce ourselves
+                    sendWS({ type: 'register', role: 'robot', name: 'KENZA Robot' });
+                    // Refresh contacts if that screen is visible
+                    if (S.state === 'contacts') renderContacts();
+                    break;
+
+                case 'peer_offline':
+                    console.log('[KENZA] Peer offline:', d.name);
+                    delete S.connectedPeers[d.name];
+                    if (!Object.keys(S.connectedPeers).length) updateConnStatus(false, null);
+                    if (S.state === 'contacts') renderContacts();
+                    break;
+
+                case 'controller_connected':
+                    S.connectedPeers[d.name || 'Controller'] = { role: 'controller' };
+                    updateConnStatus(true, d.name || 'Controller');
+                    break;
+
+                case 'call_offer':
+                    await handleIncomingCall(d);
+                    break;
+
+                case 'call_answer':
+                    if (pc && S.callState === 'calling') {
+                        clearTimeout(callTimeout);
+                        await pc.setRemoteDescription(new RTCSessionDescription(d.sdp));
+                        S.callState = 'active';
+                        enterState('call');
+                    }
+                    break;
+
+                case 'call_reject':
+                    if (S.callState === 'calling') cleanupCall();
+                    break;
+
+                case 'call_end':
+                    if (S.callState === 'active') cleanupCall();
+                    break;
+
+                case 'ice_candidate':
+                    if (pc && d.candidate) {
+                        try { await pc.addIceCandidate(new RTCIceCandidate(d.candidate)); }
+                        catch (e) { console.warn('[KENZA] ICE error:', e); }
+                    }
+                    break;
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
         // BOOT
-        // ============================================================
-        setEyeEmotion('neutral');
-        schedBlink();
-        setTimeout(runSaccade, 1000);
-        connectWS();
+        // ═══════════════════════════════════════════════════════════
+        (function boot() {
+            console.log('[KENZA] Booting state machine…');
+
+            // Eye-layer tap → open menu (from idle)
+            document.getElementById('eye-layer').addEventListener('click', () => {
+                if (S.state === 'idle') {
+                    console.log('[KENZA] Eye-layer tapped → menu');
+                    enterState('menu');
+                }
+            });
+
+            // Start blink scheduler
+            schedBlink();
+
+            // Enter idle state (starts eyes)
+            enterState('idle');
+
+            // Connect WebSocket
+            connectWS();
+
+            console.log('[KENZA] Boot complete.');
+        })();
     </script>
+
 </body>
+
 
 </html>
