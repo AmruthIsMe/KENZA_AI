@@ -1497,6 +1497,113 @@
         }
 
         // ============================================
+        // EMOTION STATE CONTROLLER
+        // Maps conversation engine states → eye animations
+        // Called by WebSocket when type === 'emotion'
+        // ============================================
+        let _emotionRestoreColor = null;  // Saved color before temp override
+        let _emotionRestoreAnimation = null;
+        let _emotionBlinkInterval = null;
+
+        const EMOTION_MAP = {
+            // state           → { anim, colorOverride }
+            neutral: { anim: 'idle', colorOverride: null },
+            happy: { anim: 'happy', colorOverride: 'cyan' },
+            sad: { anim: 'sad', colorOverride: null },
+            excited: { anim: 'surprised', colorOverride: 'orange' },
+            thinking: { anim: 'idle', colorOverride: 'purple', pulse: true },
+            listening: { anim: 'idle', colorOverride: 'green', pulse: true },
+            speaking: { anim: 'blink', colorOverride: null, fastBlink: true },
+            confused: { anim: 'dizzy', colorOverride: 'pink' },
+        };
+
+        // Label overlay for emotion state
+        let _emotionLabel = null;
+        function _showEmotionBadge(text) {
+            if (!_emotionLabel) {
+                _emotionLabel = document.createElement('div');
+                _emotionLabel.id = 'emotion-badge';
+                _emotionLabel.style.cssText = `
+                    position: fixed;
+                    top: 16px;
+                    right: 16px;
+                    background: rgba(0,0,0,0.65);
+                    color: #4dd9ff;
+                    font-family: 'Inter', sans-serif;
+                    font-size: 0.78rem;
+                    font-weight: 600;
+                    letter-spacing: 0.06em;
+                    padding: 6px 14px;
+                    border-radius: 20px;
+                    border: 1px solid rgba(77,217,255,0.4);
+                    backdrop-filter: blur(8px);
+                    pointer-events: none;
+                    z-index: 9999;
+                    transition: opacity 0.3s;
+                `;
+                document.body.appendChild(_emotionLabel);
+            }
+            _emotionLabel.textContent = '● ' + text.toUpperCase();
+            _emotionLabel.style.opacity = '1';
+        }
+
+        function applyEmotionState(emotionState) {
+            const mapping = EMOTION_MAP[emotionState] || EMOTION_MAP.neutral;
+
+            // Clear any previous fast-blink interval
+            if (_emotionBlinkInterval) {
+                clearInterval(_emotionBlinkInterval);
+                _emotionBlinkInterval = null;
+            }
+
+            // --- Color override (temporary) ---
+            if (mapping.colorOverride) {
+                if (!_emotionRestoreColor) _emotionRestoreColor = state.eyeColor;
+                updateEyeColor(mapping.colorOverride);
+            } else if (_emotionRestoreColor && emotionState === 'neutral') {
+                updateEyeColor(_emotionRestoreColor);
+                _emotionRestoreColor = null;
+            }
+
+            // --- Pulse glow for thinking / listening ---
+            const eyeCanvases = document.querySelectorAll('.eye-canvas');
+            if (mapping.pulse) {
+                const pulseColor = mapping.colorOverride === 'green'
+                    ? 'rgba(100,255,150,0.6)' : 'rgba(170,100,255,0.6)';
+                eyeCanvases.forEach(eye => {
+                    eye.style.transition = 'box-shadow 0.6s ease-in-out';
+                });
+                let pulseOn = false;
+                _emotionBlinkInterval = setInterval(() => {
+                    pulseOn = !pulseOn;
+                    eyeCanvases.forEach(eye => {
+                        eye.style.boxShadow = pulseOn
+                            ? `0 0 60px ${pulseColor}, inset 0 -10px 30px rgba(0,0,0,0.3)`
+                            : `0 0 20px ${pulseColor}, inset 0 -10px 30px rgba(0,0,0,0.3)`;
+                    });
+                }, 600);
+            }
+
+            // --- Fast blink for speaking ---
+            if (mapping.fastBlink) {
+                _emotionBlinkInterval = setInterval(() => playAnimation('blink'), 1800);
+                // Call idle (not a full anim) so eyes look open between blinks
+                if (state.currentAnimation !== 'idle') resetEyes();
+            } else {
+                // Play the mapped animation (idle resets eyes)
+                if (mapping.anim === 'idle') {
+                    resetEyes();
+                } else {
+                    playAnimation(mapping.anim);
+                }
+            }
+
+            // --- Floating badge ---
+            _showEmotionBadge(emotionState);
+            console.log('[EmotionBridge] State →', emotionState);
+        }
+
+        // ============================================
         // ANIMATIONS
         // ============================================
         let currentAnimationInterval = null;
@@ -2219,8 +2326,22 @@
                 };
 
                 ws.onmessage = (event) => {
-                    const data = JSON.parse(event.data);
-                    updateGestureCursor(data.x, data.y, data.gesture, data.action);
+                    try {
+                        const data = JSON.parse(event.data);
+
+                        // Emotion signals from ConversationEngine
+                        if (data.type === 'emotion') {
+                            applyEmotionState(data.state);
+                            return;
+                        }
+
+                        // Legacy: gesture cursor events
+                        if (data.x !== undefined) {
+                            updateGestureCursor(data.x, data.y, data.gesture, data.action);
+                        }
+                    } catch (e) {
+                        console.warn('[WS] Could not parse message:', event.data);
+                    }
                 };
 
                 ws.onclose = () => {

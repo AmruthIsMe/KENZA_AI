@@ -1085,6 +1085,94 @@ class CommandParser:
 
 
 # ============================================================================
+# EMOTION EYE BRIDGE  (non-blocking WebSocket signal to eyes_display.html)
+# ============================================================================
+
+class EmotionEyeBridge:
+    """
+    Sends emotion state signals to eyes_display.html via a background thread.
+    Uses a queue so it NEVER blocks the conversation loop or TTS.
+    If the WebSocket server isn't running it silently skips — conversation is unaffected.
+
+    Supported states:
+        neutral | happy | sad | excited | thinking | listening | speaking | confused
+    """
+
+    VALID_STATES = frozenset([
+        "neutral", "happy", "sad", "excited",
+        "thinking", "listening", "speaking", "confused",
+    ])
+
+    def __init__(self, ws_url: str = "ws://localhost:8765"):
+        self.ws_url = ws_url
+        self._queue: queue.Queue = queue.Queue(maxsize=20)
+        self._running = True
+        self._thread = threading.Thread(target=self._worker, daemon=True, name="EmotionBridge")
+        self._thread.start()
+        print("[EyeBridge] Emotion bridge started")
+
+    def send_emotion(self, state: str):
+        """Queue an emotion signal. Non-blocking — safe to call from any thread."""
+        if state not in self.VALID_STATES:
+            state = "neutral"
+        try:
+            self._queue.put_nowait(state)
+        except queue.Full:
+            pass  # Drop if queue is full
+
+    def _worker(self):
+        """Background worker: drains the queue and sends WebSocket messages."""
+        import urllib.request
+        last_state: Optional[str] = None
+        try:
+            import websockets as _ws_lib
+            HAS_WEBSOCKETS = True
+        except ImportError:
+            HAS_WEBSOCKETS = False
+            print("[EyeBridge] 'websockets' library not installed — eye signals disabled. "
+                  "Run: pip install websockets")
+
+        async def _send_loop():
+            nonlocal last_state
+            while self._running:
+                # Drain any queued states, keeping only the latest
+                state = None
+                while not self._queue.empty():
+                    try:
+                        state = self._queue.get_nowait()
+                    except queue.Empty:
+                        break
+
+                if state and state != last_state:
+                    try:
+                        import websockets
+                        async with websockets.connect(
+                            self.ws_url, open_timeout=1, close_timeout=1
+                        ) as ws:
+                            msg = json.dumps({"type": "emotion", "state": state})
+                            await ws.send(msg)
+                            last_state = state
+                            print(f"[EyeBridge] → {state}")
+                    except Exception:
+                        pass  # Server not ready — silently ignore
+
+                await asyncio.sleep(0.08)  # ~12 Hz polling
+
+        if not HAS_WEBSOCKETS:
+            return  # Can't run without websockets
+
+        import asyncio as _aio
+        loop = _aio.new_event_loop()
+        try:
+            loop.run_until_complete(_send_loop())
+        finally:
+            loop.close()
+
+    def stop(self):
+        self._running = False
+
+
+# ============================================================================
 # KENZA PERSONALITY (System prompts and responses)
 # ============================================================================
 
@@ -1114,7 +1202,20 @@ RESPONSE STYLE:
 - Short and natural, like texting a friend
 - Avoid long explanations unless asked
 - Use acknowledgments before answering complex questions
-- Be slightly playful but always helpful"""
+- Be slightly playful but always helpful
+
+EMOTION TAG (CRITICAL — always follow this):
+- Begin EVERY reply with exactly one emotion tag in square brackets.
+- Choose the tag that best matches the emotional tone of your reply.
+- Valid tags: [happy] [sad] [excited] [neutral] [confused] [thinking]
+- The tag must be the very first thing in your reply, before any other text.
+- Examples:
+  [happy] Sure thing, I'd love to help with that!
+  [thinking] Hmm, let me work that out for you.
+  [sad] I'm sorry to hear that, I wish I could do more.
+  [excited] Oh wow, that's amazing news!
+  [neutral] The sky is blue because of Rayleigh scattering.
+  [confused] I'm not quite sure what you mean — could you rephrase that?"""
     
     def get_acknowledgment(self) -> str:
         """Get a random acknowledgment phrase"""
@@ -1739,6 +1840,9 @@ class ConversationEngine:
 
         self.commands = CommandParser(self.config, eye_controller, audio_controller, self.tts)
 
+        # Emotion Eye Bridge — non-blocking WebSocket emotion signaller
+        self.eye_bridge = EmotionEyeBridge(ws_url="ws://localhost:8765")
+
         # State
         self.is_running = False
         self.is_listening = False
@@ -1762,6 +1866,24 @@ class ConversationEngine:
         if self.on_state_change:
             self.on_state_change(state)
 
+    def _parse_and_strip_emotion(self, response: str) -> tuple:
+        """
+        Extract the leading emotion tag from an LLM response.
+        Returns (emotion_str, clean_text_without_tag).
+        Defaults to 'neutral' if no valid tag is found.
+        """
+        import re
+        match = re.match(
+            r'^\[(happy|sad|excited|neutral|confused|thinking)\]\s*',
+            response.strip(),
+            re.IGNORECASE,
+        )
+        if match:
+            emotion = match.group(1).lower()
+            clean  = response[match.end():].strip()
+            return emotion, clean
+        return "neutral", response.strip()
+
     def speak_with_interrupt(self, text: str, emotion: str = None) -> bool:
         """
         Speak text while monitoring for interruption.
@@ -1771,6 +1893,9 @@ class ConversationEngine:
         if emotion is None:
             emotion = self.emotion.detect(text)
 
+        # Map EmotionEngine emotion → bridge state (EmotionEngine uses different names)
+        speaking_state = emotion if emotion in EmotionEyeBridge.VALID_STATES else "speaking"
+        self.eye_bridge.send_emotion(speaking_state)
         self._notify_state("speaking")
         interrupted = False
 
@@ -1782,6 +1907,7 @@ class ConversationEngine:
         self.vad.start_monitoring(on_interrupt)
         completed = self.tts.speak_blocking(text, emotion=emotion)
         self.vad.stop_monitoring()
+        self.eye_bridge.send_emotion("neutral")
         self._notify_state("idle")
         return completed and not interrupted
     
@@ -1817,25 +1943,33 @@ class ConversationEngine:
             return self.vision.query_with_image(text)
 
         # 3. General chat: Groq → Gemini → Ollama → LlamaGGUF (offline fallbacks)
-        response = self.groq.send(text)
-        if response:
+        raw = self.groq.send(text)
+        if raw:
+            emotion, response = self._parse_and_strip_emotion(raw)
+            self.eye_bridge.send_emotion(emotion)
             return response
 
-        response = self.gemini.send(text)
-        if response and not response.startswith("I'm"):
+        raw = self.gemini.send(text)
+        if raw and not raw.startswith("I'm"):
+            emotion, response = self._parse_and_strip_emotion(raw)
+            self.eye_bridge.send_emotion(emotion)
             return response
 
         # Offline tier 1: Ollama (any pulled model, default gemma3:270m)
         print(f"[Engine] Cloud LLMs unavailable – trying Ollama ({self.ollama.model})")
-        offline_response = self.ollama.send(text)
-        if offline_response:
-            return offline_response
+        raw = self.ollama.send(text)
+        if raw:
+            emotion, response = self._parse_and_strip_emotion(raw)
+            self.eye_bridge.send_emotion(emotion)
+            return response
 
         # Offline tier 2: llama-cpp-python GGUF file
         print("[Engine] Ollama unavailable – using llama-cpp GGUF fallback")
-        offline_response = self.llama.send(text)
-        if offline_response:
-            return offline_response
+        raw = self.llama.send(text)
+        if raw:
+            emotion, response = self._parse_and_strip_emotion(raw)
+            self.eye_bridge.send_emotion(emotion)
+            return response
 
         return "I'm having trouble responding right now. Please try again."
 
@@ -1905,6 +2039,7 @@ class ConversationEngine:
                         error_count = 0  # Reset on success
                         print(f"\n👋 Wake: {text}")
                         self.is_sleeping = False
+                        self.eye_bridge.send_emotion("listening")
                         self.speak_with_interrupt("Yes?")
                     else:
                         # No wake word, add small delay to prevent busy loop
@@ -1912,6 +2047,7 @@ class ConversationEngine:
                 else:
                     # Active listening
                     self._notify_state("listening")
+                    self.eye_bridge.send_emotion("listening")
                     print("👂 Listening...", end="\r")
                     
                     text = self.stt.listen()
@@ -1930,13 +2066,16 @@ class ConversationEngine:
                     # Check for sleep commands
                     if any(cmd in text for cmd in ["goodbye", "bye", "go to sleep", "stop", "that's all"]):
                         print("[💤 Going to sleep]")
+                        self.eye_bridge.send_emotion("neutral")
                         self.speak_with_interrupt("Okay, let me know if you need me.")
                         self.is_sleeping = True
                         continue
                     
-                    # Process and respond
+                    # Process and respond — signal thinking state BEFORE LLM call
                     self._notify_state("thinking")
+                    self.eye_bridge.send_emotion("thinking")
                     response = self.process_input(text)
+                    # Note: process_input() already signals the response emotion via eye_bridge
                     
                     if response:
                         print(f"🤖 Kenza: {response}\n")
@@ -1946,6 +2085,7 @@ class ConversationEngine:
                         self._notify_state("speaking")
                         self.speak_with_interrupt(response)
                     
+                    self.eye_bridge.send_emotion("neutral")
                     self._notify_state("idle")
                     print("--- Ready ---\n")
 
@@ -1967,6 +2107,8 @@ class ConversationEngine:
     def stop(self):
         """Stop the conversation loop"""
         self.is_running = False
+        self.eye_bridge.send_emotion("neutral")
+        self.eye_bridge.stop()
         self.tts.clear_and_stop()
         self.vad.stop_monitoring()
 
