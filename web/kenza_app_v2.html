@@ -3618,7 +3618,8 @@
             callState: 'idle',   // idle|calling|incoming|active
             camOn: true, micOn: true,
             timerInterval: null, timerSec: 0,
-            robotName: 'KENZA HomeBot'
+            robotName: 'KENZA HomeBot',
+            iceBuf: []   // Buffer ICE candidates that arrive before remote description is set
         };
         const TP_ICE = [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }];
 
@@ -3696,13 +3697,25 @@
             if (TP.pc && TP.callState === 'calling') {
                 clearTimeout(TP._callTimeout);
                 await TP.pc.setRemoteDescription(new RTCSessionDescription(d.sdp));
+                // Flush any ICE candidates that arrived before the answer
+                for (const c of TP.iceBuf) {
+                    try { await TP.pc.addIceCandidate(new RTCIceCandidate(c)); } catch (_) { }
+                }
+                TP.iceBuf = [];
                 TP.callState = 'active';
                 tpStartCallScreen();
             }
         }
 
         async function tpAddIce(d) {
-            if (TP.pc && d.candidate) { try { await TP.pc.addIceCandidate(new RTCIceCandidate(d.candidate)); } catch (_) { } }
+            if (!d.candidate) return;
+            if (TP.pc && TP.pc.remoteDescription) {
+                try { await TP.pc.addIceCandidate(new RTCIceCandidate(d.candidate)); } catch (_) { }
+            } else {
+                // Buffer until remote description is set
+                console.log('[TP] Buffering ICE candidate');
+                TP.iceBuf.push(d.candidate);
+            }
         }
 
         function tpStartCallScreen() {
@@ -3743,9 +3756,8 @@
             if (TP.localStream) { TP.localStream.getTracks().forEach(t => t.stop()); TP.localStream = null; }
             const rv = document.getElementById('ov-remote-video'); if (rv) rv.srcObject = null;
             const lv = document.getElementById('ov-local-video'); if (lv) lv.srcObject = null;
-            TP.callState = 'idle'; TP.camOn = true; TP.micOn = true;
+            TP.callState = 'idle'; TP.camOn = true; TP.micOn = true; TP.iceBuf = [];
             tpHideAllOverlays();
-
             // Return to home dashboard and reset driving state
             navigateTo('view-home');
             sendMotorCommand('S');

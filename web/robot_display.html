@@ -2256,10 +2256,21 @@
         // ═══════════════════════════════════════════════════════════
         let pc = null;
         let callTimeout = null;
+        let _iceBuf = [];   // Buffer ICE candidates that arrive before pc is ready
         const iceServers = [
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' }
         ];
+
+        async function _flushIceBuf() {
+            if (!pc || !_iceBuf.length) return;
+            console.log(`[KENZA] Flushing ${_iceBuf.length} buffered ICE candidates`);
+            for (const c of _iceBuf) {
+                try { await pc.addIceCandidate(new RTCIceCandidate(c)); }
+                catch (e) { console.warn('[KENZA] Buffered ICE error:', e); }
+            }
+            _iceBuf = [];
+        }
 
         async function startCall(name) {
             if (S.callState !== 'idle') {
@@ -2394,6 +2405,9 @@
             await pc.setLocalDescription(answer);
             sendWS({ type: 'call_answer', sdp: answer, to: 'controller' });
 
+            // Flush any ICE candidates that arrived while we were in 'incoming' state
+            await _flushIceBuf();
+
             enterState('call');
         }
 
@@ -2421,6 +2435,7 @@
         function cleanupCall() {
             console.log('[KENZA] cleanupCall');
             stopRing();
+            _iceBuf = [];   // Discard buffered candidates
             stopCallTimer();
             if (pc) { pc.close(); pc = null; }
             if (S.localStream) {
@@ -2616,9 +2631,16 @@
                     break;
 
                 case 'ice_candidate':
-                    if (pc && d.candidate) {
-                        try { await pc.addIceCandidate(new RTCIceCandidate(d.candidate)); }
-                        catch (e) { console.warn('[KENZA] ICE error:', e); }
+                    if (d.candidate) {
+                        if (pc && pc.remoteDescription) {
+                            // pc ready: apply immediately
+                            try { await pc.addIceCandidate(new RTCIceCandidate(d.candidate)); }
+                            catch (e) { console.warn('[KENZA] ICE error:', e); }
+                        } else {
+                            // pc not ready yet: buffer for later
+                            console.log('[KENZA] Buffering ICE candidate (pc not ready)');
+                            _iceBuf.push(d.candidate);
+                        }
                     }
                     break;
             }
