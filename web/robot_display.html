@@ -1492,9 +1492,10 @@
 
     <!-- ══ INCOMING CALL ══ -->
     <div class="screen" id="screen-incoming">
-        <div class="inc-ring">📹</div>
+        <div class="inc-ring" id="inc-ring-icon">📹</div>
         <div class="inc-caller" id="incoming-name">Incoming Call</div>
         <div class="inc-sub">INCOMING VIDEO CALL</div>
+        <div style="font-size:0.78rem;opacity:0.35;letter-spacing:.04em;margin-bottom:28px">TAP ACCEPT TO START</div>
         <div class="inc-btns">
             <div class="inc-btn-wrap">
                 <button class="inc-accept" onclick="acceptCall()">✓</button>
@@ -2314,6 +2315,37 @@
             }, 45000);
         }
 
+        // ── Ring tone (Web Audio API — no external file needed) ──
+        let _ringCtx = null, _ringNodes = [];
+        function startRing() {
+            try {
+                _ringCtx = new (window.AudioContext || window.webkitAudioContext)();
+                let ringCount = 0;
+                function ringOnce() {
+                    if (!_ringCtx) return;
+                    const osc = _ringCtx.createOscillator();
+                    const gain = _ringCtx.createGain();
+                    osc.connect(gain); gain.connect(_ringCtx.destination);
+                    osc.type = 'sine';
+                    const t = _ringCtx.currentTime;
+                    // Two-tone ring: 480 Hz → 620 Hz
+                    osc.frequency.setValueAtTime(480, t);
+                    osc.frequency.setValueAtTime(620, t + 0.5);
+                    gain.gain.setValueAtTime(0.35, t);
+                    gain.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+                    osc.start(t); osc.stop(t + 1.2);
+                    _ringNodes.push(osc, gain);
+                    osc.onended = () => { ringCount++; if (ringCount < 8 && _ringCtx) setTimeout(ringOnce, 400); };
+                }
+                ringOnce();
+            } catch (e) { console.warn('[RING] Audio error:', e); }
+        }
+        function stopRing() {
+            _ringNodes.forEach(n => { try { n.disconnect(); } catch (_) { } });
+            _ringNodes = [];
+            if (_ringCtx) { try { _ringCtx.close(); } catch (_) { } _ringCtx = null; }
+        }
+
         async function handleIncomingCall(data) {
             if (S.callState !== 'idle') {
                 console.warn('[KENZA] Incoming call rejected — busy:', S.callState);
@@ -2325,11 +2357,13 @@
             S.callerName = data.callerName || 'Remote User';
             window._pendingOffer = data.sdp;
             enterState('incoming', { callerName: S.callerName });
+            startRing();
         }
 
         async function acceptCall() {
             console.log('[KENZA] acceptCall clicked');
             if (S.callState !== 'incoming') return;
+            stopRing();
             S.callState = 'active';
 
             try {
@@ -2365,6 +2399,7 @@
 
         function rejectCall() {
             console.log('[KENZA] rejectCall clicked');
+            stopRing();
             sendWS({ type: 'call_reject', to: 'controller' });
             S.callState = 'idle';
             enterState('idle');
@@ -2385,6 +2420,7 @@
 
         function cleanupCall() {
             console.log('[KENZA] cleanupCall');
+            stopRing();
             stopCallTimer();
             if (pc) { pc.close(); pc = null; }
             if (S.localStream) {

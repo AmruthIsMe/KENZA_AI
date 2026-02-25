@@ -31,10 +31,19 @@ import warnings
 import ctypes
 import socket
 
+# speech_recognition — optional, gracefully skipped if not installed
+try:
+    import speech_recognition as sr
+except ImportError:
+    sr = None
+
+
 # Suppress warnings and JACK completely
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
-os.environ['SDL_AUDIODRIVER'] = 'alsa'  # Force ALSA on RPi (avoid JACK)
-os.environ['JACK_NO_START_SERVER'] = '1'  # Prevent JACK from trying to start
+os.environ['SDL_AUDIODRIVER'] = 'alsa'       # Force ALSA on RPi (avoid JACK)
+os.environ['JACK_NO_START_SERVER'] = '1'     # Prevent JACK from trying to start
+os.environ['JACK_NO_AUDIO_RESERVATION'] = '1'
+os.environ['PYTHONWARNINGS'] = 'ignore'
 warnings.filterwarnings("ignore")
 
 # ALSA error suppression for Raspberry Pi (at C library level)
@@ -57,6 +66,53 @@ def _suppress_audio_errors():
 
 # Apply ALSA suppression on import (safe)
 _suppress_audio_errors()
+
+# ---------------------------------------------------------------------------
+# Safe print: strip any non-ASCII (emoji, special chars) before writing to
+# the terminal. This prevents UnicodeEncodeError on latin-1 Pi terminals.
+# Applied globally so every print() call is automatically safe.
+# ---------------------------------------------------------------------------
+import builtins as _builtins
+_orig_print = _builtins.print
+def _safe_print(*args, **kwargs):
+    safe_args = []
+    for a in args:
+        if isinstance(a, str):
+            a = a.encode('ascii', errors='replace').decode('ascii')
+        safe_args.append(a)
+    _orig_print(*safe_args, **kwargs)
+_builtins.print = _safe_print
+
+# ---------------------------------------------------------------------------
+# Verbose logging: set VERBOSE=True via --verbose flag or env var.
+# When False (default), only conversation lines are shown in the terminal.
+# Diagnostic [OK]/[WARN]/[STT]/[NET]/[Wake] messages are hidden.
+# ---------------------------------------------------------------------------
+VERBOSE = '--verbose' in sys.argv or os.environ.get('KENZA_VERBOSE', '') == '1'
+
+def _log(*args, **kwargs):
+    """Print only when verbose mode is active."""
+    if VERBOSE:
+        _orig_print(*args, **kwargs)
+
+
+# ---------------------------------------------------------------------------
+# Silence C-level stderr permanently (JACK / pyaudio / ALSA / pygame).
+# These libraries write "Cannot connect to server socket..." etc. directly to
+# fd 2, completely bypassing Python's sys.stderr. The only fix is to redirect
+# fd 2 at the OS level before any audio library is imported/initialised.
+# We keep a backup fd so verbose mode (--verbose) can restore stderr.
+# ---------------------------------------------------------------------------
+_STDERR_SAVED_FD = None
+if sys.platform.startswith("linux") and not VERBOSE:
+    try:
+        _STDERR_SAVED_FD = os.dup(2)               # save real stderr
+        _devnull_fd = os.open(os.devnull, os.O_WRONLY)
+        os.dup2(_devnull_fd, 2)                    # redirect fd 2 → /dev/null
+        os.close(_devnull_fd)
+    except Exception:
+        pass  # If it fails, we just live with the noise
+
 
 @contextmanager
 def suppress_alsa():
@@ -171,8 +227,19 @@ class ConversationConfig:
         path = Path(config_path)
         
         if path.exists():
-            with open(path, encoding='utf-8') as f:
-                data = yaml.safe_load(f) or {}
+            # Read as bytes and strip non-printable/special characters that
+            # would cause yaml.reader.ReaderError (e.g. #x0080 at position N).
+            raw = path.read_bytes()
+            # Decode with 'replace' so bad bytes become the replacement char,
+            # then strip every character YAML's SafeLoader rejects (anything
+            # outside the printable ASCII + common whitespace range).
+            text = raw.decode('utf-8', errors='replace')
+            text = ''.join(
+                ch for ch in text
+                if ch == '\n' or ch == '\r' or ch == '\t' or (' ' <= ch <= '\x7e')
+                or '\xa0' <= ch <= '\ud7ff' or '\ue000' <= ch <= '\ufffd'
+            )
+            data = yaml.safe_load(text) or {}
             
             # API
             api_keys = data.get("api_keys", {})
@@ -262,7 +329,7 @@ class ConnectivityMonitor:
                 self._last_check = now
                 if prev != self._online:
                     status = "ONLINE" if self._online else "OFFLINE"
-                    print(f"[NET] Internet status changed: {status}")
+                    _log(f"[NET] Internet status changed: {status}")
             return self._online
 
     def _check(self) -> bool:
@@ -381,11 +448,11 @@ class InterruptibleTTS:
             mixer.pre_init(frequency=24000, buffer=2048)
             mixer.init()
             self._mixer = mixer
-            print("[OK] TTS mixer (pygame) ready")
+            _log("[OK] TTS mixer (pygame) ready")
         except ImportError:
-            print("[WARN] pygame not installed, online TTS playback disabled")
+            _log("[WARN] pygame not installed, online TTS playback disabled")
         except Exception as e:
-            print(f"[WARN] Audio mixer init failed: {e}")
+            _log(f"[WARN] Audio mixer init failed: {e}")
 
     def _init_pyttsx(self):
         """Initialize pyttsx3 for offline TTS fallback."""
@@ -395,16 +462,16 @@ class InterruptibleTTS:
             engine.setProperty("rate", self._PYTTSX_BASE_RATE)
             engine.setProperty("volume", 1.0)
             self._pyttsx_engine = engine
-            print("[OK] TTS offline fallback (pyttsx3/espeak) ready")
+            _log("[OK] TTS offline fallback (pyttsx3/espeak) ready")
         except ImportError:
-            print("[WARN] pyttsx3 not installed – run: pip install pyttsx3")
+            _log("[WARN] pyttsx3 not installed - run: pip install pyttsx3")
         except Exception as e:
-            print(f"[WARN] pyttsx3 init failed: {e}")
+            _log(f"[WARN] pyttsx3 init failed: {e}")
 
     def set_voice(self, voice_name: str):
         """Update the Edge-TTS voice name."""
         self.voice = voice_name
-        print(f"[TTS] Voice updated to: {self.voice}")
+        _log(f"[TTS] Voice updated to: {self.voice}")
 
     # ------------------------------------------------------------------
     # Edge-TTS (online) helpers
@@ -434,7 +501,7 @@ class InterruptibleTTS:
             asyncio.run(self._generate_audio_async(text, filename, emotion))
             return True
         except Exception as e:
-            print(f"[TTS-online] Error: {e}")
+            _log(f"[TTS-online] Error: {e}")
             return False
 
     def _play_file(self, filename: str) -> bool:
@@ -451,7 +518,7 @@ class InterruptibleTTS:
                 return False
             return True
         except Exception as e:
-            print(f"[TTS-play] Error: {e}")
+            _log(f"[TTS-play] Error: {e}")
             return False
 
     # ------------------------------------------------------------------
@@ -459,32 +526,34 @@ class InterruptibleTTS:
     # ------------------------------------------------------------------
 
     def _speak_offline(self, text: str, emotion: str = "neutral") -> bool:
-        """Speak using pyttsx3 (offline). Returns True if completed."""
+        """Speak using pyttsx3 (offline). Returns True if completed.
+        Redirects stderr at OS level during speak to kill JACK noise.
+        """
         if not self._pyttsx_engine:
-            print("[TTS-offline] pyttsx3 not available")
             return False
+        # Redirect C-level stderr to /dev/null to suppress JACK spam
+        devnull_fd = os.open(os.devnull, os.O_WRONLY)
+        old_stderr_fd = os.dup(2)
         try:
+            os.dup2(devnull_fd, 2)
             emotion_engine = EmotionEngine()
             delta = emotion_engine.get_pyttsx_delta(emotion)
             rate = max(100, min(250, self._PYTTSX_BASE_RATE + delta))
             self._pyttsx_engine.setProperty("rate", rate)
             self._pyttsx_engine.say(text)
-            # Run in a way that respects the stop flag
-            self._pyttsx_engine.startLoop(False)
-            while self._pyttsx_engine.isBusy() and not self._stop_flag.is_set():
-                self._pyttsx_engine.iterate()
-                time.sleep(0.05)
-            self._pyttsx_engine.endLoop()
+            self._pyttsx_engine.runAndWait()
             return not self._stop_flag.is_set()
-        except Exception:
-            # Simpler fallback
+        except Exception as e:
             try:
                 self._pyttsx_engine.say(text)
                 self._pyttsx_engine.runAndWait()
                 return True
-            except Exception as e2:
-                print(f"[TTS-offline] Error: {e2}")
+            except Exception:
                 return False
+        finally:
+            os.dup2(old_stderr_fd, 2)
+            os.close(old_stderr_fd)
+            os.close(devnull_fd)
 
     # ------------------------------------------------------------------
     # Public API
@@ -511,7 +580,7 @@ class InterruptibleTTS:
                     elif self._stop_flag.is_set():
                         return False  # Interrupted – don't fall through to offline
                 # Edge-TTS failed despite being online → try offline
-                print("[TTS] Edge-TTS failed, falling back to offline TTS")
+                _log("[TTS] Edge-TTS failed, falling back to offline TTS")
 
             # Offline path (or online failed)
             return self._speak_offline(text, emotion)
@@ -555,7 +624,7 @@ class InterruptibleTTS:
             except:
                 pass
         self.is_speaking = False
-        print("[INTERRUPT] Audio stopped")
+        _log("[INTERRUPT] Audio stopped")
 
     def is_playing(self) -> bool:
         """Check if currently playing audio."""
@@ -624,7 +693,7 @@ class VoiceActivityDetector:
                         continue
                 
                 if device_index is None:
-                    print("[VAD] No input device found, VAD disabled")
+                    _log("[VAD] No input device found, VAD disabled")
                     return
                 
                 stream = pa.open(
@@ -653,7 +722,7 @@ class VoiceActivityDetector:
                             # Only trigger if sustained speech (not just a spike)
                             if not speech_active and consecutive_speech_frames >= self.config.vad_sustained_frames:
                                 speech_active = True
-                                print(f"[VAD] Sustained speech detected (RMS: {rms})")
+                                _log(f"[VAD] Sustained speech detected (RMS: {rms})")
                                 self._speech_detected.set()
                                 on_speech_detected()
                         else:
@@ -667,14 +736,14 @@ class VoiceActivityDetector:
                     except Exception as e:
                         error_count += 1
                         if error_count >= max_errors:
-                            print(f"[VAD] Too many errors, stopping: {e}")
+                            _log(f"[VAD] Too many errors, stopping: {e}")
                             break
                         time.sleep(0.1)
                 
             except ImportError:
-                print("[VAD] pyaudio not installed, VAD disabled")
+                _log("[VAD] pyaudio not installed, VAD disabled")
             except Exception as e:
-                print(f"[VAD] Init error: {e}")
+                _log(f"[VAD] Init error: {e}")
             finally:
                 # Clean up
                 if stream:
@@ -727,18 +796,18 @@ class VisionAI:
     def _init_gemini(self):
         """Initialize Gemini model for vision"""
         if not self.config.gemini_api_key:
-            print("[WARN] Gemini API key not set, vision disabled")
+            _log("[WARN] Gemini API key not set, vision disabled")
             return
-        
+
         try:
             import google.generativeai as genai
             genai.configure(api_key=self.config.gemini_api_key)
             self.model = genai.GenerativeModel(self.config.gemini_model)
-            print("[OK] Vision AI initialized")
+            _log("[OK] Vision AI initialized")
         except ImportError:
-            print("[WARN] google-generativeai not installed")
+            _log("[WARN] google-generativeai not installed")
         except Exception as e:
-            print(f"[WARN] Vision AI init failed: {e}")
+            _log(f"[WARN] Vision AI init failed: {e}")
     
     def set_camera(self, camera):
         """Set camera source"""
@@ -962,10 +1031,10 @@ class CommandParser:
                 
                 # Update runtime TTS
                 if self.tts:
-                    print(f"[Command] Updating TTS runtime to {self.config.tts_voice}")
+                    _log(f"[Command] Updating TTS runtime to {self.config.tts_voice}")
                     self.tts.set_voice(self.config.tts_voice)
                 else:
-                    print("[Command] Warning: TTS instance is None, cannot update runtime voice")
+                    _log("[Command] Warning: TTS instance is None, cannot update runtime voice")
                     
                 return f"Switched from {old_voice.title()} to {voice.title()} voice!"
             return f"I don't know that voice. Try: {', '.join(self.config.voice_presets.keys())}"
@@ -1084,8 +1153,14 @@ class CommandParser:
             import yaml
             path = Path(self.config.config_path)
             if path.exists():
-                with open(path) as f:
-                    data = yaml.safe_load(f) or {}
+                raw = path.read_bytes()
+                text = raw.decode('utf-8', errors='replace')
+                text = ''.join(
+                    ch for ch in text
+                    if ch == '\n' or ch == '\r' or ch == '\t' or (' ' <= ch <= '\x7e')
+                    or '\xa0' <= ch <= '\ud7ff' or '\ue000' <= ch <= '\ufffd'
+                )
+                data = yaml.safe_load(text) or {}
                 
                 if "voice" not in data:
                     data["voice"] = {}
@@ -1123,7 +1198,7 @@ class EmotionEyeBridge:
         self._running = True
         self._thread = threading.Thread(target=self._worker, daemon=True, name="EmotionBridge")
         self._thread.start()
-        print("[EyeBridge] Emotion bridge started")
+        _log("[EyeBridge] Emotion bridge started")
 
     def send_emotion(self, state: str):
         """Queue an emotion signal. Non-blocking — safe to call from any thread."""
@@ -1240,7 +1315,9 @@ EMOTION TAG (CRITICAL — always follow this):
         return random.choice(self.config.thinking_phrases)
     
     def format_response(self, response: str) -> str:
-        """Clean up and format a response"""
+        """Clean up and format a response — strips emoji for terminal safety."""
+        # Strip emoji and non-ASCII so TTS/print never UnicodeErrors on Pi
+        response = response.encode('ascii', errors='replace').decode('ascii')
         # Remove markdown asterisks
         response = response.replace("*", "")
         # Ensure not too long for speech (truncate if needed)
@@ -1264,52 +1341,54 @@ class SpeechToText:
     def __init__(self, config: ConversationConfig, connectivity: "ConnectivityMonitor" = None):
         self.config = config
         self.connectivity = connectivity
-        self.recognizer = None
-        self.sr = None
-        self._whisper_model = None
-        self._whisper_loaded = False
-        self._init_google()
+        self._whisper = None
+        self._google_ok = False
+        if sr is not None:
+            self.recognizer = sr.Recognizer()
+            self.recognizer.dynamic_energy_threshold = True
+            self.recognizer.pause_threshold = 0.8
+            self._init_google()
+        else:
+            self.recognizer = None
+            _log("[WARN] speech_recognition not installed — cloud STT disabled")
+        self._load_whisper()  # Attempt to preload so first call is fast
 
     def _init_google(self):
         """Initialize Google speech_recognition (cloud STT)."""
         try:
-            import speech_recognition as sr
-            self.sr = sr
-            self.recognizer = sr.Recognizer()
-            self.recognizer.dynamic_energy_threshold = True
-            self.recognizer.energy_threshold = self.config.energy_threshold
-            print("[OK] STT cloud (Google) ready")
-        except ImportError:
-            print("[WARN] speech_recognition not installed")
+            with sr.Microphone() as _:
+                self._google_ok = True
+                _log("[OK] STT cloud (Google) ready")
+        except Exception as e:
+            _log(f"[WARN] Microphone not accessible: {e}")
+            self._google_ok = False
 
     def _load_whisper(self):
         """Lazy-load faster-whisper model on first offline use."""
-        if self._whisper_loaded:
-            return self._whisper_model
         try:
             from faster_whisper import WhisperModel
-            model_name = self.config.stt_offline_model  # e.g., 'base.en'
-            print(f"[STT-offline] Loading faster-whisper '{model_name}' (first run downloads ~145MB)...")
-            self._whisper_model = WhisperModel(model_name, device="cpu", compute_type="int8")
-            print("[OK] STT offline (faster-whisper) ready")
+            self._whisper = WhisperModel(
+                self.config.whisper_model,
+                device="cpu",
+                compute_type="int8",
+            )
+            _log(f"[OK] STT offline (faster-whisper/{self.config.whisper_model}) ready")
         except ImportError:
-            print("[WARN] faster-whisper not installed – run: pip install faster-whisper")
+            _log("[WARN] faster-whisper not installed - run: pip install faster-whisper")
         except Exception as e:
-            print(f"[WARN] faster-whisper init failed: {e}")
-        self._whisper_loaded = True
-        return self._whisper_model
+            _log(f"[WARN] faster-whisper failed: {e}")
 
     def is_available(self) -> bool:
         """True if at least one STT engine is usable."""
-        return self.recognizer is not None or True  # Whisper always attempted
+        return self._google_ok or (self._whisper is not None)
 
     def _capture_audio_bytes(self, timeout: int, phrase_limit: int) -> Optional[bytes]:
         """Capture raw WAV bytes from microphone."""
-        if not self.sr:
+        if not self.recognizer:
             return None
         try:
             with suppress_alsa():
-                with self.sr.Microphone() as source:
+                with sr.Microphone() as source:
                     self.recognizer.adjust_for_ambient_noise(source, duration=0.3)
                     audio = self.recognizer.listen(source, timeout=timeout, phrase_time_limit=phrase_limit)
                     return audio.get_wav_data()
@@ -1326,7 +1405,7 @@ class SpeechToText:
 
     def _transcribe_whisper(self, wav_bytes: bytes) -> Optional[str]:
         """Transcribe using faster-whisper (offline)."""
-        model = self._load_whisper()
+        model = self._whisper
         if not model:
             return None
         import tempfile
@@ -1342,7 +1421,7 @@ class SpeechToText:
                 pass
             return text if text else None
         except Exception as e:
-            print(f"[STT-offline] Whisper error: {e}")
+            _log(f"[STT-offline] Whisper error: {e}")
             return None
 
     def listen(self, timeout: int = None, phrase_limit: int = None) -> Optional[str]:
@@ -1351,41 +1430,42 @@ class SpeechToText:
         phrase_limit = phrase_limit or self.config.phrase_time_limit
         online = self.connectivity.is_online() if self.connectivity else True
 
-        if not self.sr:
+        if not self.recognizer or sr is None:
             return None
+
+        _sr_unknown = sr.UnknownValueError
+        _sr_timeout = sr.WaitTimeoutError
 
         try:
             with suppress_alsa():
-                with self.sr.Microphone() as source:
+                with sr.Microphone() as source:
                     self.recognizer.adjust_for_ambient_noise(source, duration=0.3)
                     audio = self.recognizer.listen(source, timeout=timeout, phrase_time_limit=phrase_limit)
 
-            if online:
+            if online and self._google_ok:
                 # Primary: Google cloud STT
                 try:
                     text = self.recognizer.recognize_google(audio)
-                    print(f"[STT] Google: '{text}'")
                     return text.lower()
-                except self.sr.UnknownValueError:
+                except _sr_unknown:
                     return None
-                except Exception as e:
-                    print(f"[STT] Google failed ({e}), trying Whisper offline...")
-                    # Fall through to Whisper
+                except Exception:
+                    pass  # Google failed silently, fall through to Whisper
 
             # Offline path (or Google failed)
             return self._transcribe_whisper(audio.get_wav_data())
 
-        except self.sr.WaitTimeoutError:
+        except _sr_timeout:
             return None
         except Exception as e:
-            print(f"[STT] Capture error: {e}")
+            _log(f"[STT] Capture error: {e}")
             return None
 
     def listen_for_wake_word(self) -> Optional[str]:
         """Listen for wake word. Includes STT mishear aliases for 'Kenza'."""
         text = self.listen(timeout=8, phrase_limit=5)
         if text:
-            # Common STT misheards of 'Kenza' added as aliases
+            # Common STT misheards of 'Kenza' — normalize all to 'kenza'
             wake_words = [
                 "kenza", "kenzo", "kinza", "kansa", "kanza",  # correct-ish
                 "cancer", "kancer", "kencer", "censer",       # phonetic mishears
@@ -1393,8 +1473,10 @@ class SpeechToText:
             ]
             for word in wake_words:
                 if word in text:
-                    print(f"[Wake word detected in: '{text}']")
-                    return text
+                    # Always display as 'kenza' regardless of what was heard
+                    normalized = text.replace(word, "kenza")
+                    _log(f"[Wake] Heard: '{text}' -> 'kenza'")
+                    return normalized
         return None
 
 
@@ -1416,7 +1498,7 @@ class GeminiChat:
     
     def _init(self):
         if not self.config.gemini_api_key:
-            print("[WARN] Gemini API key not configured")
+            _log("[WARN] Gemini API key not configured")
             return
         
         try:
@@ -1427,11 +1509,11 @@ class GeminiChat:
                 system_instruction=self.personality.get_system_prompt()
             )
             self.chat = self.model.start_chat(history=[])
-            print(f"[OK] Gemini chat initialized ({self.config.gemini_model})")
+            _log(f"[OK] Gemini chat initialized ({self.config.gemini_model})")
         except ImportError:
-            print("[WARN] google-generativeai not installed")
+            _log("[WARN] google-generativeai not installed")
         except Exception as e:
-            print(f"[WARN] Gemini init failed: {e}")
+            _log(f"[WARN] Gemini init failed: {e}")
     
     def is_available(self) -> bool:
         return self.chat is not None
@@ -1453,11 +1535,11 @@ class GeminiChat:
                 # Check if it's a quota/rate limit error
                 if '429' in str(e) or 'quota' in error_str or 'rate' in error_str:
                     wait_time = self.retry_delay * (2 ** attempt)  # Exponential backoff
-                    print(f"[API] Rate limited, waiting {wait_time}s... (attempt {attempt+1}/{self.max_retries})")
+                    _log(f"[API] Rate limited, waiting {wait_time}s... (attempt {attempt+1}/{self.max_retries})")
                     time.sleep(wait_time)
                 else:
                     # Non-retryable error
-                    print(f"[API] Error: {e}")
+                    _log(f"[API] Error: {e}")
                     break
         
         # All retries failed
@@ -1487,17 +1569,17 @@ class GroqChat:
     
     def _init(self):
         if not self.config.groq_api_key:
-            print("[WARN] Groq API key not configured")
+            _log("[WARN] Groq API key not configured")
             return
         
         try:
             from groq import Groq
             self.client = Groq(api_key=self.config.groq_api_key)
-            print(f"[OK] Groq chat initialized ({self.config.groq_model})")
+            _log(f"[OK] Groq chat initialized ({self.config.groq_model})")
         except ImportError:
-            print("[WARN] groq not installed. Run: pip install groq")
+            _log("[WARN] groq not installed. Run: pip install groq")
         except Exception as e:
-            print(f"[WARN] Groq init failed: {e}")
+            _log(f"[WARN] Groq init failed: {e}")
     
     def is_available(self) -> bool:
         return self.client is not None
@@ -1544,10 +1626,10 @@ class GroqChat:
                 
                 if '429' in str(e) or 'rate' in error_str:
                     wait_time = self.retry_delay * (2 ** attempt)
-                    print(f"[Groq] Rate limited, waiting {wait_time}s...")
+                    _log(f"[Groq] Rate limited, waiting {wait_time}s...")
                     time.sleep(wait_time)
                 else:
-                    print(f"[Groq] Error: {e}")
+                    _log(f"[Groq] Error: {e}")
                     break
         
         return None  # Return None so Gemini fallback can be used
@@ -1586,25 +1668,25 @@ class LlamaChat:
         self._loaded = True
         model_path = Path(self.config.llama_path) if hasattr(self.config, 'llama_path') else Path("models/llama-3.2-3b-instruct.Q4_K_M.gguf")
         if not model_path.exists():
-            print(f"[Llama] Model not found at {model_path} — offline LLM unavailable")
-            print(f"[Llama] Download: wget <HF link> -O {model_path}")
+            _log(f"[Llama] Model not found at {model_path} — offline LLM unavailable")
+            _log(f"[Llama] Download: wget <HF link> -O {model_path}")
             return
         try:
             from llama_cpp import Llama
             threads = getattr(self.config, 'llama_threads', 4)
             ctx = getattr(self.config, 'llama_context', 2048)
-            print(f"[Llama] Loading {model_path} (threads={threads}, ctx={ctx})...")
+            _log(f"[Llama] Loading {model_path} (threads={threads}, ctx={ctx})...")
             self._llm = Llama(
                 model_path=str(model_path),
                 n_ctx=ctx,
                 n_threads=threads,
                 verbose=False,
             )
-            print("[OK] Llama offline LLM ready")
+            _log("[OK] Llama offline LLM ready")
         except ImportError:
-            print("[WARN] llama-cpp-python not installed – run: pip install llama-cpp-python")
+            _log("[WARN] llama-cpp-python not installed – run: pip install llama-cpp-python")
         except Exception as e:
-            print(f"[WARN] Llama load failed: {e}")
+            _log(f"[WARN] Llama load failed: {e}")
 
     def is_available(self) -> bool:
         self._load()
@@ -1629,7 +1711,7 @@ class LlamaChat:
             self.conversation_history.append({"role": "assistant", "content": reply})
             return self.personality.format_response(reply)
         except Exception as e:
-            print(f"[Llama] Inference error: {e}")
+            _log(f"[Llama] Inference error: {e}")
             return None
 
     def reset(self):
@@ -1660,11 +1742,11 @@ class ObjectDetector:
             # yolo11n.pt is the latest nano model (smallest, fastest)
             self._model = YOLO("yolo11n.pt")
             self._model.fuse()  # Optimise for inference speed
-            print("[OK] ObjectDetector (YOLO11n) ready")
+            _log("[OK] ObjectDetector (YOLO11n) ready")
         except ImportError:
-            print("[WARN] ultralytics not installed – run: pip install ultralytics")
+            _log("[WARN] ultralytics not installed – run: pip install ultralytics")
         except Exception as e:
-            print(f"[WARN] YOLO init failed: {e}")
+            _log(f"[WARN] YOLO init failed: {e}")
 
     def is_available(self) -> bool:
         self._load()
@@ -1694,7 +1776,7 @@ class ObjectDetector:
                 return f"I can see {names[0]}."
             return f"I can see: {', '.join(names[:-1])} and {names[-1]}."
         except Exception as e:
-            print(f"[Vision] YOLO detection error: {e}")
+            _log(f"[Vision] YOLO detection error: {e}")
             return None
 
 
@@ -1756,7 +1838,7 @@ class OllamaChat:
         self.model = model_name
         self.conversation_history.clear()   # Clear context on model switch
         self._available = None              # Re-check server on next call
-        print(f"[Ollama] Switched to model: {model_name}")
+        _log(f"[Ollama] Switched to model: {model_name}")
 
     def list_local_models(self) -> List[str]:
         """Return models pulled on this machine via Ollama."""
@@ -1771,7 +1853,7 @@ class OllamaChat:
     def send(self, message: str) -> Optional[str]:
         """Generate a response using Ollama's /api/chat endpoint."""
         if not self.is_available():
-            print("[Ollama] Server not running – skipping")
+            _log("[Ollama] Server not running – skipping")
             return None
 
         import urllib.request, json as _json
@@ -1799,10 +1881,10 @@ class OllamaChat:
                 result = _json.loads(resp.read())
             reply = result["message"]["content"].strip()
             self.conversation_history.append({"role": "assistant", "content": reply})
-            print(f"[Ollama:{self.model}] Response generated")
+            _log(f"[Ollama:{self.model}] Response generated")
             return self.personality.format_response(reply)
         except Exception as e:
-            print(f"[Ollama] Error: {e}")
+            _log(f"[Ollama] Error: {e}")
             self._available = None   # Mark for re-check
             return None
 
@@ -1870,10 +1952,10 @@ class ConversationEngine:
         self.audio_controller = audio_controller
 
         online = "online" if self.connectivity.is_online() else "OFFLINE"
-        print("\n" + "=" * 50)
-        print("     KENZA Conversation Engine Ready")
-        print(f"     Network: {online}")
-        print("=" * 50 + "\n")
+        _log("\n" + "=" * 50)
+        _log("     KENZA Conversation Engine Ready")
+        _log(f"     Network: {online}")
+        _log("=" * 50 + "\n")
     
     def _notify_state(self, state: str):
         """Notify state change."""
@@ -1970,7 +2052,7 @@ class ConversationEngine:
             return response
 
         # Offline tier 1: Ollama (any pulled model, default gemma3:270m)
-        print(f"[Engine] Cloud LLMs unavailable – trying Ollama ({self.ollama.model})")
+        _log(f"[Engine] Cloud LLMs unavailable – trying Ollama ({self.ollama.model})")
         raw = self.ollama.send(text)
         if raw:
             emotion, response = self._parse_and_strip_emotion(raw)
@@ -1978,7 +2060,7 @@ class ConversationEngine:
             return response
 
         # Offline tier 2: llama-cpp-python GGUF file
-        print("[Engine] Ollama unavailable – using llama-cpp GGUF fallback")
+        _log("[Engine] Ollama unavailable – using llama-cpp GGUF fallback")
         raw = self.llama.send(text)
         if raw:
             emotion, response = self._parse_and_strip_emotion(raw)
@@ -1996,7 +2078,7 @@ class ConversationEngine:
         self.ollama.set_model(model_name)
         self.config.ollama_model = model_name
         available = self.ollama.is_available()
-        print(f"[Engine] Offline model set to '{model_name}' (Ollama {'[OK]' if available else '[FAIL]'})")
+        _log(f"[Engine] Offline model set to '{model_name}' (Ollama {'[OK]' if available else '[FAIL]'})")
         return {
             "model": model_name,
             "available": available,
@@ -2019,102 +2101,100 @@ class ConversationEngine:
     def run_voice_loop(self, use_wake_word: bool = True):
         """
         Main voice interaction loop.
-        
+
         Args:
             use_wake_word: If True, wait for wake word before listening
         """
         if not self.stt.is_available():
             print("ERROR: Speech recognition not available!")
             return
-        
+
         self.is_running = True
         self.is_sleeping = use_wake_word
         error_count = 0
         max_errors = 5
-        
-        print("\n" + "=" * 50)
-        print("[V]  KENZA Voice Mode")
-        print("=" * 50)
+
+        # Show a minimal, clean startup banner
+        print("\n" + "-" * 40)
+        print("  KENZA  |  AI Conversation Mode")
         if use_wake_word:
-            print(f"   Say '{self.config.wake_word.title()}' to start")
-        print("   Say 'goodbye' or 'stop' to sleep")
-        print("=" * 50 + "\n")
-        
+            print(f"  Say '{self.config.wake_word.title()}' to begin")
+        else:
+            print("  Listening continuously (no wake word)")
+        print("-" * 40 + "\n")
+
         while self.is_running:
             try:
                 if self.is_sleeping:
-                    # Waiting for wake word
+                    # Waiting for wake word — suppress the carriage-return spam
                     self._notify_state("sleeping")
-                    print(f"[SLEEP] Waiting for '{self.config.wake_word}'...", end="\r")
-                    
+                    _log(f"[SLEEP] Waiting for '{self.config.wake_word}'...", end="\r")
+
                     text = self.stt.listen_for_wake_word()
-                    
+
                     if text:
-                        error_count = 0  # Reset on success
-                        print(f"\n👋 Wake: {text}")
+                        error_count = 0
+                        _log(f"[Wake] {text}")
                         self.is_sleeping = False
                         self.eye_bridge.send_emotion("listening")
                         self.speak_with_interrupt("Yes?")
                     else:
-                        # No wake word, add small delay to prevent busy loop
                         time.sleep(0.1)
                 else:
                     # Active listening
                     self._notify_state("listening")
                     self.eye_bridge.send_emotion("listening")
-                    print("👂 Listening...", end="\r")
-                    
+                    _log("[Listening...]", end="\r")
+
                     text = self.stt.listen()
-                    
+
                     if not text:
-                        time.sleep(0.1)  # Small delay on timeout
+                        time.sleep(0.1)
                         continue
-                    
-                    error_count = 0  # Reset on success
-                    print(f"\n🗣️  You: {text}")
-                    
+
+                    error_count = 0
+                    # Always show user speech — this is the conversation
+                    print(f"You: {text}")
+
                     # Notify app of user speech
                     if self.on_user_speech:
                         self.on_user_speech(text)
-                    
+
                     # Check for sleep commands
                     if any(cmd in text for cmd in ["goodbye", "bye", "go to sleep", "stop", "that's all"]):
-                        print("[💤 Going to sleep]")
+                        _log("[Going to sleep]")
                         self.eye_bridge.send_emotion("sleep")
                         self.speak_with_interrupt("Okay, let me know if you need me.")
                         self.is_sleeping = True
                         continue
-                    
-                    # Process and respond — signal thinking state BEFORE LLM call
+
+                    # Process and respond
                     self._notify_state("thinking")
                     self.eye_bridge.send_emotion("thinking")
                     response = self.process_input(text)
-                    # Note: process_input() already signals the response emotion via eye_bridge
-                    
+
                     if response:
-                        print(f"🤖 Kenza: {response}\n")
-                        # Notify app of AI response
+                        # Always show Kenza's reply — this is the conversation
+                        print(f"Kenza: {response}\n")
                         if self.on_ai_response:
                             self.on_ai_response(response)
                         self._notify_state("speaking")
                         self.speak_with_interrupt(response)
-                    
-                    self.eye_bridge.send_emotion("neutral")
-                    self._notify_state("idle")
-                    print("--- Ready ---\n")
 
-                    
+                    self.eye_bridge.send_emotion("neutral")
+                    self._notify_state("listening")
+
             except KeyboardInterrupt:
-                print("\n\n👋 Goodbye!")
+                print("\nGoodbye!")
                 break
             except Exception as e:
                 error_count += 1
-                print(f"\nError ({error_count}/{max_errors}): {e}")
+                _log(f"Error ({error_count}/{max_errors}): {e}")
                 if error_count >= max_errors:
-                    print("Too many errors, stopping voice mode.")
+                    print("Too many errors, stopping.")
                     break
-                time.sleep(1)  # Wait before retrying after error
-        
+                time.sleep(1)
+
         self.is_running = False
         self._notify_state("stopped")
     

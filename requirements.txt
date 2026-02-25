@@ -36,4 +36,6 @@ websockets>=12.0             # WebSocket for gesture UI
 # === Pi System Dependencies ===
 # Run these first on Raspberry Pi:
 # sudo apt-get install portaudio19-dev python3-pyaudio libopus-dev libvpx-dev
+# sudo apt-get install flac                  # Required for Google STT audio encoding
+# sudo apt-get install espeak-ng             # Required for pyttsx3 offline TTS
 # For face-recognition: sudo apt-get install cmake libopenblas-dev liblapack-dev
