@@ -2396,9 +2396,11 @@
                 <span>Kenza</span>
             </div>
         </div>
-        <div class="status-badge">
+        <div class="status-badge"
+            onclick="(function(){const p=document.getElementById('dev-panel');p.style.display=p.style.display==='flex'?'none':'flex';})()"
+            style="cursor:pointer" title="Tap to configure IP">
             <div class="status-dot" id="status-dot"></div>
-            <span id="status-text">Offline</span>
+            <span id="status-text">Tap to connect</span>
         </div>
     </header>
 
@@ -4456,7 +4458,7 @@
         document.querySelector('.logo').addEventListener('click', () => {
             devTaps++;
             clearTimeout(devTimer);
-            devTimer = setTimeout(() => devTaps = 0, 500);
+            devTimer = setTimeout(() => devTaps = 0, 1500);
             if (devTaps >= 3) {
                 devTaps = 0;
                 const panel = document.getElementById('dev-panel');
