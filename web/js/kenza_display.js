@@ -64,6 +64,7 @@ let notifTmr = null, stxtTmr = null, tpTimerIv = null, zzzIv = null;
 let lpTmr = null; // long press
 let ws = null;
 let tpSecs = 0;
+let aiOverlayVisible = false;  // tracks AI Mode overlay state
 
 /* ── Boot Sequence ────────────────────────────────────────── */
 function boot() {
@@ -91,6 +92,7 @@ function boot() {
         resetSleepTimer();
         setStatusText('System ready', 2500);
         connectWS();
+        _injectAiOverlay();
     }, 3200);
 }
 
@@ -393,7 +395,26 @@ function handleWS(m) {
             if (m.data.direction != null) { const d = m.data.direction; movePupils(d === 'left' ? -22 : d === 'right' ? 22 : 0, 0, 200); }
             if (m.data.obstacle != null && m.data.obstacle) { setExpr('alert', 2000); setStatusText('Obstacle detected!', 2000); notify('🚧 Obstacle!', 'warn'); }
             break;
-        case 'emotion': setExpr(emotionMap(m.data.expression || m.data.emotion)); break;
+        case 'emotion':
+            // Direct emotion state from conversation engine — always applied regardless of AI Mode
+            setExpr(emotionMap(m.state || m.data?.expression || m.data?.emotion || 'neutral'));
+            break;
+        case 'ai_state':
+            // Conversation engine state — map to eye expression
+            setExpr(emotionMap(m.state || 'neutral'));
+            break;
+        case 'ai_mode':
+            // AI Mode overlay toggle — show/hide chat transcript without affecting eyes
+            _setAiOverlay(m.active === true);
+            break;
+        case 'ai_message':
+            // Conversation transcripts — always update overlay; visible only when AI Mode is on
+            _appendAiMessage(m.role, m.text);
+            break;
+        case 'wake_word':
+            setExpr('listening');
+            setStatusText('Listening…', 3000);
+            break;
         case 'status_text': setStatusText(m.data.text); break;
         case 'speaking_start': setExpr('speaking'); st.speaking = true; break;
         case 'speaking_stop': st.speaking = false; setExpr('neutral'); break;
@@ -407,20 +428,65 @@ function handleWS(m) {
             if (m.data.emotion) setExpr(emotionMap(m.data.emotion));
             break;
         case 'call_incoming': notify('📞 Incoming call…', 'info', 6000); break;
-        case 'wake_word': setExpr('listening'); setStatusText('Listening…', 3000); break;
     }
 }
 
 const EMAP = {
+    // Emotions from EmotionEngine
     excited: 'excited', happy: 'happy', joy: 'happy',
     sad: 'sad', anger: 'alert', stern: 'alert',
     curious: 'curious', interest: 'curious',
     love: 'happy', surprise: 'excited',
     fear: 'alert', disgust: 'error',
     thinking: 'thinking', speaking: 'speaking',
-    neutral: 'neutral'
+    neutral: 'neutral',
+    // Conversation state → expression
+    listening: 'listening', sleeping: 'sleepy', sleep: 'sleepy',
+    wake_word: 'listening', idle: 'neutral', stopped: 'neutral',
 };
 function emotionMap(e) { return EMAP[e] || 'neutral'; }
+
+/* ── AI Mode Chat Overlay ─────────────────────────────────── */
+function _injectAiOverlay() {
+    if ($('ai-overlay')) return;
+    const el = document.createElement('div');
+    el.id = 'ai-overlay';
+    el.innerHTML = '<div id="ai-log"></div>';
+    el.style.cssText = [
+        'position:fixed', 'bottom:0', 'left:0', 'right:0',
+        'max-height:32vh', 'overflow-y:auto',
+        'background:linear-gradient(0deg,rgba(0,0,0,0.82) 0%,transparent 100%)',
+        'padding:12px 18px 16px', 'pointer-events:none',
+        'display:none', 'z-index:500',
+        'font-family:inherit', 'font-size:0.78rem', 'line-height:1.45',
+        'transition:opacity 0.35s'
+    ].join(';');
+    document.body.appendChild(el);
+}
+
+function _setAiOverlay(show) {
+    aiOverlayVisible = show;
+    const el = $('ai-overlay');
+    if (!el) return;
+    el.style.display = show ? 'block' : 'none';
+}
+
+const _AI_MAX_MSGS = 8;
+function _appendAiMessage(role, text) {
+    const log = $('ai-log');
+    if (!log || !text) return;
+    const line = document.createElement('div');
+    const isUser = role === 'user';
+    line.style.cssText = [
+        'margin-bottom:5px',
+        `color:${isUser ? 'rgba(180,230,255,0.9)' : 'rgba(255,255,255,0.88)'}`,
+    ].join(';');
+    line.innerHTML = `<span style="font-weight:600;color:${isUser ? '#4dd9ff' : '#a0e0a0'}">${isUser ? 'You' : 'Kenza'}</span>: ${text.slice(0, 160)}`;
+    log.appendChild(line);
+    // Keep only last N messages
+    while (log.children.length > _AI_MAX_MSGS) log.removeChild(log.firstChild);
+    log.scrollTop = log.scrollHeight;
+}
 
 /* ── Autonomous mode status updates ──────────────────────── */
 let lastExploreText = '';

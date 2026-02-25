@@ -459,10 +459,11 @@ class KenzaServer:
             'call_end', 'ice_candidate', 'call_busy', 'call_ping'
         }
 
-        # Conversation engine (started when robot enters AI mode)
+        # Conversation engine — always running in background (started at boot)
         self._conv_engine: Optional[ConversationEngine] = None
         self._conv_thread: Optional[threading.Thread] = None
         self._loop: Optional[asyncio.AbstractEventLoop] = None  # Set when server starts
+        self._ai_display_mode: bool = False  # True when AI text overlay is active
         
     async def start(self, port: int = CONFIG.PORT):
         """Start the WebSocket server"""
@@ -500,6 +501,8 @@ class KenzaServer:
         
         async with websockets.serve(self._handle_client, "0.0.0.0", port):
             self._loop = asyncio.get_event_loop()
+            # ── Auto-start conversation engine on boot (always-on with wake word) ──
+            self._start_conversation_engine(use_wake_word=True)
             await asyncio.Future()  # Run forever
     
     def _init_camera(self):
@@ -620,13 +623,23 @@ class KenzaServer:
                         print(f"[CALL] Relayed '{msg_type}' from {client_role} → {target_role} ({len(targets)} recipients)")
                         continue
 
-                    # ── AI Mode: start/stop conversation engine ──
+                    # ── AI Mode: toggle display overlay (engine always runs) ──
                     if msg_type == 'ai_mode_enter':
-                        self._start_conversation_engine()
+                        self._ai_display_mode = True
+                        # Notify all clients to show chat transcript overlay
+                        asyncio.run_coroutine_threadsafe(
+                            self._broadcast_to_robots({'type': 'ai_mode', 'active': True}),
+                            self._loop
+                        )
                         continue
 
                     if msg_type == 'ai_mode_exit':
-                        self._stop_conversation_engine()
+                        self._ai_display_mode = False
+                        # Notify all clients to hide chat transcript overlay
+                        asyncio.run_coroutine_threadsafe(
+                            self._broadcast_to_robots({'type': 'ai_mode', 'active': False}),
+                            self._loop
+                        )
                         continue
 
                     # Standard command handling
@@ -701,8 +714,8 @@ class KenzaServer:
                 self._broadcast_to_robots(msg), self._loop
             )
 
-    def _start_conversation_engine(self):
-        """Start ConversationEngine in a background thread when AI mode is entered."""
+    def _start_conversation_engine(self, use_wake_word: bool = True):
+        """Start ConversationEngine in a background thread (called once at boot)."""
         if not HAS_CONVERSATION:
             print("[AI] ConversationEngine not available — skipping")
             return
@@ -710,13 +723,11 @@ class KenzaServer:
             print("[AI] Engine already running")
             return
 
-        print("[AI] Starting ConversationEngine...")
-
-        # Capture loop reference for threadsafe broadcast
-        self._loop = asyncio.get_event_loop()
+        print("[AI] Starting ConversationEngine (always-on, wake-word={})...".format(use_wake_word))
 
         def on_user_speech(text: str):
             print(f"[AI] User: {text}")
+            # Always broadcast speech — display shows it only when AI Mode overlay is active
             self._broadcast_from_thread({
                 'type': 'ai_message',
                 'role': 'user',
@@ -732,10 +743,15 @@ class KenzaServer:
             })
 
         def on_state_change(state: str):
-            self._broadcast_from_thread({
-                'type': 'ai_state',
-                'state': state
-            })
+            # Map conversation states → WebSocket events for the display
+            if state == 'wake_word':
+                self._broadcast_from_thread({'type': 'wake_word'})
+            else:
+                self._broadcast_from_thread({'type': 'ai_state', 'state': state})
+
+        def on_emotion(emotion: str):
+            """Broadcast emotion directly to display without WS round-trip."""
+            self._broadcast_from_thread({'type': 'emotion', 'state': emotion})
 
         config = ConversationConfig.load()
         self._conv_engine = ConversationEngine(
@@ -743,21 +759,21 @@ class KenzaServer:
             on_user_speech=on_user_speech,
             on_ai_response=on_ai_response,
             on_state_change=on_state_change,
+            on_emotion=on_emotion,
         )
 
         def _run():
             try:
-                # No wake word in AI Mode — listen continuously
-                self._conv_engine.run_voice_loop(use_wake_word=False)
+                self._conv_engine.run_voice_loop(use_wake_word=use_wake_word)
             except Exception as e:
                 print(f"[AI] Engine stopped: {e}")
 
         self._conv_thread = threading.Thread(target=_run, daemon=True, name="ConversationEngine")
         self._conv_thread.start()
-        print("[AI] ConversationEngine started")
+        print("[AI] ConversationEngine started (always-on)")
 
     def _stop_conversation_engine(self):
-        """Stop the ConversationEngine when AI mode is exited."""
+        """Stop the ConversationEngine (called on server shutdown only)."""
         if self._conv_engine:
             print("[AI] Stopping ConversationEngine...")
             self._conv_engine.is_running = False

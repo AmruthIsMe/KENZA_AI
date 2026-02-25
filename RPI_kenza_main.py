@@ -439,13 +439,15 @@ class AIHandler:
     Integrates with the new ConversationEngine for seamless interaction.
     """
     
-    def __init__(self, audio_controller: AudioController, eye_controller: EyeController = None, camera=None):
+    def __init__(self, audio_controller: AudioController, eye_controller: EyeController = None,
+                 camera=None, on_emotion_fn=None):
         self.audio = audio_controller
         self.eyes = eye_controller
         self.camera = camera
         self.conversation_engine = None
         self.voice_thread = None
         self._running = False
+        self.on_emotion_fn = on_emotion_fn  # callback(emotion: str) for WS broadcast
         self._init_engine()
     
     def _init_engine(self):
@@ -459,7 +461,8 @@ class AIHandler:
                 eye_controller=self.eyes,
                 audio_controller=self.audio,
                 camera=self.camera,
-                on_state_change=self._on_state_change
+                on_state_change=self._on_state_change,
+                on_emotion=self._on_emotion,
             )
             log.info("🧠 Conversation Engine initialized")
         except ImportError as e:
@@ -470,7 +473,18 @@ class AIHandler:
     def _on_state_change(self, state: str):
         """Handle conversation state changes"""
         log.debug(f"AI State: {state}")
-        # Could broadcast to WebSocket clients here
+
+    def _on_emotion(self, emotion: str):
+        """Handle emotion from conversation engine — update local eyes and fire WS callback."""
+        # Local eye LED/servo update
+        if self.eyes:
+            self.eyes.set_style(emotion)
+        # WebSocket broadcast (set via KenzaMain.run)
+        if self.on_emotion_fn:
+            try:
+                self.on_emotion_fn(emotion)
+            except Exception:
+                pass
     
     def set_camera(self, camera):
         """Set camera for vision capability"""
@@ -480,7 +494,19 @@ class AIHandler:
     
     def start_voice_mode(self, use_wake_word: bool = True):
         """Start voice interaction in background thread"""
-        if self._running or not self.conversation_engine:
+        if self._running and use_wake_word:
+            # If already running and wake_word is requested, it's a no-op
+            return False
+        
+        if self._running and not use_wake_word:
+            # If already running but a non-wake-word mode is requested,
+            # stop the current one and restart.
+            log.info("Restarting voice mode for non-wake-word interaction.")
+            self.stop_voice_mode()
+            # Give a moment for the thread to clean up
+            time.sleep(0.1)
+
+        if not self.conversation_engine:
             return False
         
         self._running = True
@@ -1042,7 +1068,11 @@ class KenzaMain:
         self.motors = GPIOMotorController()
         self.eyes   = EyeController()
         self.audio  = AudioController()
-        self.ai     = AIHandler(self.audio, eye_controller=self.eyes)
+        
+        # Wire WS emotion broadcast into AIHandler
+        def _ws_emotion_broadcast(emotion: str):
+            self.ws_server.broadcast_sync({'type': 'emotion', 'state': emotion})
+        self.ai     = AIHandler(self.audio, eye_controller=self.eyes, on_emotion_fn=_ws_emotion_broadcast)
 
         # Autonomy engine
         self.autonomy = None
@@ -1463,10 +1493,18 @@ class KenzaMain:
         """
         Start voice interaction mode.
         Data: {use_wake_word: true/false}
+        If engine is already running, this is a no-op (engine is always-on).
         """
         use_wake_word = data.get('data', {}).get('use_wake_word', True)
-        success = self.ai.start_voice_mode(use_wake_word=use_wake_word)
+        # If engine is already running, and we're requesting wake_word mode, it's a no-op.
+        # If engine is running but we're requesting non-wake_word mode, restart it.
+        if self.ai._running and use_wake_word:
+            return {
+                'type': 'voice_mode_status',
+                'data': {'running': True, 'use_wake_word': use_wake_word, 'note': 'already_running'}
+            }
         
+        success = self.ai.start_voice_mode(use_wake_word=use_wake_word)
         return {
             'type': 'voice_mode_status',
             'data': {'running': success, 'use_wake_word': use_wake_word}
@@ -1609,10 +1647,21 @@ class KenzaMain:
         else:
             log.info("🖥️  Display auto-launch skipped (--no-display)")
 
-        # 6. Voice / conversation engine
+        # 6. Voice / conversation engine (always-on with wake word)
         if self.auto_voice:
             # Small delay to let WS server settle before mic init
             await asyncio.sleep(1.5)
+
+            # Wire WS emotion broadcast into AIHandler BEFORE starting voice mode
+            def _ws_emotion_broadcast(emotion: str):
+                self.ws_server.broadcast_sync({'type': 'emotion', 'state': emotion})
+
+            self.ai.on_emotion_fn = _ws_emotion_broadcast
+
+            # Propagate callback to already-initialised ConversationEngine
+            if self.ai.conversation_engine:
+                self.ai.conversation_engine.on_emotion = lambda e: self.ai._on_emotion(e)
+
             self.ai.start_voice_mode(use_wake_word=True)
             log.info("🎤 Voice mode started — say 'Kenza' to begin")
         else:

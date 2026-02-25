@@ -1910,7 +1910,8 @@ class ConversationEngine:
         camera=None,
         on_state_change: Callable = None,
         on_user_speech: Callable = None,
-        on_ai_response: Callable = None
+        on_ai_response: Callable = None,
+        on_emotion: Callable = None
     ):
         self.config = config or ConversationConfig.load()
 
@@ -1946,6 +1947,7 @@ class ConversationEngine:
         self.on_state_change = on_state_change
         self.on_user_speech = on_user_speech
         self.on_ai_response = on_ai_response
+        self.on_emotion = on_emotion  # Callback for emotion state changes
 
         # Controllers
         self.eye_controller = eye_controller
@@ -1961,6 +1963,15 @@ class ConversationEngine:
         """Notify state change."""
         if self.on_state_change:
             self.on_state_change(state)
+
+    def _notify_emotion(self, emotion: str):
+        """Send emotion to eye bridge AND fire on_emotion callback. Non-blocking."""
+        self.eye_bridge.send_emotion(emotion)
+        if self.on_emotion:
+            try:
+                self.on_emotion(emotion)
+            except Exception:
+                pass
 
     def _parse_and_strip_emotion(self, response: str) -> tuple:
         """
@@ -1991,7 +2002,7 @@ class ConversationEngine:
 
         # Map EmotionEngine emotion → bridge state (EmotionEngine uses different names)
         speaking_state = emotion if emotion in EmotionEyeBridge.VALID_STATES else "speaking"
-        self.eye_bridge.send_emotion(speaking_state)
+        self._notify_emotion(speaking_state)
         self._notify_state("speaking")
         interrupted = False
 
@@ -2003,7 +2014,7 @@ class ConversationEngine:
         self.vad.start_monitoring(on_interrupt)
         completed = self.tts.speak_blocking(text, emotion=emotion)
         self.vad.stop_monitoring()
-        self.eye_bridge.send_emotion("neutral")
+        self._notify_emotion("neutral")
         self._notify_state("idle")
         return completed and not interrupted
     
@@ -2042,13 +2053,13 @@ class ConversationEngine:
         raw = self.groq.send(text)
         if raw:
             emotion, response = self._parse_and_strip_emotion(raw)
-            self.eye_bridge.send_emotion(emotion)
+            self._notify_emotion(emotion)
             return response
 
         raw = self.gemini.send(text)
         if raw and not raw.startswith("I'm"):
             emotion, response = self._parse_and_strip_emotion(raw)
-            self.eye_bridge.send_emotion(emotion)
+            self._notify_emotion(emotion)
             return response
 
         # Offline tier 1: Ollama (any pulled model, default gemma3:270m)
@@ -2056,7 +2067,7 @@ class ConversationEngine:
         raw = self.ollama.send(text)
         if raw:
             emotion, response = self._parse_and_strip_emotion(raw)
-            self.eye_bridge.send_emotion(emotion)
+            self._notify_emotion(emotion)
             return response
 
         # Offline tier 2: llama-cpp-python GGUF file
@@ -2064,7 +2075,7 @@ class ConversationEngine:
         raw = self.llama.send(text)
         if raw:
             emotion, response = self._parse_and_strip_emotion(raw)
-            self.eye_bridge.send_emotion(emotion)
+            self._notify_emotion(emotion)
             return response
 
         return "I'm having trouble responding right now. Please try again."
@@ -2136,14 +2147,17 @@ class ConversationEngine:
                         error_count = 0
                         _log(f"[Wake] {text}")
                         self.is_sleeping = False
-                        self.eye_bridge.send_emotion("listening")
+                        self._notify_emotion("listening")
+                        # Also fire wake_word event so display shows 'Listening…' status
+                        if self.on_state_change:
+                            self.on_state_change("wake_word")
                         self.speak_with_interrupt("Yes?")
                     else:
                         time.sleep(0.1)
                 else:
                     # Active listening
                     self._notify_state("listening")
-                    self.eye_bridge.send_emotion("listening")
+                    self._notify_emotion("listening")
                     _log("[Listening...]", end="\r")
 
                     text = self.stt.listen()
@@ -2156,6 +2170,11 @@ class ConversationEngine:
                     # Always show user speech — this is the conversation
                     print(f"You: {text}")
 
+                    # Detect emotion in user's speech and update eyes accordingly
+                    user_emotion = self.emotion.detect(text)
+                    if user_emotion != "neutral":
+                        self._notify_emotion(user_emotion)
+
                     # Notify app of user speech
                     if self.on_user_speech:
                         self.on_user_speech(text)
@@ -2163,14 +2182,14 @@ class ConversationEngine:
                     # Check for sleep commands
                     if any(cmd in text for cmd in ["goodbye", "bye", "go to sleep", "stop", "that's all"]):
                         _log("[Going to sleep]")
-                        self.eye_bridge.send_emotion("sleep")
+                        self._notify_emotion("sleep")
                         self.speak_with_interrupt("Okay, let me know if you need me.")
                         self.is_sleeping = True
                         continue
 
                     # Process and respond
                     self._notify_state("thinking")
-                    self.eye_bridge.send_emotion("thinking")
+                    self._notify_emotion("thinking")
                     response = self.process_input(text)
 
                     if response:
@@ -2181,7 +2200,7 @@ class ConversationEngine:
                         self._notify_state("speaking")
                         self.speak_with_interrupt(response)
 
-                    self.eye_bridge.send_emotion("neutral")
+                    self._notify_emotion("neutral")
                     self._notify_state("listening")
 
             except KeyboardInterrupt:
