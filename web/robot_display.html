@@ -2408,7 +2408,12 @@
             // Flush any ICE candidates that arrived while we were in 'incoming' state
             await _flushIceBuf();
 
+            // Attach local camera to local-video element
+            const lv = document.getElementById('local-video');
+            if (lv && S.localStream) lv.srcObject = S.localStream;
+
             enterState('call');
+            startCallTimer();
         }
 
         function rejectCall() {

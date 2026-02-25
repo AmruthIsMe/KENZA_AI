@@ -3688,10 +3688,22 @@
             if (TP.localStream) TP.localStream.getTracks().forEach(t => TP.pc.addTrack(t, TP.localStream));
             TP.pc.onicecandidate = e => { if (e.candidate) tpSend({ type: 'ice_candidate', candidate: e.candidate, to: 'robot' }); };
             TP.pc.ontrack = e => { const rv = document.getElementById('ov-remote-video'); if (rv) rv.srcObject = e.streams[0]; };
+            TP.pc.onconnectionstatechange = () => {
+                console.log('[TP] PC state (accepted):', TP.pc.connectionState);
+                const txt = { connected: 'Connected', connecting: 'Connecting…', disconnected: 'Disconnected', failed: 'Failed' }[TP.pc.connectionState] || TP.pc.connectionState;
+                const q = document.getElementById('ov-quality-txt'); if (q) q.textContent = txt;
+                if (TP.pc.connectionState === 'failed') tpCleanup();
+            };
             await TP.pc.setRemoteDescription(new RTCSessionDescription(window._tpPendingOffer));
             const answer = await TP.pc.createAnswer();
             await TP.pc.setLocalDescription(answer);
             tpSend({ type: 'call_answer', sdp: answer, to: 'robot' });
+            // Flush any ICE candidates that arrived before we accepted
+            console.log('[TP] Flushing', TP.iceBuf.length, 'buffered ICE candidates');
+            for (const c of TP.iceBuf) {
+                try { await TP.pc.addIceCandidate(new RTCIceCandidate(c)); } catch (_) { }
+            }
+            TP.iceBuf = [];
             tpStartCallScreen();
         }
 
