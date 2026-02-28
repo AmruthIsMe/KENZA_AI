@@ -24,6 +24,7 @@ import os
 import sys
 import json
 import asyncio
+import subprocess
 import time
 import threading
 from dataclasses import dataclass, asdict
@@ -456,14 +457,18 @@ class KenzaServer:
         # Call signaling message types that should be relayed verbatim
         self._relay_types = {
             'call_offer', 'call_answer', 'call_reject',
-            'call_end', 'ice_candidate', 'call_busy', 'call_ping'
+            'call_end', 'ice_candidate', 'call_busy', 'call_ping',
+            'call_accepted', 'update_settings', 'voice_select', 'eye_animation'
         }
+        # Track client metadata for disconnect notifications
+        self._client_meta: Dict = {}  # websocket → {role, name}
 
         # Conversation engine — always running in background (started at boot)
         self._conv_engine: Optional[ConversationEngine] = None
         self._conv_thread: Optional[threading.Thread] = None
         self._loop: Optional[asyncio.AbstractEventLoop] = None  # Set when server starts
         self._ai_display_mode: bool = False  # True when AI text overlay is active
+        self._stream_proc = None  # kenza_stream.py subprocess
         
     async def start(self, port: int = CONFIG.PORT):
         """Start the WebSocket server"""
@@ -499,11 +504,81 @@ class KenzaServer:
         print("=" * 50)
         print("\nPress Ctrl+C to stop.\n")
         
+        # Auto-start kenza_stream.py so MediaMTX + camera are ready for calls
+        # Release gesture camera first to avoid PiCamera2 conflict
+        if self.camera is not None:
+            print("[STREAM] Releasing gesture camera for streaming...")
+            try:
+                if HAS_PICAMERA and hasattr(self.camera, 'stop'):
+                    self.camera.stop()
+                    self.camera.close()
+                elif HAS_OPENCV and hasattr(self.camera, 'release'):
+                    self.camera.release()
+            except Exception as e:
+                print(f"[STREAM] Camera release warning: {e}")
+            self.camera = None
+        self._start_stream()
+        
         async with websockets.serve(self._handle_client, "0.0.0.0", port):
             self._loop = asyncio.get_event_loop()
             # ── Auto-start conversation engine on boot (always-on with wake word) ──
             self._start_conversation_engine(use_wake_word=True)
-            await asyncio.Future()  # Run forever
+            try:
+                await asyncio.Future()  # Run forever
+            finally:
+                # Clean up stream process
+                if self._stream_proc:
+                    self._stream_proc.terminate()
+                    print("[STREAM] kenza_stream.py stopped")
+    
+    def _start_stream(self):
+        """Start kenza_stream.py as a subprocess for MediaMTX + camera streaming"""
+        import shutil
+        stream_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'kenza_stream.py')
+        if not os.path.exists(stream_script):
+            print(f"[STREAM] ❌ kenza_stream.py not found at: {stream_script}")
+            return
+        
+        # Check if MediaMTX binary exists
+        mediamtx_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'mediamtx')
+        if not os.path.exists(mediamtx_path):
+            print(f"[STREAM] ⚠ MediaMTX binary not found at: {mediamtx_path}")
+            print(f"[STREAM]   Download from: https://github.com/bluenviron/mediamtx/releases")
+            print(f"[STREAM]   WHEP streaming will NOT work without MediaMTX!")
+        
+        try:
+            python_exec = shutil.which('python3') or shutil.which('python') or sys.executable
+            print(f"[STREAM] Starting: {python_exec} {stream_script}")
+            self._stream_proc = subprocess.Popen(
+                [python_exec, stream_script, '--no-audio'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                cwd=os.path.dirname(os.path.abspath(__file__)),
+                bufsize=1,
+                universal_newlines=True
+            )
+            # Start a thread to read and print subprocess output
+            def _read_stream_output():
+                try:
+                    for line in self._stream_proc.stdout:
+                        print(f"[STREAM] {line.rstrip()}")
+                except:
+                    pass
+            threading.Thread(target=_read_stream_output, daemon=True).start()
+            
+            print(f"[STREAM] Started kenza_stream.py (PID {self._stream_proc.pid})")
+            print(f"[STREAM] WHEP endpoint will be at: http://0.0.0.0:8889/kenza/whep")
+            
+            # Check if process is still running after 2 seconds
+            import time
+            time.sleep(2)
+            if self._stream_proc.poll() is not None:
+                print(f"[STREAM] ❌ kenza_stream.py exited with code {self._stream_proc.returncode}")
+                self._stream_proc = None
+            else:
+                print(f"[STREAM] ✓ kenza_stream.py is running")
+        except Exception as e:
+            print(f"[STREAM] ❌ Failed to start kenza_stream.py: {e}")
     
     def _init_camera(self):
         """Initialize camera for gesture tracking"""
@@ -572,6 +647,21 @@ class KenzaServer:
             pass
         finally:
             self.clients.discard(websocket)
+            # Broadcast peer_offline to the other side
+            meta = self._client_meta.pop(websocket, None)
+            if meta:
+                peer_role = 'controller' if meta['role'] == 'robot' else 'robot'
+                offline_msg = json.dumps({
+                    'type': 'peer_offline',
+                    'role': meta['role'],
+                    'name': meta['name']
+                })
+                for peer in list(self.clients_by_role.get(peer_role, set())):
+                    try:
+                        await peer.send(offline_msg)
+                    except:
+                        pass
+                print(f"[WS] Broadcast peer_offline for {meta['name']} ({meta['role']})")
             # Remove from role registry
             for role_set in self.clients_by_role.values():
                 role_set.discard(websocket)
@@ -590,10 +680,12 @@ class KenzaServer:
                     if msg_type == 'register':
                         client_role = msg.get('role', 'unknown')
                         self.clients_by_role.get(client_role, set()).add(websocket)
-                        print(f"[WS] Client registered as: {client_role}")
+                        peer_name = msg.get('name', client_role)
+                        # Store metadata for disconnect broadcast
+                        self._client_meta[websocket] = {'role': client_role, 'name': peer_name}
+                        print(f"[WS] Client registered as: {client_role} ({peer_name})")
                         # Notify the other side that this client is online
                         peer_role = 'controller' if client_role == 'robot' else 'robot'
-                        peer_name = msg.get('name', client_role)
                         presence = json.dumps({
                             'type': 'peer_online',
                             'role': client_role,

@@ -2215,7 +2215,7 @@
         // ═══════════════════════════════════════════════════════════
         // CONTACTS (Telepresence user selection)
         // ═══════════════════════════════════════════════════════════
-        const STATIC_CONTACTS = ["Amruth", "Sabil", "Shamnas", "Sidharth"];
+        const STATIC_CONTACTS = ["Amruth", "Sabil", "Sidharth", "Tejas"];
 
         function renderContacts() {
             const grid = document.getElementById('contact-grid');
@@ -2252,25 +2252,9 @@
         });
 
         // ═══════════════════════════════════════════════════════════
-        // WebRTC CALL SYSTEM
+        // CALL SYSTEM (simplified — video via MediaMTX/WHEP, signaling via WebSocket)
         // ═══════════════════════════════════════════════════════════
-        let pc = null;
         let callTimeout = null;
-        let _iceBuf = [];   // Buffer ICE candidates that arrive before pc is ready
-        const iceServers = [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' }
-        ];
-
-        async function _flushIceBuf() {
-            if (!pc || !_iceBuf.length) return;
-            console.log(`[KENZA] Flushing ${_iceBuf.length} buffered ICE candidates`);
-            for (const c of _iceBuf) {
-                try { await pc.addIceCandidate(new RTCIceCandidate(c)); }
-                catch (e) { console.warn('[KENZA] Buffered ICE error:', e); }
-            }
-            _iceBuf = [];
-        }
 
         async function startCall(name) {
             if (S.callState !== 'idle') {
@@ -2282,40 +2266,8 @@
             S.callerName = name;
             enterState('calling', { name });
 
-            try {
-                S.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            } catch (e) {
-                console.warn('[KENZA] Media access denied:', e.message);
-                S.localStream = null;
-            }
-
-            pc = new RTCPeerConnection({ iceServers });
-
-            if (S.localStream)
-                S.localStream.getTracks().forEach(t => pc.addTrack(t, S.localStream));
-
-            pc.onicecandidate = e => {
-                if (e.candidate)
-                    sendWS({ type: 'ice_candidate', candidate: e.candidate, to: 'controller' });
-            };
-            pc.ontrack = e => {
-                const rv = document.getElementById('remote-video');
-                if (rv) rv.srcObject = e.streams[0];
-            };
-            pc.onconnectionstatechange = () => {
-                console.log('[KENZA] PC state:', pc.connectionState);
-                const txt = {
-                    connected: 'Connected', connecting: 'Connecting…',
-                    disconnected: 'Disconnected', failed: 'Connection failed'
-                }[pc.connectionState] || pc.connectionState;
-                const q = document.getElementById('call-quality-txt');
-                if (q) q.textContent = txt;
-                if (pc.connectionState === 'failed') endCall();
-            };
-
-            const offer = await pc.createOffer({ offerToReceiveVideo: true, offerToReceiveAudio: true });
-            await pc.setLocalDescription(offer);
-            sendWS({ type: 'call_offer', sdp: offer, callerName: 'Robot', to: 'controller' });
+            // No getUserMedia or WebRTC needed — just send call request via WebSocket
+            sendWS({ type: 'call_offer', callerName: 'KENZA Robot', to: 'controller' });
 
             // Auto-cancel if no answer within 45 s
             callTimeout = setTimeout(() => {
@@ -2377,40 +2329,9 @@
             stopRing();
             S.callState = 'active';
 
-            try {
-                S.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            } catch (e) {
-                console.warn('[KENZA] Media access denied on accept:', e.message);
-                S.localStream = null;
-            }
-
-            pc = new RTCPeerConnection({ iceServers });
-            if (S.localStream)
-                S.localStream.getTracks().forEach(t => pc.addTrack(t, S.localStream));
-            pc.onicecandidate = e => {
-                if (e.candidate)
-                    sendWS({ type: 'ice_candidate', candidate: e.candidate, to: 'controller' });
-            };
-            pc.ontrack = e => {
-                const rv = document.getElementById('remote-video');
-                if (rv) rv.srcObject = e.streams[0];
-            };
-            pc.onconnectionstatechange = () => {
-                console.log('[KENZA] PC state (accepted):', pc.connectionState);
-                if (pc.connectionState === 'failed') endCall();
-            };
-
-            await pc.setRemoteDescription(new RTCSessionDescription(window._pendingOffer));
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
-            sendWS({ type: 'call_answer', sdp: answer, to: 'controller' });
-
-            // Flush any ICE candidates that arrived while we were in 'incoming' state
-            await _flushIceBuf();
-
-            // Attach local camera to local-video element
-            const lv = document.getElementById('local-video');
-            if (lv && S.localStream) lv.srcObject = S.localStream;
+            // No getUserMedia needed — the Pi's camera/mic are streamed via MediaMTX/WHEP
+            // Just tell the controller we accepted
+            sendWS({ type: 'call_accepted', callerName: 'KENZA Robot', to: 'controller' });
 
             enterState('call');
             startCallTimer();
@@ -2440,15 +2361,7 @@
         function cleanupCall() {
             console.log('[KENZA] cleanupCall');
             stopRing();
-            _iceBuf = [];   // Discard buffered candidates
             stopCallTimer();
-            if (pc) { pc.close(); pc = null; }
-            if (S.localStream) {
-                S.localStream.getTracks().forEach(t => t.stop());
-                S.localStream = null;
-            }
-            const rv = document.getElementById('remote-video'); if (rv) rv.srcObject = null;
-            const lv = document.getElementById('local-video'); if (lv) lv.srcObject = null;
 
             // Reset call controls to defaults
             S.callState = 'idle'; S.camOn = true; S.micOn = true;
@@ -2457,7 +2370,7 @@
             if (bc) { bc.textContent = '📷'; bc.classList.remove('off'); }
             if (bm) { bm.textContent = '🎙️'; bm.classList.remove('off'); }
 
-            // ← THE CRITICAL FIX: always return to idle
+            // Always return to idle
             enterState('idle');
         }
 
@@ -2618,12 +2531,12 @@
                     await handleIncomingCall(d);
                     break;
 
-                case 'call_answer':
-                    if (pc && S.callState === 'calling') {
+                case 'call_accepted':
+                    if (S.callState === 'calling') {
                         clearTimeout(callTimeout);
-                        await pc.setRemoteDescription(new RTCSessionDescription(d.sdp));
                         S.callState = 'active';
                         enterState('call');
+                        startCallTimer();
                     }
                     break;
 
@@ -2633,20 +2546,6 @@
 
                 case 'call_end':
                     if (S.callState === 'active') cleanupCall();
-                    break;
-
-                case 'ice_candidate':
-                    if (d.candidate) {
-                        if (pc && pc.remoteDescription) {
-                            // pc ready: apply immediately
-                            try { await pc.addIceCandidate(new RTCIceCandidate(d.candidate)); }
-                            catch (e) { console.warn('[KENZA] ICE error:', e); }
-                        } else {
-                            // pc not ready yet: buffer for later
-                            console.log('[KENZA] Buffering ICE candidate (pc not ready)');
-                            _iceBuf.push(d.candidate);
-                        }
-                    }
                     break;
             }
         }

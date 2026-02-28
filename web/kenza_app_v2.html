@@ -2415,6 +2415,20 @@
                 <input type="password" class="login-input" id="login-pass" placeholder="Password">
                 <button class="login-btn" id="btn-login">Sign In</button>
                 <div class="login-error" id="login-error">Incorrect credentials</div>
+                <div style="margin-top:20px;text-align:center;">
+                    <span style="color:var(--text-dim);font-size:0.85rem;">No account?</span>
+                    <button id="btn-show-register"
+                        style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;font-weight:600;">Register</button>
+                </div>
+                <div id="register-fields" style="display:none;margin-top:16px;">
+                    <input type="text" class="login-input" id="reg-user" placeholder="New Username" autocomplete="off">
+                    <input type="text" class="login-input" id="reg-display" placeholder="Display Name"
+                        autocomplete="off">
+                    <input type="password" class="login-input" id="reg-pass" placeholder="New Password">
+                    <button class="login-btn" id="btn-register"
+                        style="background:linear-gradient(135deg, var(--pink), #cc3388);">Register</button>
+                    <div class="login-error" id="reg-error">Username already taken</div>
+                </div>
             </div>
         </div>
 
@@ -3117,7 +3131,22 @@
     </script>
     <script>
         // ===== AUTH =====
-        const AUTH = { user: 'titanic', pass: 'sinking' };
+        const DEFAULT_USERS = {
+            amruth: { pass: 'kenza123', display: 'Amruth' },
+            sabil: { pass: 'kenza123', display: 'Sabil' },
+            sidharth: { pass: 'kenza123', display: 'Sidharth' },
+            tejas: { pass: 'kenza123', display: 'Tejas' }
+        };
+        function getUsers() {
+            const stored = localStorage.getItem('kenza_users');
+            if (stored) return JSON.parse(stored);
+            // First time: initialize with defaults
+            localStorage.setItem('kenza_users', JSON.stringify(DEFAULT_USERS));
+            return { ...DEFAULT_USERS };
+        }
+        function saveUsers(users) { localStorage.setItem('kenza_users', JSON.stringify(users)); }
+        let LOGGED_IN_USER = localStorage.getItem('kenza_logged_in_user') || '';
+        let LOGGED_IN_DISPLAY = localStorage.getItem('kenza_logged_in_display') || '';
 
         // ===== EYE STATE (from eyes_display.html) =====
         const eyeState = {
@@ -3467,25 +3496,63 @@
         }
 
         function login() {
-            const user = document.getElementById('login-user').value;
+            const user = document.getElementById('login-user').value.trim().toLowerCase();
             const pass = document.getElementById('login-pass').value;
-            if (user === AUTH.user && pass === AUTH.pass) {
+            const users = getUsers();
+            if (users[user] && users[user].pass === pass) {
+                LOGGED_IN_USER = user;
+                LOGGED_IN_DISPLAY = users[user].display || user;
                 localStorage.setItem('kenza_auth', 'true');
+                localStorage.setItem('kenza_logged_in_user', LOGGED_IN_USER);
+                localStorage.setItem('kenza_logged_in_display', LOGGED_IN_DISPLAY);
                 navigateTo('view-home');
                 document.getElementById('login-error').classList.remove('visible');
+                // Re-register with correct name if WebSocket is already open
+                if (ws && ws.readyState === 1) {
+                    ws.send(JSON.stringify({ type: 'register', role: 'controller', name: LOGGED_IN_DISPLAY }));
+                }
             } else {
                 document.getElementById('login-error').classList.add('visible');
             }
         }
 
+        function registerUser() {
+            const user = document.getElementById('reg-user').value.trim().toLowerCase();
+            const display = document.getElementById('reg-display').value.trim();
+            const pass = document.getElementById('reg-pass').value;
+            if (!user || !pass || !display) return;
+            const users = getUsers();
+            if (users[user]) {
+                document.getElementById('reg-error').classList.add('visible');
+                return;
+            }
+            users[user] = { pass, display };
+            saveUsers(users);
+            document.getElementById('reg-error').classList.remove('visible');
+            // Auto-fill login fields
+            document.getElementById('login-user').value = user;
+            document.getElementById('login-pass').value = pass;
+            document.getElementById('register-fields').style.display = 'none';
+            login();
+        }
+
         function logout() {
             localStorage.removeItem('kenza_auth');
+            localStorage.removeItem('kenza_logged_in_user');
+            localStorage.removeItem('kenza_logged_in_display');
+            LOGGED_IN_USER = '';
+            LOGGED_IN_DISPLAY = '';
             navigateTo('view-login');
         }
 
         document.getElementById('btn-login').addEventListener('click', login);
         document.getElementById('login-pass').addEventListener('keypress', e => { if (e.key === 'Enter') login(); });
         document.getElementById('btn-logout').addEventListener('click', logout);
+        document.getElementById('btn-show-register')?.addEventListener('click', () => {
+            const fields = document.getElementById('register-fields');
+            fields.style.display = fields.style.display === 'none' ? 'block' : 'none';
+        });
+        document.getElementById('btn-register')?.addEventListener('click', registerUser);
 
         // ===== NAVIGATION =====
         const navStack = [];
@@ -3552,8 +3619,8 @@
                 statusDot.classList.add('connected');
                 statusText.textContent = 'Connected';
                 localStorage.setItem('kenza_pi_ip', ip);
-                // Register immediately as controller — no timeout needed
-                ws.send(JSON.stringify({ type: 'register', role: 'controller', name: 'Sidharth' }));
+                // Register immediately as controller with logged-in user's name
+                ws.send(JSON.stringify({ type: 'register', role: 'controller', name: LOGGED_IN_DISPLAY || 'User' }));
                 document.getElementById('pi-ip').value = ip;
             };
             ws.onmessage = e => {
@@ -3593,10 +3660,9 @@
                     if (role === 'robot') tpSetRobotOnline(false);
                 }
                 if (d.type === 'call_offer') tpHandleIncoming(d);
-                if (d.type === 'call_answer') tpHandleAnswer(d);
+                if (d.type === 'call_accepted') tpHandleAccepted(d);
                 if (d.type === 'call_reject') tpCleanup();
                 if (d.type === 'call_end') tpCleanup();
-                if (d.type === 'ice_candidate') tpAddIce(d);
                 if (d.type === 'call_busy') { alert('Robot is busy on another call.'); tpCleanup(); }
             };
 
@@ -3614,16 +3680,16 @@
             if (ws?.readyState === 1) ws.send(JSON.stringify({ type, data }));
         }
 
-        // ====== TELEPRESENCE / WebRTC ======
+        // ====== TELEPRESENCE / WHEP-based streaming ======
+        // Uses MediaMTX WHEP endpoint on the Pi for video+audio (same approach as stream_viewer.html)
+        // Call state managed by WebSocket signaling (call_offer, call_accepted, call_end)
         const TP = {
-            pc: null, localStream: null,
+            pc: null,
             callState: 'idle',   // idle|calling|incoming|active
             camOn: true, micOn: true,
             timerInterval: null, timerSec: 0,
             robotName: 'KENZA HomeBot',
-            iceBuf: []   // Buffer ICE candidates that arrive before remote description is set
         };
-        const TP_ICE = [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }];
 
         function tpSend(obj) {
             if (ws?.readyState === 1) ws.send(JSON.stringify(obj));
@@ -3651,91 +3717,166 @@
             document.querySelectorAll('.call-overlay').forEach(o => o.classList.remove('visible'));
         }
 
+        // ── Connect to WHEP endpoint to get video+audio from Pi ──
+        async function tpConnectWHEP() {
+            const ip = document.getElementById('pi-ip')?.value?.trim() || location.hostname;
+            if (!ip) { console.error('[TP] No Pi IP for WHEP'); return false; }
+            const whepUrl = `http://${ip}:8889/kenza/whep`;
+            console.log('[TP] Connecting to WHEP:', whepUrl);
+
+            try {
+                // Clean up any previous PC
+                if (TP.pc) { try { TP.pc.close(); } catch (_) { } TP.pc = null; }
+
+                TP.pc = new RTCPeerConnection({
+                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                });
+
+                TP.pc.ontrack = (event) => {
+                    console.log('[TP] Received track:', event.track.kind);
+                    const rv = document.getElementById('ov-remote-video');
+                    if (rv) {
+                        if (!rv.srcObject) rv.srcObject = new MediaStream();
+                        rv.srcObject.addTrack(event.track);
+                        rv.muted = false;
+                        rv.volume = 1.0;
+                    }
+                };
+
+                TP.pc.oniceconnectionstatechange = () => {
+                    console.log('[TP] ICE state:', TP.pc?.iceConnectionState);
+                    const txt = {
+                        connected: 'Connected', checking: 'Connecting…',
+                        disconnected: 'Disconnected', failed: 'Connection failed',
+                        completed: 'Connected'
+                    }[TP.pc?.iceConnectionState] || TP.pc?.iceConnectionState;
+                    const q = document.getElementById('ov-quality-txt');
+                    if (q) q.textContent = txt;
+                    if (TP.pc?.iceConnectionState === 'failed') tpCleanup();
+                };
+
+                // Receive-only transceivers for video and audio from Pi
+                TP.pc.addTransceiver('video', { direction: 'recvonly' });
+                TP.pc.addTransceiver('audio', { direction: 'recvonly' });
+
+                const offer = await TP.pc.createOffer();
+                await TP.pc.setLocalDescription(offer);
+
+                // Wait for ICE gathering (with 5s timeout)
+                await Promise.race([
+                    new Promise(resolve => {
+                        if (TP.pc.iceGatheringState === 'complete') resolve();
+                        else TP.pc.onicegatheringstatechange = () => {
+                            if (TP.pc.iceGatheringState === 'complete') resolve();
+                        };
+                    }),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('ICE gathering timeout')), 5000))
+                ]);
+
+                // Send offer to WHEP endpoint
+                const response = await fetch(whepUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/sdp' },
+                    body: TP.pc.localDescription.sdp
+                });
+
+                if (!response.ok) throw new Error('WHEP returned ' + response.status);
+
+                const answer = await response.text();
+                await TP.pc.setRemoteDescription({ type: 'answer', sdp: answer });
+
+                console.log('[TP] WHEP connected successfully');
+                return true;
+
+            } catch (e) {
+                console.error('[TP] WHEP connection failed:', e.message);
+                if (TP.pc) { try { TP.pc.close(); } catch (_) { } TP.pc = null; }
+                return false;
+            }
+        }
+
+        // ── Connect with retry (MediaMTX may need time to boot) ──
+        async function tpConnectWithRetry(maxRetries = 8, delayMs = 3000) {
+            const q = document.getElementById('ov-quality-txt');
+            for (let i = 1; i <= maxRetries; i++) {
+                if (TP.callState !== 'active') return false; // call was cancelled
+                if (q) q.textContent = `Connecting stream (${i}/${maxRetries})…`;
+                console.log(`[TP] WHEP attempt ${i}/${maxRetries}`);
+                const ok = await tpConnectWHEP();
+                if (ok) return true;
+                if (i < maxRetries) {
+                    if (q) q.textContent = `Retrying in ${delayMs / 1000}s…`;
+                    await new Promise(r => setTimeout(r, delayMs));
+                }
+            }
+            return false;
+        }
+
+        // ── User calls Robot ──
         async function tpStartCall() {
             if (TP.callState !== 'idle') return;
             TP.callState = 'calling';
             tpShowOverlay('ov-calling');
-            try { TP.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true }); } catch (e) { TP.localStream = null; }
-            TP.pc = new RTCPeerConnection({ iceServers: TP_ICE });
-            if (TP.localStream) TP.localStream.getTracks().forEach(t => TP.pc.addTrack(t, TP.localStream));
-            TP.pc.onicecandidate = e => { if (e.candidate) tpSend({ type: 'ice_candidate', candidate: e.candidate, to: 'robot' }); };
-            TP.pc.ontrack = e => { const rv = document.getElementById('ov-remote-video'); if (rv) rv.srcObject = e.streams[0]; };
-            TP.pc.onconnectionstatechange = () => {
-                const txt = { connected: 'Connected', connecting: 'Connecting…', disconnected: 'Disconnected', failed: 'Failed' }[TP.pc.connectionState] || TP.pc.connectionState;
-                const q = document.getElementById('ov-quality-txt'); if (q) q.textContent = txt;
-                if (TP.pc.connectionState === 'failed') tpCleanup();
-            };
-            const offer = await TP.pc.createOffer({ offerToReceiveVideo: true, offerToReceiveAudio: true });
-            await TP.pc.setLocalDescription(offer);
-            tpSend({ type: 'call_offer', sdp: offer, callerName: 'Sidharth', to: 'robot' });
+            // Send call request via WebSocket (no SDP — just a call request)
+            tpSend({ type: 'call_offer', callerName: LOGGED_IN_DISPLAY || 'User', to: 'robot' });
+            // Timeout if no response in 45s
             TP._callTimeout = setTimeout(() => { if (TP.callState === 'calling') tpCancelCall(); }, 45000);
         }
 
+        // ── Robot accepted our call → connect WHEP with retry ──
+        async function tpHandleAccepted(d) {
+            if (TP.callState !== 'calling') return;
+            clearTimeout(TP._callTimeout);
+            TP.callState = 'active';
+
+            // Show call overlay while connecting
+            tpShowOverlay('ov-call');
+            const ok = await tpConnectWithRetry();
+            if (!ok) {
+                console.error('[TP] All WHEP retries failed, ending call');
+                tpSend({ type: 'call_end', to: 'robot' });
+                tpCleanup();
+                alert('Could not connect to robot camera stream. Make sure kenza_stream.py is running on the Pi.');
+                return;
+            }
+            tpStartCallScreen();
+        }
+
+        // ── Robot calls User ──
         async function tpHandleIncoming(d) {
             if (TP.callState !== 'idle') { tpSend({ type: 'call_busy', to: 'robot' }); return; }
             TP.callState = 'incoming';
-            window._tpPendingOffer = d.sdp;
             document.getElementById('ov-incoming-name').textContent = d.callerName || TP.robotName;
             tpShowOverlay('ov-incoming');
         }
 
+        // ── User accepts incoming call → connect WHEP with retry ──
         async function tpAcceptCall() {
             if (TP.callState !== 'incoming') return;
             TP.callState = 'active';
             tpHideAllOverlays();
-            try { TP.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true }); } catch (e) { TP.localStream = null; }
-            TP.pc = new RTCPeerConnection({ iceServers: TP_ICE });
-            if (TP.localStream) TP.localStream.getTracks().forEach(t => TP.pc.addTrack(t, TP.localStream));
-            TP.pc.onicecandidate = e => { if (e.candidate) tpSend({ type: 'ice_candidate', candidate: e.candidate, to: 'robot' }); };
-            TP.pc.ontrack = e => { const rv = document.getElementById('ov-remote-video'); if (rv) rv.srcObject = e.streams[0]; };
-            TP.pc.onconnectionstatechange = () => {
-                console.log('[TP] PC state (accepted):', TP.pc.connectionState);
-                const txt = { connected: 'Connected', connecting: 'Connecting…', disconnected: 'Disconnected', failed: 'Failed' }[TP.pc.connectionState] || TP.pc.connectionState;
-                const q = document.getElementById('ov-quality-txt'); if (q) q.textContent = txt;
-                if (TP.pc.connectionState === 'failed') tpCleanup();
-            };
-            await TP.pc.setRemoteDescription(new RTCSessionDescription(window._tpPendingOffer));
-            const answer = await TP.pc.createAnswer();
-            await TP.pc.setLocalDescription(answer);
-            tpSend({ type: 'call_answer', sdp: answer, to: 'robot' });
-            // Flush any ICE candidates that arrived before we accepted
-            console.log('[TP] Flushing', TP.iceBuf.length, 'buffered ICE candidates');
-            for (const c of TP.iceBuf) {
-                try { await TP.pc.addIceCandidate(new RTCIceCandidate(c)); } catch (_) { }
+
+            // Tell robot we accepted
+            tpSend({ type: 'call_accepted', callerName: LOGGED_IN_DISPLAY || 'User', to: 'robot' });
+
+            // Show call overlay while connecting
+            tpShowOverlay('ov-call');
+            const ok = await tpConnectWithRetry();
+            if (!ok) {
+                console.error('[TP] All WHEP retries failed, ending call');
+                tpSend({ type: 'call_end', to: 'robot' });
+                tpCleanup();
+                alert('Could not connect to robot camera stream. Make sure kenza_stream.py is running on the Pi.');
+                return;
             }
-            TP.iceBuf = [];
             tpStartCallScreen();
         }
 
-        async function tpHandleAnswer(d) {
-            if (TP.pc && TP.callState === 'calling') {
-                clearTimeout(TP._callTimeout);
-                await TP.pc.setRemoteDescription(new RTCSessionDescription(d.sdp));
-                // Flush any ICE candidates that arrived before the answer
-                for (const c of TP.iceBuf) {
-                    try { await TP.pc.addIceCandidate(new RTCIceCandidate(c)); } catch (_) { }
-                }
-                TP.iceBuf = [];
-                TP.callState = 'active';
-                tpStartCallScreen();
-            }
-        }
-
-        async function tpAddIce(d) {
-            if (!d.candidate) return;
-            if (TP.pc && TP.pc.remoteDescription) {
-                try { await TP.pc.addIceCandidate(new RTCIceCandidate(d.candidate)); } catch (_) { }
-            } else {
-                // Buffer until remote description is set
-                console.log('[TP] Buffering ICE candidate');
-                TP.iceBuf.push(d.candidate);
-            }
-        }
-
         function tpStartCallScreen() {
-            const lv = document.getElementById('ov-local-video');
-            if (lv && TP.localStream) lv.srcObject = TP.localStream;
             tpShowOverlay('ov-call');
+            // Unmute video element
+            const rv = document.getElementById('ov-remote-video');
+            if (rv) { rv.muted = false; rv.volume = 1.0; rv.play().catch(() => { }); }
             // start timer
             TP.timerSec = 0;
             clearInterval(TP.timerInterval);
@@ -3767,27 +3908,28 @@
             clearInterval(TP.timerInterval);
             clearTimeout(TP._callTimeout);
             if (TP.pc) { TP.pc.close(); TP.pc = null; }
-            if (TP.localStream) { TP.localStream.getTracks().forEach(t => t.stop()); TP.localStream = null; }
             const rv = document.getElementById('ov-remote-video'); if (rv) rv.srcObject = null;
             const lv = document.getElementById('ov-local-video'); if (lv) lv.srcObject = null;
-            TP.callState = 'idle'; TP.camOn = true; TP.micOn = true; TP.iceBuf = [];
+            TP.callState = 'idle'; TP.camOn = true; TP.micOn = true;
             tpHideAllOverlays();
-            // Return to home dashboard and reset driving state
+            // Return to home dashboard and stop motors
             navigateTo('view-home');
             sendMotorCommand('S');
         }
 
         function tpToggleCam() {
-            TP.camOn = !TP.camOn;
-            if (TP.localStream) TP.localStream.getVideoTracks().forEach(t => t.enabled = TP.camOn);
-            const b = document.getElementById('ov-btn-cam');
-            if (b) { b.classList.toggle('off', !TP.camOn); b.textContent = TP.camOn ? '📷' : '🚫'; }
+            // Camera toggle not applicable in WHEP receive-only mode
+            // Could be used to toggle local preview in future
         }
         function tpToggleMic() {
-            TP.micOn = !TP.micOn;
-            if (TP.localStream) TP.localStream.getAudioTracks().forEach(t => t.enabled = TP.micOn);
-            const b = document.getElementById('ov-btn-mic');
-            if (b) { b.classList.toggle('off', !TP.micOn); b.textContent = TP.micOn ? '🎙️' : '🔇'; }
+            // Mic toggle — mute/unmute received audio
+            const rv = document.getElementById('ov-remote-video');
+            if (rv) {
+                TP.micOn = !TP.micOn;
+                rv.muted = !TP.micOn;
+                const b = document.getElementById('ov-btn-mic');
+                if (b) { b.classList.toggle('off', !TP.micOn); b.textContent = TP.micOn ? '🎙️' : '🔇'; }
+            }
         }
 
         function enableSimulation() {
@@ -4487,9 +4629,14 @@
             navigateTo('view-home');
         }
 
-        // Auto-connect if saved IP
+        // Auto-connect: try location.hostname first (served from Pi), then saved IP
+        const autoHost = location.hostname;
         const savedIp = localStorage.getItem('kenza_pi_ip');
-        if (savedIp) {
+        if (autoHost && autoHost !== '' && autoHost !== 'localhost' && autoHost !== '127.0.0.1' && !autoHost.startsWith('file')) {
+            // Served from the Pi — connect to the serving host
+            document.getElementById('pi-ip').value = autoHost;
+            setTimeout(() => connectWebSocket(autoHost), 500);
+        } else if (savedIp) {
             document.getElementById('pi-ip').value = savedIp;
             setTimeout(() => connectWebSocket(savedIp), 500);
         }
