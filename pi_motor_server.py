@@ -45,16 +45,16 @@ def backward():
     IN4.on()
 
 def left():
-    IN1.off()
-    IN2.on()
-    IN3.on()
-    IN4.off()
-
-def right():
     IN1.on()
     IN2.off()
     IN3.off()
     IN4.on()
+
+def right():
+    IN1.off()
+    IN2.on()
+    IN3.on()
+    IN4.off()
 
 stopCar()
 
