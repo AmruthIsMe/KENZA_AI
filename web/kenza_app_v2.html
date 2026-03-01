@@ -3536,18 +3536,37 @@
             login();
         }
 
-        function logout() {
+        document.getElementById('btn-login').addEventListener('click', login);
+        document.getElementById('login-pass').addEventListener('keypress', e => { if (e.key === 'Enter') login(); });
+
+        // ===== AUTH LOGOUT =====
+        document.getElementById('btn-logout').addEventListener('click', async () => {
+            const ip = document.getElementById('pi-ip').value.trim() || localStorage.getItem('kenza_pi_ip');
+
+            // Try to stop the heavy server on the Pi to save resources
+            if (ip) {
+                try {
+                    statusText.textContent = 'Putting KENZA to sleep...';
+                    await fetch(`http://${ip}:8764/stop`, { method: 'GET', mode: 'cors' });
+                } catch (e) {
+                    console.warn('[LAUNCHER] Failed to send stop command', e);
+                }
+            }
+
             localStorage.removeItem('kenza_auth');
             localStorage.removeItem('kenza_logged_in_user');
             localStorage.removeItem('kenza_logged_in_display');
             LOGGED_IN_USER = '';
             LOGGED_IN_DISPLAY = '';
-            navigateTo('view-login');
-        }
-
-        document.getElementById('btn-login').addEventListener('click', login);
-        document.getElementById('login-pass').addEventListener('keypress', e => { if (e.key === 'Enter') login(); });
-        document.getElementById('btn-logout').addEventListener('click', logout);
+            document.getElementById('welcome-user').textContent = 'User';
+            if (ws) {
+                ws.onclose = null; // Prevent auto-reconnect
+                ws.close();
+            }
+            statusDot.classList.remove('connected');
+            statusText.textContent = 'Offline';
+            document.getElementById('auth-overlay').style.display = 'flex';
+        });
         document.getElementById('btn-show-register')?.addEventListener('click', () => {
             const fields = document.getElementById('register-fields');
             fields.style.display = fields.style.display === 'none' ? 'block' : 'none';
@@ -3611,9 +3630,22 @@
         const statusDot = document.getElementById('status-dot');
         const statusText = document.getElementById('status-text');
 
-        function connectWebSocket(ipOverride) {
+        async function connectWebSocket(ipOverride) {
             const ip = ipOverride || document.getElementById('pi-ip').value.trim();
             if (!ip) return;
+
+            statusText.textContent = 'Waking up KENZA...';
+            // 1. Ping the launcher service to start the heavy kenza_server.py
+            try {
+                await fetch(`http://${ip}:8764/start`, { method: 'GET', mode: 'cors' });
+                // Give the Python server 2 seconds to fully initialize
+                await new Promise(r => setTimeout(r, 2000));
+            } catch (e) {
+                console.warn('[LAUNCHER] Could not reach launcher service, attempting direct WS connection anyway...', e);
+            }
+
+            // 2. Connect WebSocket
+            statusText.textContent = 'Connecting...';
             ws = new WebSocket(`ws://${ip}:8765`);
             ws.onopen = () => {
                 statusDot.classList.add('connected');

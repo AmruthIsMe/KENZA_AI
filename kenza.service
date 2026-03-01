@@ -1,0 +1,17 @@
+[Unit]
+Description=KENZA Launcher Service
+After=network.target
+
+[Service]
+Type=simple
+User=amruth
+WorkingDirectory=/home/amruth/KENZA_AI
+ExecStart=/home/amruth/KENZA_AI/venv/bin/python3 kenza_launcher.py
+Restart=always
+RestartSec=5
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=kenza_launcher
+
+[Install]
+WantedBy=multi-user.target
