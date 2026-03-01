@@ -791,7 +791,7 @@ paths:
   # Uses rpicam-vid piped through ffmpeg to publish H264 via RTSP to MediaMTX
   # The HTML app connects via WHEP at http://<pi-ip>:8889/kenza/whep
   kenza:
-    runOnInit: bash -c 'rpicam-vid -t 0 --camera 0 --nopreview --codec yuv420 --width 1280 --height 720 --inline --listen -o - | ffmpeg -f rawvideo -pix_fmt yuv420p -s:v 1280x720 -i /dev/stdin -c:v libx264 -preset ultrafast -tune zerolatency -f rtsp rtsp://localhost:$RTSP_PORT/$MTX_PATH'
+    runOnInit: bash -c 'rpicam-vid -t 0 --camera 0 --nopreview --codec yuv420 --width 1280 --height 720 --inline --listen -o - | ffmpeg -f rawvideo -pix_fmt yuv420p -s:v 1280x720 -i /dev/stdin -f alsa -i default -c:v libx264 -preset ultrafast -tune zerolatency -c:a aac -b:a 64k -ar 44100 -ac 1 -f rtsp rtsp://localhost:$RTSP_PORT/$MTX_PATH'
     runOnInitRestart: yes
 
   # Settings under path "all_others" are applied to all paths that

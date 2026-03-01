@@ -3782,8 +3782,23 @@
                     if (rv) {
                         if (!rv.srcObject) rv.srcObject = new MediaStream();
                         rv.srcObject.addTrack(event.track);
+                        // Ensure audio is unmuted — autoplay policy may block this
                         rv.muted = false;
                         rv.volume = 1.0;
+                        // Force play with unmuted audio (user gesture should have preceded this)
+                        rv.play().catch(e => {
+                            console.warn('[TP] Autoplay blocked, will retry on user gesture:', e.message);
+                            // Fallback: listen for any user touch/click to resume
+                            const resumeAudio = () => {
+                                rv.muted = false;
+                                rv.volume = 1.0;
+                                rv.play().catch(() => { });
+                                document.removeEventListener('click', resumeAudio);
+                                document.removeEventListener('touchstart', resumeAudio);
+                            };
+                            document.addEventListener('click', resumeAudio, { once: true });
+                            document.addEventListener('touchstart', resumeAudio, { once: true });
+                        });
                     }
                 };
 
@@ -3799,8 +3814,9 @@
                     if (TP.pc?.iceConnectionState === 'failed') tpCleanup();
                 };
 
-                // Receive-only transceiver for video from Pi (rpiCamera is video-only)
+                // Receive-only transceivers for video AND audio from Pi via MediaMTX
                 TP.pc.addTransceiver('video', { direction: 'recvonly' });
+                TP.pc.addTransceiver('audio', { direction: 'recvonly' });
 
                 const offer = await TP.pc.createOffer();
                 await TP.pc.setLocalDescription(offer);

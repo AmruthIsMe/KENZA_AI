@@ -2463,9 +2463,9 @@
             switch (d.type) {
 
                 case 'emotion':
-                    if (eyesActive) setEmotion(d.state);
-                    if (d.state === 'sleep') hideEyes();
-                    else if (S.state === 'idle') startEyes();
+                    // Rich emotion from ConversationEngine → play animation on eyes
+                    // This works in ALL states, not just AI mode
+                    _handleRichEmotion(d.state);
                     break;
 
                 case 'update_settings':
@@ -2497,6 +2497,9 @@
                     break;
 
                 case 'ai_state':
+                    // Phase 2: Route AI states to eyes in ALL states (not just AI mode)
+                    _handleAIState(d.state);
+                    // Update AI overlay text only when visible
                     if (S.state === 'ai') setAIStatus(d.state);
                     break;
 
@@ -2592,7 +2595,21 @@
                     if (rv) {
                         if (!rv.srcObject) rv.srcObject = new MediaStream();
                         rv.srcObject.addTrack(event.track);
-                        rv.play().catch(() => { });
+                        // Explicitly unmute and play audio from the app
+                        rv.muted = false;
+                        rv.volume = 1.0;
+                        rv.play().catch(e => {
+                            console.warn('[KENZA] Autoplay blocked, retrying on gesture:', e.message);
+                            const resume = () => {
+                                rv.muted = false;
+                                rv.volume = 1.0;
+                                rv.play().catch(() => { });
+                                document.removeEventListener('click', resume);
+                                document.removeEventListener('touchstart', resume);
+                            };
+                            document.addEventListener('click', resume, { once: true });
+                            document.addEventListener('touchstart', resume, { once: true });
+                        });
                     }
                 };
 
@@ -2627,6 +2644,132 @@
 
             } catch (e) {
                 console.error('[KENZA] Failed to handle WebRTC offer:', e);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // PHASE 2+3: Emotion & AI State → Eye System (always-active)
+        // ═══════════════════════════════════════════════════════════
+        let _emotionRevertTimer = null;
+        let _speakingPulseInterval = null;
+        let _currentBaseState = 'neutral'; // Track the current AI base state
+
+        // Map ConversationEngine emotions to playSync animation names
+        const EMOTION_TO_ANIM = {
+            happy: 'happy', excited: 'happy', joy: 'happy', playful: 'happy',
+            sad: 'sad', melancholy: 'sad', empathetic: 'sad',
+            angry: 'angry', frustrated: 'angry',
+            surprised: 'surprised', curious: 'surprised', confused: 'surprised',
+            love: 'love', caring: 'love', comforting: 'love', affectionate: 'love',
+            sleepy: 'sleepy', tired: 'sleepy',
+            dizzy: 'dizzy',
+            wink: 'wink',
+        };
+
+        // Map ConversationEngine emotions to basic setEmotion states (less dramatic)
+        const EMOTION_TO_STATE = {
+            neutral: 'neutral', calm: 'neutral',
+            thinking: 'thinking',
+            listening: 'listening',
+            speaking: 'speaking',
+            sleep: 'sleep',
+            alert: 'alert',
+            excited: 'excited',
+        };
+
+        function _handleRichEmotion(emotionName) {
+            if (!emotionName) return;
+            console.log('[EYES] Rich emotion:', emotionName);
+
+            // Handle sleep specially
+            if (emotionName === 'sleep') {
+                hideEyes();
+                return;
+            }
+
+            // Ensure eyes are visible (wake up if sleeping)
+            if (!eyesActive && S.state === 'idle') startEyes();
+
+            // Clear any pending revert
+            if (_emotionRevertTimer) { clearTimeout(_emotionRevertTimer); _emotionRevertTimer = null; }
+
+            // Check if this emotion has a rich animation
+            const animName = EMOTION_TO_ANIM[emotionName];
+            if (animName) {
+                // Play the rich animation
+                playSync(animName);
+                // Auto-revert to base state after 4 seconds
+                _emotionRevertTimer = setTimeout(() => {
+                    resetSync();
+                    if (eyesActive) setEmotion(_currentBaseState);
+                }, 4000);
+            } else {
+                // Fall back to basic eye state
+                const stateName = EMOTION_TO_STATE[emotionName] || 'neutral';
+                if (eyesActive) setEmotion(stateName);
+            }
+        }
+
+        function _handleAIState(state) {
+            if (!state) return;
+            console.log('[EYES] AI state:', state);
+
+            // Stop speaking pulse if leaving speaking state
+            if (state !== 'speaking') _stopSpeakingPulse();
+
+            // Map AI states to eye emotions (works in any screen state)
+            switch (state) {
+                case 'listening':
+                    _currentBaseState = 'listening';
+                    if (eyesActive) setEmotion('listening');
+                    // Ensure eyes are visible when AI is actively listening
+                    if (!eyesActive && S.state === 'idle') startEyes();
+                    break;
+                case 'thinking':
+                    _currentBaseState = 'thinking';
+                    if (eyesActive) setEmotion('thinking');
+                    break;
+                case 'speaking':
+                    _currentBaseState = 'speaking';
+                    if (eyesActive) setEmotion('speaking');
+                    _startSpeakingPulse();
+                    break;
+                case 'idle':
+                case 'sleeping':
+                    _currentBaseState = 'neutral';
+                    if (eyesActive) setEmotion('neutral');
+                    break;
+                case 'wake_word':
+                    _currentBaseState = 'excited';
+                    if (eyesActive) setEmotion('excited');
+                    if (!eyesActive && S.state === 'idle') startEyes();
+                    break;
+                default:
+                    _currentBaseState = 'neutral';
+                    if (eyesActive) setEmotion('neutral');
+            }
+        }
+
+        // Speaking pulse: subtle brightness oscillation while TTS is playing
+        function _startSpeakingPulse() {
+            _stopSpeakingPulse();
+            let bright = true;
+            _speakingPulseInterval = setInterval(() => {
+                if (!eyesActive) return;
+                const eyes = document.querySelectorAll('.eye');
+                eyes.forEach(eye => {
+                    eye.style.filter = bright ? 'brightness(1.15)' : 'brightness(0.95)';
+                });
+                bright = !bright;
+            }, 400);
+        }
+
+        function _stopSpeakingPulse() {
+            if (_speakingPulseInterval) {
+                clearInterval(_speakingPulseInterval);
+                _speakingPulseInterval = null;
+                // Reset filter
+                document.querySelectorAll('.eye').forEach(eye => { eye.style.filter = ''; });
             }
         }
 

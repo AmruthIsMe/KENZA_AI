@@ -66,6 +66,22 @@ except ImportError:
     HAS_GESTURE = False
     print("[!] kenza_gesture module not found")
 
+# Try to import autonomy engine
+try:
+    from kenza_autonomy import AutonomyEngine
+    HAS_AUTONOMY = True
+except ImportError:
+    HAS_AUTONOMY = False
+    print("[!] kenza_autonomy not available")
+
+# Try to import vision (face tracker)
+try:
+    from kenza_vision import FaceDetector
+    HAS_VISION = True
+except ImportError:
+    HAS_VISION = False
+    print("[!] kenza_vision not available")
+
 # Try to import camera
 try:
     from picamera2 import Picamera2
@@ -167,13 +183,17 @@ class CommandHandler:
                 return await self._esp32_config(data)
             elif cmd_type == 'get_state':
                 return {'type': 'state', 'data': self.state.to_dict()}
-            # New handlers for expanded app
+            # Autonomy mode handlers
             elif cmd_type == 'slam_control':
                 return await self._slam_control(data)
             elif cmd_type == 'follow_mode':
                 return await self._follow_mode(data)
             elif cmd_type == 'sentry_mode':
                 return await self._sentry_mode(data)
+            elif cmd_type == 'explore':
+                return await self._explore_mode(data)
+            elif cmd_type == 'face_track_mode':
+                return await self._face_track_mode(data)
             elif cmd_type == 'privacy_mode':
                 return await self._privacy_mode(data)
             elif cmd_type == 'voice_select':
@@ -339,20 +359,39 @@ class CommandHandler:
         return {'type': 'slam_status', 'data': {'status': 'mapping' if action == 'start' else 'idle'}}
     
     async def _follow_mode(self, data: Dict) -> Dict:
-        """Toggle Follow Me mode"""
+        """Toggle Follow Me mode — uses AutonomyEngine"""
         enabled = data.get('enabled', False)
         print(f"[FOLLOW] {'Enabled' if enabled else 'Disabled'}")
-        # TODO: Connect to person tracking system
+        if hasattr(self, '_server') and self._server:
+            self._server._set_autonomy_mode('follow' if enabled else 'idle')
         return {'type': 'follow_status', 'data': {'enabled': enabled}}
-    
+
     async def _sentry_mode(self, data: Dict) -> Dict:
-        """Toggle Sentry/Security patrol mode"""
+        """Toggle Sentry/Security patrol mode — uses AutonomyEngine"""
         enabled = data.get('enabled', False)
-        start_time = data.get('start', '22:00')
-        end_time = data.get('end', '06:00')
-        print(f"[SENTRY] {'Enabled' if enabled else 'Disabled'} ({start_time} - {end_time})")
-        # TODO: Connect to patrol scheduler
-        return {'type': 'sentry_status', 'data': {'enabled': enabled, 'schedule': f'{start_time}-{end_time}'}}
+        print(f"[SENTRY] {'Enabled' if enabled else 'Disabled'}")
+        if hasattr(self, '_server') and self._server:
+            self._server._set_autonomy_mode('sentry' if enabled else 'idle')
+        return {'type': 'sentry_status', 'data': {'enabled': enabled}}
+
+    async def _explore_mode(self, data: Dict) -> Dict:
+        """Toggle Explore/Autonomous mode — uses AutonomyEngine"""
+        enabled = data.get('active', data.get('enabled', False))
+        print(f"[EXPLORE] {'Enabled' if enabled else 'Disabled'}")
+        if hasattr(self, '_server') and self._server:
+            self._server._set_autonomy_mode('explore' if enabled else 'idle')
+        return {'type': 'explore_status', 'data': {'enabled': enabled}}
+
+    async def _face_track_mode(self, data: Dict) -> Dict:
+        """Toggle Face Tracking mode — stationary eye tracking"""
+        enabled = data.get('enabled', False)
+        print(f"[FACETRACK] {'Enabled' if enabled else 'Disabled'}")
+        if hasattr(self, '_server') and self._server:
+            if enabled:
+                self._server._start_face_tracking()
+            else:
+                self._server._stop_face_tracking()
+        return {'type': 'face_track_status', 'data': {'enabled': enabled}}
     
     async def _privacy_mode(self, data: Dict) -> Dict:
         """Toggle Privacy Mode (disable camera/mic)"""
@@ -447,6 +486,7 @@ class KenzaServer:
     def __init__(self, enable_gesture: bool = True):
         self.state = RobotState()
         self.handler = CommandHandler(self.state)
+        self.handler._server = self  # Back-reference for mode management
         self.clients: Set = set()
         # Role-indexed clients for call signaling
         self.clients_by_role: Dict[str, Set] = {'robot': set(), 'controller': set()}
@@ -470,6 +510,13 @@ class KenzaServer:
         self._loop: Optional[asyncio.AbstractEventLoop] = None  # Set when server starts
         self._ai_display_mode: bool = False  # True when AI text overlay is active
         self._stream_proc = None  # kenza_stream.py subprocess
+
+        # Autonomy engine — Phase 4-7
+        self._autonomy: Optional['AutonomyEngine'] = None
+        self._autonomy_mode: str = 'idle'  # idle|follow|explore|sentry|gesture
+        self._face_track_thread: Optional[threading.Thread] = None
+        self._face_tracking: bool = False
+        self._init_autonomy()
         
     async def start(self, port: int = CONFIG.PORT):
         """Start the WebSocket server"""
@@ -720,9 +767,19 @@ class KenzaServer:
 
                     if msg_type == 'ai_mode_exit':
                         self._ai_display_mode = False
-                        # Notify all clients to hide chat transcript overlay
+                        # Notify all clients to hide chat overlay
                         asyncio.run_coroutine_threadsafe(
                             self._broadcast_to_robots({'type': 'ai_mode', 'active': False}),
+                            self._loop
+                        )
+                        continue
+
+                    # ── Explore Mode: from robot_display.html ──
+                    if msg_type == 'explore':
+                        active = msg.get('active', False)
+                        self._set_autonomy_mode('explore' if active else 'idle')
+                        asyncio.run_coroutine_threadsafe(
+                            self._broadcast_to_robots({'type': 'explore', 'active': active}),
                             self._loop
                         )
                         continue
@@ -792,12 +849,20 @@ class KenzaServer:
             except Exception:
                 pass
 
-    def _broadcast_from_thread(self, msg: dict):
+    async def _broadcast_to_all(self, msg: dict):
+        """Broadcast a message to ALL connected clients (robot + controller)."""
+        payload = json.dumps(msg)
+        for ws in list(self.clients):
+            try:
+                await ws.send(payload)
+            except Exception:
+                pass
+
+    def _broadcast_from_thread(self, msg: dict, to_all: bool = False):
         """Thread-safe broadcast — schedules on the main event loop."""
         if self._loop and not self._loop.is_closed():
-            asyncio.run_coroutine_threadsafe(
-                self._broadcast_to_robots(msg), self._loop
-            )
+            coro = self._broadcast_to_all(msg) if to_all else self._broadcast_to_robots(msg)
+            asyncio.run_coroutine_threadsafe(coro, self._loop)
 
     def _start_conversation_engine(self, use_wake_word: bool = True):
         """Start ConversationEngine in a background thread (called once at boot)."""
@@ -828,15 +893,15 @@ class KenzaServer:
             })
 
         def on_state_change(state: str):
-            # Map conversation states → WebSocket events for the display
+            # Map conversation states → WebSocket events for ALL clients
             if state == 'wake_word':
-                self._broadcast_from_thread({'type': 'wake_word'})
+                self._broadcast_from_thread({'type': 'wake_word'}, to_all=True)
             else:
-                self._broadcast_from_thread({'type': 'ai_state', 'state': state})
+                self._broadcast_from_thread({'type': 'ai_state', 'state': state}, to_all=True)
 
         def on_emotion(emotion: str):
-            """Broadcast emotion directly to display without WS round-trip."""
-            self._broadcast_from_thread({'type': 'emotion', 'state': emotion})
+            """Broadcast emotion to ALL clients (robot display + app)."""
+            self._broadcast_from_thread({'type': 'emotion', 'state': emotion}, to_all=True)
 
         config = ConversationConfig.load()
         self._conv_engine = ConversationEngine(
@@ -884,12 +949,197 @@ class KenzaServer:
             if ret:
                 return cv2.flip(frame, 1)  # Mirror
             return None
-    
+
+    # ═════════════════════════════════════════════════════════════
+    # AUTONOMY ENGINE (Phases 4-7)
+    # ═════════════════════════════════════════════════════════════
+
+    def _init_autonomy(self):
+        """Initialize AutonomyEngine with motor and status callbacks."""
+        if not HAS_AUTONOMY:
+            print("[AUTONOMY] AutonomyEngine not available — skipping")
+            return
+
+        try:
+            self._autonomy = AutonomyEngine(
+                motor_callback=self._motor_callback,
+                status_callback=self._autonomy_status_callback,
+            )
+            print("[AUTONOMY] AutonomyEngine initialized")
+        except Exception as e:
+            print(f"[AUTONOMY] Failed to initialize: {e}")
+            self._autonomy = None
+
+    def _motor_callback(self, direction: str, speed: int):
+        """Send motor commands to pi_motor_server via HTTP (port 8080)."""
+        try:
+            import urllib.request
+            url = f"http://127.0.0.1:8080/{direction}"
+            req = urllib.request.Request(url)
+            urllib.request.urlopen(req, timeout=0.5)
+        except Exception:
+            pass  # Silent fail for high-frequency motor commands
+
+    def _autonomy_status_callback(self, status: dict):
+        """Broadcast autonomy status to all clients."""
+        msg = {'type': 'autonomy_status', 'data': status}
+        self._broadcast_from_thread(msg, to_all=True)
+
+        # If person detected in sentry mode, also broadcast person_detected
+        state = status.get('state', '')
+        if 'person' in state.lower() or 'detected' in state.lower():
+            self._broadcast_from_thread({
+                'type': 'person_detected',
+                'detected': True
+            }, to_all=True)
+            # Optional: TTS announcement
+            if self._conv_engine and hasattr(self._conv_engine, 'tts'):
+                try:
+                    self._conv_engine.tts.speak("I detected someone nearby.")
+                except Exception:
+                    pass
+
+    def _set_autonomy_mode(self, mode: str):
+        """Switch autonomy mode with mutual exclusion.
+
+        Args:
+            mode: 'idle', 'follow', 'explore', 'sentry', 'gesture'
+        """
+        if not self._autonomy:
+            print(f"[AUTONOMY] Engine not available — cannot set mode '{mode}'")
+            return
+
+        # Stop current mode first (clean transition)
+        if self._autonomy_mode != 'idle':
+            print(f"[AUTONOMY] Stopping current mode: {self._autonomy_mode}")
+            self._autonomy.stop()
+
+        # Stop face tracking if switching to a motor-based mode
+        if mode != 'idle':
+            self._stop_face_tracking()
+
+        self._autonomy_mode = mode
+
+        if mode == 'idle':
+            print("[AUTONOMY] Mode → idle")
+            return
+
+        # Ensure camera is available for vision-based modes
+        if not self._autonomy.camera:
+            try:
+                if HAS_OPENCV:
+                    cam = cv2.VideoCapture(0)
+                    if cam.isOpened():
+                        self._autonomy.camera = cam
+                        print("[AUTONOMY] Camera opened via OpenCV")
+                    else:
+                        print("[AUTONOMY] [WARN] Could not open camera — autonomy may not work")
+            except Exception as e:
+                print(f"[AUTONOMY] Camera init failed: {e}")
+
+        # Start new mode
+        if mode == 'follow':
+            self._autonomy.start_follow()
+        elif mode == 'explore':
+            self._autonomy.start_explore()
+        elif mode == 'sentry':
+            self._autonomy.start_sentry()
+        elif mode == 'gesture':
+            self._autonomy.start_gesture_nav()
+        else:
+            print(f"[AUTONOMY] Unknown mode: {mode}")
+
+        print(f"[AUTONOMY] Mode → {mode}")
+
+    def _start_face_tracking(self):
+        """Start face tracking in a background thread (stationary eye tracking)."""
+        if not HAS_VISION:
+            print("[FACETRACK] FaceDetector not available")
+            return
+        if self._face_tracking:
+            print("[FACETRACK] Already running")
+            return
+
+        # Stop autonomy motor modes — face tracking is stationary
+        if self._autonomy_mode != 'idle':
+            self._set_autonomy_mode('idle')
+
+        self._face_tracking = True
+
+        def _track_loop():
+            try:
+                detector = FaceDetector()
+                cap = None
+                if HAS_OPENCV:
+                    cap = cv2.VideoCapture(0)
+                    if not cap.isOpened():
+                        print("[FACETRACK] Could not open camera")
+                        self._face_tracking = False
+                        return
+                else:
+                    print("[FACETRACK] OpenCV not available for camera")
+                    self._face_tracking = False
+                    return
+
+                print("[FACETRACK] Started — tracking faces for eye movement")
+                while self._face_tracking:
+                    ret, frame = cap.read()
+                    if not ret:
+                        time.sleep(0.1)
+                        continue
+
+                    faces = detector.detect(frame)
+                    if faces:
+                        # Use the largest/closest face (bbox is x, y, width, height)
+                        face = max(faces, key=lambda f: f.bbox[2] * f.bbox[3])
+                        # FacePosition already contains normalized coordinates (-1 to 1) 
+                        # but robot_display.html expects 0 to 1 range
+                        nx = (face.position.x + 1.0) / 2.0
+                        ny = (face.position.y + 1.0) / 2.0
+                        
+                        self._broadcast_from_thread({
+                            'type': 'face_track',
+                            'x': round(nx, 3),
+                            'y': round(ny, 3)
+                        })
+                    time.sleep(0.05)  # ~20 FPS
+
+                cap.release()
+                print("[FACETRACK] Stopped")
+            except Exception as e:
+                print(f"[FACETRACK] Error: {e}")
+                self._face_tracking = False
+
+        self._face_track_thread = threading.Thread(target=_track_loop, daemon=True, name="FaceTracker")
+        self._face_track_thread.start()
+
+    def _stop_face_tracking(self):
+        """Stop the face tracking background thread."""
+        if self._face_tracking:
+            self._face_tracking = False
+            if self._face_track_thread:
+                self._face_track_thread.join(timeout=2.0)
+                self._face_track_thread = None
+            print("[FACETRACK] Stopped")
+
     def stop(self):
-        """Stop the server"""
+        """Stop the server and all subsystems"""
         self.running = False
+        # Stop autonomy engine
+        if self._autonomy:
+            try:
+                self._autonomy.stop()
+                self._autonomy.close()
+            except Exception:
+                pass
+        # Stop face tracking
+        self._stop_face_tracking()
+        # Stop conversation engine
+        self._stop_conversation_engine()
+        # Stop gesture tracker
         if self.tracker:
             self.tracker.close()
+        # Release camera
         if self.camera:
             if HAS_PICAMERA and isinstance(self.camera, Picamera2):
                 self.camera.stop()
