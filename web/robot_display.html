@@ -2255,6 +2255,7 @@
         // CALL SYSTEM (simplified — video via MediaMTX/WHEP, signaling via WebSocket)
         // ═══════════════════════════════════════════════════════════
         let callTimeout = null;
+        let remotePc = null;  // WebRTC peer connection for receiving App's webcam/mic
 
         async function startCall(name) {
             if (S.callState !== 'idle') {
@@ -2362,6 +2363,15 @@
             console.log('[KENZA] cleanupCall');
             stopRing();
             stopCallTimer();
+
+            // Clean up WebRTC peer connection for App->Pi stream
+            if (remotePc) {
+                remotePc.close();
+                remotePc = null;
+                console.log('[KENZA] WebRTC peer connection closed');
+            }
+            const rv = document.getElementById('remote-video');
+            if (rv) rv.srcObject = null;
 
             // Reset call controls to defaults
             S.callState = 'idle'; S.camOn = true; S.micOn = true;
@@ -2547,6 +2557,76 @@
                 case 'call_end':
                     if (S.callState === 'active') cleanupCall();
                     break;
+
+                // WebRTC signaling: receive App's webcam/mic stream
+                case 'webrtc_offer':
+                    await handleWebRTCOffer(d);
+                    break;
+
+                case 'ice_candidate':
+                    if (d.candidate && remotePc) {
+                        remotePc.addIceCandidate(new RTCIceCandidate(d.candidate)).catch(e =>
+                            console.warn('[KENZA] Failed to add ICE candidate:', e));
+                    }
+                    break;
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // WEBRTC: Receive App's webcam/mic stream
+        // ═══════════════════════════════════════════════════════════
+        async function handleWebRTCOffer(d) {
+            console.log('[KENZA] Received WebRTC offer from app');
+            try {
+                // Clean up any previous connection
+                if (remotePc) { remotePc.close(); remotePc = null; }
+
+                remotePc = new RTCPeerConnection({
+                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                });
+
+                // When we receive the app's video/audio tracks, display them
+                remotePc.ontrack = (event) => {
+                    console.log('[KENZA] Received track from app:', event.track.kind);
+                    const rv = document.getElementById('remote-video');
+                    if (rv) {
+                        if (!rv.srcObject) rv.srcObject = new MediaStream();
+                        rv.srcObject.addTrack(event.track);
+                        rv.play().catch(() => { });
+                    }
+                };
+
+                // Send ICE candidates back to the app
+                remotePc.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        sendWS({ type: 'ice_candidate', candidate: event.candidate, to: 'controller' });
+                    }
+                };
+
+                remotePc.oniceconnectionstatechange = () => {
+                    console.log('[KENZA] Remote ICE state:', remotePc?.iceConnectionState);
+                    const q = document.getElementById('call-quality-txt');
+                    if (q) {
+                        const txt = {
+                            connected: 'Connected', checking: 'Connecting...',
+                            disconnected: 'Disconnected', failed: 'Connection failed',
+                            completed: 'Connected'
+                        }[remotePc?.iceConnectionState] || remotePc?.iceConnectionState;
+                        q.textContent = txt;
+                    }
+                };
+
+                // Set the remote offer and create answer
+                await remotePc.setRemoteDescription({ type: 'offer', sdp: d.sdp });
+                const answer = await remotePc.createAnswer();
+                await remotePc.setLocalDescription(answer);
+
+                // Send answer back to the app
+                sendWS({ type: 'webrtc_answer', sdp: answer.sdp, to: 'controller' });
+                console.log('[KENZA] WebRTC answer sent to app');
+
+            } catch (e) {
+                console.error('[KENZA] Failed to handle WebRTC offer:', e);
             }
         }
 

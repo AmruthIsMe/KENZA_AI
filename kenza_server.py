@@ -198,7 +198,7 @@ class CommandHandler:
             eyes = data['eyes']
             if 'color' in eyes:
                 self.state.eye_color = eyes['color']
-                print(f"[SETTINGS] Eye color → {self.state.eye_color}")
+                print(f"[SETTINGS] Eye color -> {self.state.eye_color}")
             if 'style' in eyes:
                 self.state.eye_style = eyes['style']
                 
@@ -211,7 +211,7 @@ class CommandHandler:
                 
         if 'speed' in data:
             self.state.max_speed = data['speed']
-            print(f"[SETTINGS] Max speed → {self.state.max_speed}%")
+            print(f"[SETTINGS] Max speed -> {self.state.max_speed}%")
             
         if 'obstacle_avoidance' in data:
             self.state.obstacle_avoidance = data['obstacle_avoidance']
@@ -222,7 +222,7 @@ class CommandHandler:
         """Switch between autonomous and remote mode"""
         mode = data.get('mode', 'autonomous')
         self.state.mode = mode
-        print(f"[MODE] Switched to → {mode.upper()}")
+        print(f"[MODE] Switched to -> {mode.upper()}")
         
         # Here you would trigger actual mode switch logic
         # e.g., stop autonomous behaviors, enable joystick control
@@ -232,7 +232,7 @@ class CommandHandler:
     async def _robot_action(self, data: Dict) -> Dict:
         """Trigger robot action (wave, dance, etc.)"""
         action = data.get('action', '')
-        print(f"[ACTION] Triggered → {action}")
+        print(f"[ACTION] Triggered -> {action}")
         
         # Here you would call actual robot control
         # e.g., self.robot.wave(), self.robot.dance()
@@ -242,7 +242,7 @@ class CommandHandler:
     async def _play_sound(self, data: Dict) -> Dict:
         """Play a sound on the robot"""
         sound = data.get('sound', 'meow.wav')
-        print(f"[SOUND] Playing → {sound}")
+        print(f"[SOUND] Playing -> {sound}")
         
         # Here you would play the actual sound file
         # import pygame; pygame.mixer.music.load(sound); pygame.mixer.music.play()
@@ -357,7 +357,7 @@ class CommandHandler:
     async def _privacy_mode(self, data: Dict) -> Dict:
         """Toggle Privacy Mode (disable camera/mic)"""
         enabled = data.get('enabled', False)
-        print(f"[PRIVACY] {'🔴 Active - Camera/Mic disabled' if enabled else '🟢 Inactive'}")
+        print(f"[PRIVACY] {'[ON] Active - Camera/Mic disabled' if enabled else '[OFF] Inactive'}")
         # TODO: Actually disable camera and mic hardware
         return {'type': 'privacy_status', 'data': {'enabled': enabled}}
     
@@ -397,7 +397,7 @@ class CommandHandler:
         level = int(cmd.get('level', 80))
         level = max(0, min(100, level))
         self.state.voice_volume = level
-        print(f"[VOLUME] Setting system volume → {level}%")
+        print(f"[VOLUME] Setting system volume -> {level}%")
 
         success = False
         try:
@@ -458,7 +458,8 @@ class KenzaServer:
         self._relay_types = {
             'call_offer', 'call_answer', 'call_reject',
             'call_end', 'ice_candidate', 'call_busy', 'call_ping',
-            'call_accepted', 'update_settings', 'voice_select', 'eye_animation'
+            'call_accepted', 'update_settings', 'voice_select', 'eye_animation',
+            'webrtc_offer', 'webrtc_answer'
         }
         # Track client metadata for disconnect notifications
         self._client_meta: Dict = {}  # websocket → {role, name}
@@ -473,14 +474,14 @@ class KenzaServer:
     async def start(self, port: int = CONFIG.PORT):
         """Start the WebSocket server"""
         if not HAS_WEBSOCKETS:
-            print("❌ Cannot start server: websockets not installed")
+            print("[ERROR] Cannot start server: websockets not installed")
             return
             
         self.running = True
         
-        # Initialize gesture tracking
+        # Initialize gesture tracking (skip camera -- MediaMTX rpiCamera needs exclusive access)
         if self.enable_gesture:
-            self._init_camera()
+            print("[CAMERA] Skipped -- MediaMTX rpiCamera handles camera directly")
             if HAS_GESTURE:
                 self.tracker = GestureTracker()
                 print("[GESTURE] Tracker initialized")
@@ -504,25 +505,18 @@ class KenzaServer:
         print("=" * 50)
         print("\nPress Ctrl+C to stop.\n")
         
-        # Auto-start kenza_stream.py so MediaMTX + camera are ready for calls
-        # Release gesture camera first to avoid PiCamera2 conflict
-        if self.camera is not None:
-            print("[STREAM] Releasing gesture camera for streaming...")
-            try:
-                if HAS_PICAMERA and hasattr(self.camera, 'stop'):
-                    self.camera.stop()
-                    self.camera.close()
-                elif HAS_OPENCV and hasattr(self.camera, 'release'):
-                    self.camera.release()
-            except Exception as e:
-                print(f"[STREAM] Camera release warning: {e}")
-            self.camera = None
+        # Start MediaMTX for camera streaming (camera is free since we skipped init)
         self._start_stream()
         
         async with websockets.serve(self._handle_client, "0.0.0.0", port):
             self._loop = asyncio.get_event_loop()
             # ── Auto-start conversation engine on boot (always-on with wake word) ──
-            self._start_conversation_engine(use_wake_word=True)
+            try:
+                self._start_conversation_engine(use_wake_word=True)
+            except Exception as e:
+                import traceback
+                print(f"[AI] ConversationEngine failed to start: {e}")
+                traceback.print_exc()
             try:
                 await asyncio.Future()  # Run forever
             finally:
@@ -532,25 +526,24 @@ class KenzaServer:
                     print("[STREAM] kenza_stream.py stopped")
     
     def _start_stream(self):
-        """Start kenza_stream.py as a subprocess for MediaMTX + camera streaming"""
-        import shutil
-        stream_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'kenza_stream.py')
-        if not os.path.exists(stream_script):
-            print(f"[STREAM] ❌ kenza_stream.py not found at: {stream_script}")
-            return
-        
-        # Check if MediaMTX binary exists
+        """Start MediaMTX directly for camera streaming via rpiCamera source"""
         mediamtx_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'mediamtx')
+        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'mediamtx.yml')
+        
         if not os.path.exists(mediamtx_path):
-            print(f"[STREAM] ⚠ MediaMTX binary not found at: {mediamtx_path}")
+            print(f"[STREAM] [WARN] MediaMTX binary not found at: {mediamtx_path}")
             print(f"[STREAM]   Download from: https://github.com/bluenviron/mediamtx/releases")
             print(f"[STREAM]   WHEP streaming will NOT work without MediaMTX!")
+            return
         
         try:
-            python_exec = shutil.which('python3') or shutil.which('python') or sys.executable
-            print(f"[STREAM] Starting: {python_exec} {stream_script}")
+            print(f"[STREAM] Starting MediaMTX directly (rpiCamera source)...")
+            cmd = [mediamtx_path]
+            if os.path.exists(config_path):
+                cmd.append(config_path)
+            
             self._stream_proc = subprocess.Popen(
-                [python_exec, stream_script, '--no-audio'],
+                cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 cwd=os.path.dirname(os.path.abspath(__file__)),
@@ -566,19 +559,19 @@ class KenzaServer:
                     pass
             threading.Thread(target=_read_stream_output, daemon=True).start()
             
-            print(f"[STREAM] Started kenza_stream.py (PID {self._stream_proc.pid})")
-            print(f"[STREAM] WHEP endpoint will be at: http://0.0.0.0:8889/kenza/whep")
+            print(f"[STREAM] MediaMTX started (PID {self._stream_proc.pid})")
+            print(f"[STREAM] WHEP endpoint: http://0.0.0.0:8889/kenza/whep")
             
             # Check if process is still running after 2 seconds
             import time
             time.sleep(2)
             if self._stream_proc.poll() is not None:
-                print(f"[STREAM] ❌ kenza_stream.py exited with code {self._stream_proc.returncode}")
+                print(f"[STREAM] [ERROR] MediaMTX exited with code {self._stream_proc.returncode}")
                 self._stream_proc = None
             else:
-                print(f"[STREAM] ✓ kenza_stream.py is running")
+                print(f"[STREAM] [OK] MediaMTX is running")
         except Exception as e:
-            print(f"[STREAM] ❌ Failed to start kenza_stream.py: {e}")
+            print(f"[STREAM] [ERROR] Failed to start MediaMTX: {e}")
     
     def _init_camera(self):
         """Initialize camera for gesture tracking"""
@@ -622,7 +615,7 @@ class KenzaServer:
                 self.camera = None
         
         if self.camera is None:
-            print("[CAMERA] ❌ ALL CAMERA SYSTEMS FAILED. Check connections and permissions.")
+            print("[CAMERA] [ERROR] ALL CAMERA SYSTEMS FAILED. Check connections and permissions.")
     
     async def _handle_client(self, websocket):
         """Handle a WebSocket client connection"""
@@ -712,7 +705,7 @@ class KenzaServer:
                                 await target.send(relay_msg)
                             except:
                                 pass
-                        print(f"[CALL] Relayed '{msg_type}' from {client_role} → {target_role} ({len(targets)} recipients)")
+                        print(f"[CALL] Relayed '{msg_type}' from {client_role} -> {target_role} ({len(targets)} recipients)")
                         continue
 
                     # ── AI Mode: toggle display overlay (engine always runs) ──
@@ -809,7 +802,7 @@ class KenzaServer:
     def _start_conversation_engine(self, use_wake_word: bool = True):
         """Start ConversationEngine in a background thread (called once at boot)."""
         if not HAS_CONVERSATION:
-            print("[AI] ConversationEngine not available — skipping")
+            print("[AI] ConversationEngine not available -- skipping")
             return
         if self._conv_thread and self._conv_thread.is_alive():
             print("[AI] Engine already running")
@@ -921,7 +914,7 @@ def main():
     try:
         asyncio.run(server.start(port=args.port))
     except KeyboardInterrupt:
-        print("\n\n👋 Server stopped")
+        print("\n\nServer stopped")
     finally:
         server.stop()
 

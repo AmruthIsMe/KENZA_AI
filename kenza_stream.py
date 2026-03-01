@@ -46,7 +46,7 @@ try:
     HAS_PICAMERA = True
 except ImportError:
     HAS_PICAMERA = False
-    print("⚠ PiCamera2 not available (not on Pi?)")
+    print("[!] PiCamera2 not available (not on Pi?)")
 
 try:
     import miniupnpc
@@ -59,7 +59,7 @@ try:
     HAS_PYAUDIO = True
 except ImportError:
     HAS_PYAUDIO = False
-    print("⚠ PyAudio not available")
+    print("[!] PyAudio not available")
 
 from aiortc import (
     RTCPeerConnection,
@@ -363,7 +363,7 @@ def list_audio_devices():
     print("=" * 60)
     
     # ALSA devices
-    print("\n📢 ALSA OUTPUT DEVICES (Speakers):")
+    print("\n[SPEAKER] ALSA OUTPUT DEVICES (Speakers):")
     try:
         result = subprocess.check_output("aplay -l 2>/dev/null", shell=True).decode()
         if result.strip():
@@ -373,7 +373,7 @@ def list_audio_devices():
     except:
         print("  Could not list ALSA output devices")
     
-    print("\n🎤 ALSA INPUT DEVICES (Microphones):")
+    print("\n[MIC] ALSA INPUT DEVICES (Microphones):")
     try:
         result = subprocess.check_output("arecord -l 2>/dev/null", shell=True).decode()
         if result.strip():
@@ -384,7 +384,7 @@ def list_audio_devices():
         print("  Could not list ALSA input devices")
     
     # PulseAudio devices (includes Bluetooth)
-    print("\n🔵 PULSEAUDIO SINKS (Output - includes Bluetooth):")
+    print("\n[PULSE] PULSEAUDIO SINKS (Output - includes Bluetooth):")
     try:
         result = subprocess.check_output(
             "pactl list sinks short 2>/dev/null", shell=True
@@ -393,14 +393,14 @@ def list_audio_devices():
             for line in result.strip().split('\n'):
                 parts = line.split('\t')
                 if len(parts) >= 2:
-                    is_bt = '🎧' if 'bluez' in parts[1].lower() else '  '
+                    is_bt = '[BT]' if 'bluez' in parts[1].lower() else '    '
                     print(f"  {is_bt} {parts[1]}")
         else:
             print("  No PulseAudio sinks found")
     except:
         print("  PulseAudio not available")
     
-    print("\n🔵 PULSEAUDIO SOURCES (Input - includes Bluetooth):")
+    print("\n[PULSE] PULSEAUDIO SOURCES (Input - includes Bluetooth):")
     try:
         result = subprocess.check_output(
             "pactl list sources short 2>/dev/null", shell=True
@@ -409,7 +409,7 @@ def list_audio_devices():
             for line in result.strip().split('\n'):
                 parts = line.split('\t')
                 if len(parts) >= 2 and 'monitor' not in parts[1].lower():
-                    is_bt = '🎧' if 'bluez' in parts[1].lower() else '  '
+                    is_bt = '[BT]' if 'bluez' in parts[1].lower() else '    '
                     print(f"  {is_bt} {parts[1]}")
         else:
             print("  No PulseAudio sources found")
@@ -417,7 +417,7 @@ def list_audio_devices():
         print("  PulseAudio not available")
     
     # Bluetooth devices
-    print("\n🎧 BLUETOOTH AUDIO DEVICES:")
+    print("\n[BT] BLUETOOTH AUDIO DEVICES:")
     bt_in, bt_out = get_bluetooth_audio_devices()
     if bt_in or bt_out:
         if bt_in:
@@ -426,11 +426,11 @@ def list_audio_devices():
             print(f"  Output: {bt_out}")
     else:
         print("  No Bluetooth audio devices connected")
-        print("  To connect: bluetoothctl → connect <MAC>")
+        print("  To connect: bluetoothctl -> connect <MAC>")
     
     # PyAudio devices
     if HAS_PYAUDIO:
-        print("\n🐍 PYAUDIO DEVICES:")
+        print("\n[PYAUDIO] PYAUDIO DEVICES:")
         p = pyaudio.PyAudio()
         for i in range(p.get_device_count()):
             info = p.get_device_info_by_index(i)
@@ -442,7 +442,7 @@ def list_audio_devices():
                     direction.append(f"in:{in_ch}")
                 if out_ch > 0:
                     direction.append(f"out:{out_ch}")
-                is_bt = '🎧' if 'bluez' in info['name'].lower() else '  '
+                is_bt = '[BT]' if 'bluez' in info['name'].lower() else '    '
                 print(f"  {is_bt} [{i}] {info['name']} ({', '.join(direction)})")
         p.terminate()
     
@@ -970,10 +970,10 @@ async def run_stream(enable_video=True, enable_audio=True):
         print(f" [GLOBAL] http://{public_ip}:8889/{CONFIG.STREAM_NAME}")
     print("-" * 60)
     print(" Features:")
-    print(f"   Video:     {'✓ Enabled' if video_track else '✗ Disabled'}")
-    print(f"   Audio Out: {'✓ Mic → Browser' if audio_track else '✗ Disabled'}")
-    print(f"   Audio In:  ✓ Browser → Speaker")
-    print(f"   AEC:       {'✓ Enabled' if echo_canceller else '✗ Disabled'}")
+    print(f"   Video:     {'[OK] Enabled' if video_track else '[X] Disabled'}")
+    print(f"   Audio Out: {'[OK] Mic -> Browser' if audio_track else '[X] Disabled'}")
+    print(f"   Audio In:  [OK] Browser -> Speaker")
+    print(f"   AEC:       {'[OK] Enabled' if echo_canceller else '[X] Disabled'}")
     print("-" * 60)
     print(" Press Ctrl+C to stop.")
     print("=" * 60 + "\n")
@@ -1018,7 +1018,7 @@ def main():
     
     # Set Bluetooth as default if requested
     if args.bluetooth:
-        print("\n🎧 Bluetooth mode enabled")
+        print("\n[BT] Bluetooth mode enabled")
         if set_bluetooth_as_default():
             print("    > Bluetooth audio activated!\n")
         else:
@@ -1041,7 +1041,7 @@ def main():
         
         print(f"  Original mic RMS:  {np.sqrt(np.mean(mic_signal**2)):.4f}")
         print(f"  Cleaned signal RMS: {np.sqrt(np.mean(cleaned**2)):.4f}")
-        print("  ✓ AEC test complete")
+        print("  [OK] AEC test complete")
         return
     
     try:
@@ -1050,7 +1050,7 @@ def main():
             enable_audio=not args.no_audio
         ))
     except KeyboardInterrupt:
-        print("\n\n👋 Stopped by user")
+        print("\n\nStopped by user")
 
 
 if __name__ == "__main__":

@@ -1218,7 +1218,7 @@ class EmotionEyeBridge:
             HAS_WEBSOCKETS = True
         except ImportError:
             HAS_WEBSOCKETS = False
-            print("[EyeBridge] 'websockets' library not installed — eye signals disabled. "
+            print("[EyeBridge] 'websockets' library not installed -- eye signals disabled. "
                   "Run: pip install websockets")
 
         async def _send_loop():
@@ -1241,7 +1241,7 @@ class EmotionEyeBridge:
                             msg = json.dumps({"type": "emotion", "state": state})
                             await ws.send(msg)
                             last_state = state
-                            print(f"[EyeBridge] → {state}")
+                            print(f"[EyeBridge] -> {state}")
                     except Exception:
                         pass  # Server not ready — silently ignore
 
@@ -1350,7 +1350,7 @@ class SpeechToText:
             self._init_google()
         else:
             self.recognizer = None
-            _log("[WARN] speech_recognition not installed — cloud STT disabled")
+            _log("[WARN] speech_recognition not installed -- cloud STT disabled")
         self._load_whisper()  # Attempt to preload so first call is fast
 
     def _init_google(self):
@@ -1668,7 +1668,7 @@ class LlamaChat:
         self._loaded = True
         model_path = Path(self.config.llama_path) if hasattr(self.config, 'llama_path') else Path("models/llama-3.2-3b-instruct.Q4_K_M.gguf")
         if not model_path.exists():
-            _log(f"[Llama] Model not found at {model_path} — offline LLM unavailable")
+            _log(f"[Llama] Model not found at {model_path} -- offline LLM unavailable")
             _log(f"[Llama] Download: wget <HF link> -O {model_path}")
             return
         try:
@@ -1684,7 +1684,7 @@ class LlamaChat:
             )
             _log("[OK] Llama offline LLM ready")
         except ImportError:
-            _log("[WARN] llama-cpp-python not installed – run: pip install llama-cpp-python")
+            _log("[WARN] llama-cpp-python not installed -- run: pip install llama-cpp-python")
         except Exception as e:
             _log(f"[WARN] Llama load failed: {e}")
 
@@ -1744,7 +1744,7 @@ class ObjectDetector:
             self._model.fuse()  # Optimise for inference speed
             _log("[OK] ObjectDetector (YOLO11n) ready")
         except ImportError:
-            _log("[WARN] ultralytics not installed – run: pip install ultralytics")
+            _log("[WARN] ultralytics not installed -- run: pip install ultralytics")
         except Exception as e:
             _log(f"[WARN] YOLO init failed: {e}")
 
@@ -1853,7 +1853,7 @@ class OllamaChat:
     def send(self, message: str) -> Optional[str]:
         """Generate a response using Ollama's /api/chat endpoint."""
         if not self.is_available():
-            _log("[Ollama] Server not running – skipping")
+            _log("[Ollama] Server not running -- skipping")
             return None
 
         import urllib.request, json as _json
@@ -2063,7 +2063,7 @@ class ConversationEngine:
             return response
 
         # Offline tier 1: Ollama (any pulled model, default gemma3:270m)
-        _log(f"[Engine] Cloud LLMs unavailable – trying Ollama ({self.ollama.model})")
+        _log(f"[Engine] Cloud LLMs unavailable -- trying Ollama ({self.ollama.model})")
         raw = self.ollama.send(text)
         if raw:
             emotion, response = self._parse_and_strip_emotion(raw)
@@ -2071,7 +2071,7 @@ class ConversationEngine:
             return response
 
         # Offline tier 2: llama-cpp-python GGUF file
-        _log("[Engine] Ollama unavailable – using llama-cpp GGUF fallback")
+        _log("[Engine] Ollama unavailable -- using llama-cpp GGUF fallback")
         raw = self.llama.send(text)
         if raw:
             emotion, response = self._parse_and_strip_emotion(raw)
@@ -2245,7 +2245,7 @@ def main():
     
     # Microphone test mode
     if args.test_mic:
-        print("\n🎤 MICROPHONE TEST")
+        print("\n[MIC] MICROPHONE TEST")
         print("=" * 40)
         print("Speak something and I'll show what I hear.\n")
         
@@ -2281,7 +2281,7 @@ def main():
     
     if args.text:
         # Text mode for testing
-        print("\n📝 Text mode (type 'quit' to exit)\n")
+        print("\n[TEXT] Text mode (type 'quit' to exit)\n")
         while True:
             try:
                 user_input = input("You: ").strip()

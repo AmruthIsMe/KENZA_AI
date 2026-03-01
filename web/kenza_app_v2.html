@@ -3664,6 +3664,16 @@
                 if (d.type === 'call_reject') tpCleanup();
                 if (d.type === 'call_end') tpCleanup();
                 if (d.type === 'call_busy') { alert('Robot is busy on another call.'); tpCleanup(); }
+                // WebRTC signaling for local stream (App -> Pi)
+                if (d.type === 'webrtc_answer' && TP.localPc) {
+                    console.log('[TP] Received WebRTC answer from robot');
+                    TP.localPc.setRemoteDescription({ type: 'answer', sdp: d.sdp }).catch(e =>
+                        console.error('[TP] Failed to set remote description:', e));
+                }
+                if (d.type === 'ice_candidate' && d.candidate && TP.localPc) {
+                    TP.localPc.addIceCandidate(new RTCIceCandidate(d.candidate)).catch(e =>
+                        console.error('[TP] Failed to add ICE candidate:', e));
+                }
             };
 
             ws.onclose = () => {
@@ -3684,7 +3694,9 @@
         // Uses MediaMTX WHEP endpoint on the Pi for video+audio (same approach as stream_viewer.html)
         // Call state managed by WebSocket signaling (call_offer, call_accepted, call_end)
         const TP = {
-            pc: null,
+            pc: null,          // WHEP peer connection (receive Pi camera)
+            localPc: null,     // WebRTC peer connection (send webcam/mic to Pi)
+            localStream: null, // Local MediaStream (webcam + mic)
             callState: 'idle',   // idle|calling|incoming|active
             camOn: true, micOn: true,
             timerInterval: null, timerSec: 0,
@@ -3755,9 +3767,8 @@
                     if (TP.pc?.iceConnectionState === 'failed') tpCleanup();
                 };
 
-                // Receive-only transceivers for video and audio from Pi
+                // Receive-only transceiver for video from Pi (rpiCamera is video-only)
                 TP.pc.addTransceiver('video', { direction: 'recvonly' });
-                TP.pc.addTransceiver('audio', { direction: 'recvonly' });
 
                 const offer = await TP.pc.createOffer();
                 await TP.pc.setLocalDescription(offer);
@@ -3823,7 +3834,7 @@
             TP._callTimeout = setTimeout(() => { if (TP.callState === 'calling') tpCancelCall(); }, 45000);
         }
 
-        // ── Robot accepted our call → connect WHEP with retry ──
+        // ── Robot accepted our call → connect WHEP + start local stream ──
         async function tpHandleAccepted(d) {
             if (TP.callState !== 'calling') return;
             clearTimeout(TP._callTimeout);
@@ -3836,9 +3847,11 @@
                 console.error('[TP] All WHEP retries failed, ending call');
                 tpSend({ type: 'call_end', to: 'robot' });
                 tpCleanup();
-                alert('Could not connect to robot camera stream. Make sure kenza_stream.py is running on the Pi.');
+                alert('Could not connect to robot camera stream. Make sure MediaMTX is running on the Pi.');
                 return;
             }
+            // Start sending our webcam + mic to the robot
+            await tpStartLocalStream();
             tpStartCallScreen();
         }
 
@@ -3850,7 +3863,7 @@
             tpShowOverlay('ov-incoming');
         }
 
-        // ── User accepts incoming call → connect WHEP with retry ──
+        // ── User accepts incoming call → connect WHEP + start local stream ──
         async function tpAcceptCall() {
             if (TP.callState !== 'incoming') return;
             TP.callState = 'active';
@@ -3866,9 +3879,11 @@
                 console.error('[TP] All WHEP retries failed, ending call');
                 tpSend({ type: 'call_end', to: 'robot' });
                 tpCleanup();
-                alert('Could not connect to robot camera stream. Make sure kenza_stream.py is running on the Pi.');
+                alert('Could not connect to robot camera stream. Make sure MediaMTX is running on the Pi.');
                 return;
             }
+            // Start sending our webcam + mic to the robot
+            await tpStartLocalStream();
             tpStartCallScreen();
         }
 
@@ -3908,6 +3923,12 @@
             clearInterval(TP.timerInterval);
             clearTimeout(TP._callTimeout);
             if (TP.pc) { TP.pc.close(); TP.pc = null; }
+            // Clean up local WebRTC peer connection and media stream
+            if (TP.localPc) { TP.localPc.close(); TP.localPc = null; }
+            if (TP.localStream) {
+                TP.localStream.getTracks().forEach(t => t.stop());
+                TP.localStream = null;
+            }
             const rv = document.getElementById('ov-remote-video'); if (rv) rv.srcObject = null;
             const lv = document.getElementById('ov-local-video'); if (lv) lv.srcObject = null;
             TP.callState = 'idle'; TP.camOn = true; TP.micOn = true;
@@ -3918,17 +3939,67 @@
         }
 
         function tpToggleCam() {
-            // Camera toggle not applicable in WHEP receive-only mode
-            // Could be used to toggle local preview in future
+            // Toggle local webcam on/off
+            if (TP.localStream) {
+                TP.camOn = !TP.camOn;
+                TP.localStream.getVideoTracks().forEach(t => t.enabled = TP.camOn);
+                const b = document.getElementById('ov-btn-cam');
+                if (b) { b.classList.toggle('off', !TP.camOn); b.textContent = TP.camOn ? '📷' : '🚫'; }
+            }
         }
         function tpToggleMic() {
-            // Mic toggle — mute/unmute received audio
+            // Toggle local mic on/off
+            TP.micOn = !TP.micOn;
+            if (TP.localStream) {
+                TP.localStream.getAudioTracks().forEach(t => t.enabled = TP.micOn);
+            }
+            // Also toggle received audio
             const rv = document.getElementById('ov-remote-video');
-            if (rv) {
-                TP.micOn = !TP.micOn;
-                rv.muted = !TP.micOn;
-                const b = document.getElementById('ov-btn-mic');
-                if (b) { b.classList.toggle('off', !TP.micOn); b.textContent = TP.micOn ? '🎙️' : '🔇'; }
+            if (rv) rv.muted = !TP.micOn;
+            const b = document.getElementById('ov-btn-mic');
+            if (b) { b.classList.toggle('off', !TP.micOn); b.textContent = TP.micOn ? '🎙️' : '🔇'; }
+        }
+
+        // ── Start local webcam+mic stream and send via WebRTC to Pi ──
+        async function tpStartLocalStream() {
+            try {
+                console.log('[TP] Starting local camera+mic...');
+                TP.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+
+                // Show local preview
+                const lv = document.getElementById('ov-local-video');
+                if (lv) { lv.srcObject = TP.localStream; lv.muted = true; lv.play().catch(() => { }); }
+
+                // Create peer connection for sending to Pi
+                TP.localPc = new RTCPeerConnection({
+                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                });
+
+                // Add local tracks to peer connection
+                TP.localStream.getTracks().forEach(track => {
+                    TP.localPc.addTrack(track, TP.localStream);
+                });
+
+                // Send ICE candidates to robot
+                TP.localPc.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        tpSend({ type: 'ice_candidate', candidate: event.candidate, to: 'robot' });
+                    }
+                };
+
+                TP.localPc.oniceconnectionstatechange = () => {
+                    console.log('[TP] Local ICE state:', TP.localPc?.iceConnectionState);
+                };
+
+                // Create and send offer
+                const offer = await TP.localPc.createOffer();
+                await TP.localPc.setLocalDescription(offer);
+                tpSend({ type: 'webrtc_offer', sdp: offer.sdp, to: 'robot' });
+                console.log('[TP] WebRTC offer sent to robot');
+
+            } catch (e) {
+                console.error('[TP] Failed to start local stream:', e.message);
+                // Call continues without local stream — Pi camera still visible
             }
         }
 
@@ -3974,7 +4045,8 @@
             // Also send HTTP request if Pi IP is configured
             if (ip) {
                 const url = `http://${ip}:${port}/${direction}`;
-                document.getElementById('last-command').textContent = `→ ${url}`;
+                const lastCmd = document.getElementById('last-command');
+                if (lastCmd) lastCmd.textContent = `-> ${url}`;
                 fetch(url, { mode: 'no-cors', cache: 'no-store' }).catch(() => { });
             }
 
@@ -4420,7 +4492,7 @@
         }
 
         // ===== HUD BUTTONS =====
-        document.getElementById('btn-mic').addEventListener('click', function () {
+        document.getElementById('btn-mic')?.addEventListener('click', function () {
             this.classList.toggle('muted');
             const isMuted = this.classList.contains('muted');
             sendCmd('toggle_mic', { muted: isMuted });
