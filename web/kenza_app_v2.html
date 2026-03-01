@@ -2839,16 +2839,16 @@
             <div class="glass-card">
                 <h4 style="margin-bottom:16px;font-size:0.95rem;">Expressions</h4>
                 <div class="anim-btn-grid">
-                    <button class="anim-btn" data-anim="idle">🔄 Reset</button>
-                    <button class="anim-btn" data-anim="blink">👁️ Blink</button>
-                    <button class="anim-btn" data-anim="happy">😊 Happy</button>
-                    <button class="anim-btn" data-anim="sad">😢 Sad</button>
-                    <button class="anim-btn" data-anim="angry">😠 Angry</button>
-                    <button class="anim-btn" data-anim="surprised">😲 Surprised</button>
-                    <button class="anim-btn" data-anim="sleepy">😴 Sleepy</button>
-                    <button class="anim-btn" data-anim="dizzy">😵 Dizzy</button>
-                    <button class="anim-btn" data-anim="love">😍 Love</button>
-                    <button class="anim-btn" data-anim="wink">😉 Wink</button>
+                    <button class="anim-btn" data-anim="idle">&#x1F504; Reset</button>
+                    <button class="anim-btn" data-anim="blink">&#x1F441; Blink</button>
+                    <button class="anim-btn" data-anim="happy">&#x1F60A; Happy</button>
+                    <button class="anim-btn" data-anim="sad">&#x1F622; Sad</button>
+                    <button class="anim-btn" data-anim="angry">&#x1F620; Angry</button>
+                    <button class="anim-btn" data-anim="surprised">&#x1F632; Surprised</button>
+                    <button class="anim-btn" data-anim="sleepy">&#x1F634; Sleepy</button>
+                    <button class="anim-btn" data-anim="dizzy">&#x1F635; Dizzy</button>
+                    <button class="anim-btn" data-anim="love">&#x1F60D; Love</button>
+                    <button class="anim-btn" data-anim="wink">&#x1F609; Wink</button>
                 </div>
             </div>
         </div>
@@ -3041,6 +3041,7 @@
     <!-- Active call overlay -->
     <div class="call-overlay" id="ov-call">
         <video id="ov-remote-video" autoplay playsinline></video>
+        <audio id="ov-remote-audio" autoplay></audio>
         <video id="ov-local-video" autoplay playsinline muted></video>
 
         <!-- HUD ELEMENTS INTEGRATED -->
@@ -3961,6 +3962,9 @@
                 TP.localStream.getTracks().forEach(t => t.stop());
                 TP.localStream = null;
             }
+
+            const ra = document.getElementById('ov-remote-audio');
+            if (ra) ra.srcObject = null;
             const rv = document.getElementById('ov-remote-video'); if (rv) rv.srcObject = null;
             const lv = document.getElementById('ov-local-video'); if (lv) lv.srcObject = null;
             TP.callState = 'idle'; TP.camOn = true; TP.micOn = true;
@@ -4006,6 +4010,15 @@
                 TP.localPc = new RTCPeerConnection({
                     iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
                 });
+
+                // When we receive tracks (Pi's microphone) over this connection:
+                TP.localPc.ontrack = (event) => {
+                    console.log('[TP] Received track from robot:', event.track.kind);
+                    const remoteAudio = document.getElementById('ov-remote-audio');
+                    if (remoteAudio && event.streams && event.streams[0]) {
+                        remoteAudio.srcObject = event.streams[0];
+                    }
+                };
 
                 // Add local tracks to peer connection
                 TP.localStream.getTracks().forEach(track => {

@@ -2373,6 +2373,13 @@
             const rv = document.getElementById('remote-video');
             if (rv) rv.srcObject = null;
 
+            // Stop local Pi microphone
+            if (S.localStream) {
+                S.localStream.getTracks().forEach(track => track.stop());
+                S.localStream = null;
+                console.log('[KENZA] Stopped local microphone');
+            }
+
             // Reset call controls to defaults
             S.callState = 'idle'; S.camOn = true; S.micOn = true;
             const bc = document.getElementById('btn-cam');
@@ -2584,6 +2591,18 @@
                 remotePc = new RTCPeerConnection({
                     iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
                 });
+
+                // Grab local Mic from the Pi and add it to the connection
+                // This streams the robot's surrounding audio back to the App
+                try {
+                    S.localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                    S.localStream.getTracks().forEach(track => {
+                        remotePc.addTrack(track, S.localStream);
+                    });
+                    console.log('[KENZA] Captured local microphone and added to WebRTC peer connection');
+                } catch (e) {
+                    console.warn('[KENZA] Failed to capture microphone for reverse stream:', e);
+                }
 
                 // When we receive the app's video/audio tracks, display them
                 remotePc.ontrack = (event) => {
