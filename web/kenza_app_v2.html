@@ -2839,16 +2839,16 @@
             <div class="glass-card">
                 <h4 style="margin-bottom:16px;font-size:0.95rem;">Expressions</h4>
                 <div class="anim-btn-grid">
-                    <button class="anim-btn" data-anim="idle">&#x1F504; Reset</button>
-                    <button class="anim-btn" data-anim="blink">&#x1F441; Blink</button>
-                    <button class="anim-btn" data-anim="happy">&#x1F60A; Happy</button>
-                    <button class="anim-btn" data-anim="sad">&#x1F622; Sad</button>
-                    <button class="anim-btn" data-anim="angry">&#x1F620; Angry</button>
-                    <button class="anim-btn" data-anim="surprised">&#x1F632; Surprised</button>
-                    <button class="anim-btn" data-anim="sleepy">&#x1F634; Sleepy</button>
-                    <button class="anim-btn" data-anim="dizzy">&#x1F635; Dizzy</button>
-                    <button class="anim-btn" data-anim="love">&#x1F60D; Love</button>
-                    <button class="anim-btn" data-anim="wink">&#x1F609; Wink</button>
+                    <button class="anim-btn" data-anim="idle">🔄 Reset</button>
+                    <button class="anim-btn" data-anim="blink">👁️ Blink</button>
+                    <button class="anim-btn" data-anim="happy">😊 Happy</button>
+                    <button class="anim-btn" data-anim="sad">😢 Sad</button>
+                    <button class="anim-btn" data-anim="angry">😠 Angry</button>
+                    <button class="anim-btn" data-anim="surprised">😲 Surprised</button>
+                    <button class="anim-btn" data-anim="sleepy">😴 Sleepy</button>
+                    <button class="anim-btn" data-anim="dizzy">😵 Dizzy</button>
+                    <button class="anim-btn" data-anim="love">😍 Love</button>
+                    <button class="anim-btn" data-anim="wink">😉 Wink</button>
                 </div>
             </div>
         </div>
@@ -3706,6 +3706,12 @@
                     TP.localPc.addIceCandidate(new RTCIceCandidate(d.candidate)).catch(e =>
                         console.error('[TP] Failed to add ICE candidate:', e));
                 }
+                if (d.type === 'cam_toggle') {
+                    const rv = document.getElementById('ov-remote-video');
+                    if (rv && rv.srcObject) {
+                        rv.srcObject.getVideoTracks().forEach(t => t.enabled = d.state);
+                    }
+                }
             };
 
             ws.onclose = () => {
@@ -3782,23 +3788,8 @@
                     if (rv) {
                         if (!rv.srcObject) rv.srcObject = new MediaStream();
                         rv.srcObject.addTrack(event.track);
-                        // Ensure audio is unmuted — autoplay policy may block this
                         rv.muted = false;
                         rv.volume = 1.0;
-                        // Force play with unmuted audio (user gesture should have preceded this)
-                        rv.play().catch(e => {
-                            console.warn('[TP] Autoplay blocked, will retry on user gesture:', e.message);
-                            // Fallback: listen for any user touch/click to resume
-                            const resumeAudio = () => {
-                                rv.muted = false;
-                                rv.volume = 1.0;
-                                rv.play().catch(() => { });
-                                document.removeEventListener('click', resumeAudio);
-                                document.removeEventListener('touchstart', resumeAudio);
-                            };
-                            document.addEventListener('click', resumeAudio, { once: true });
-                            document.addEventListener('touchstart', resumeAudio, { once: true });
-                        });
                     }
                 };
 
@@ -3814,9 +3805,8 @@
                     if (TP.pc?.iceConnectionState === 'failed') tpCleanup();
                 };
 
-                // Receive-only transceivers for video AND audio from Pi via MediaMTX
+                // Receive-only transceiver for video from Pi (rpiCamera is video-only)
                 TP.pc.addTransceiver('video', { direction: 'recvonly' });
-                TP.pc.addTransceiver('audio', { direction: 'recvonly' });
 
                 const offer = await TP.pc.createOffer();
                 await TP.pc.setLocalDescription(offer);
@@ -4003,7 +3993,9 @@
             }
             // Also toggle received audio
             const rv = document.getElementById('ov-remote-video');
+            const ra = document.getElementById('ov-remote-audio');
             if (rv) rv.muted = !TP.micOn;
+            if (ra) ra.muted = !TP.micOn;
             const b = document.getElementById('ov-btn-mic');
             if (b) { b.classList.toggle('off', !TP.micOn); b.textContent = TP.micOn ? '🎙️' : '🔇'; }
         }
@@ -4018,10 +4010,27 @@
                 const lv = document.getElementById('ov-local-video');
                 if (lv) { lv.srcObject = TP.localStream; lv.muted = true; lv.play().catch(() => { }); }
 
-                // Create peer connection for sending to Pi
+                // Create peer connection for sending to/receiving from Pi
                 TP.localPc = new RTCPeerConnection({
                     iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
                 });
+
+                // Listen for incoming audio track from the robot's microphone
+                TP.localPc.ontrack = (event) => {
+                    console.log('[TP] Received peer track:', event.track.kind);
+                    if (event.track.kind === 'audio') {
+                        let audioEl = document.getElementById('ov-remote-audio');
+                        if (!audioEl) {
+                            audioEl = document.createElement('audio');
+                            audioEl.id = 'ov-remote-audio';
+                            audioEl.autoplay = true;
+                            document.body.appendChild(audioEl);
+                        }
+                        if (!audioEl.srcObject) audioEl.srcObject = new MediaStream();
+                        audioEl.srcObject.addTrack(event.track);
+                        audioEl.play().catch(e => console.warn('[TP] Audio play blocked:', e));
+                    }
+                };
 
                 // Add local tracks to peer connection
                 TP.localStream.getTracks().forEach(track => {
