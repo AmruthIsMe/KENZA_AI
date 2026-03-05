@@ -204,38 +204,43 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            padding: 0 18px;
-            overflow-y: auto;
+            gap: 0;
+            padding: 0;
+            overflow-y: hidden;
         }
 
         .big-btn {
+            flex: 1;
             display: flex;
             align-items: center;
             gap: 22px;
-            padding: 24px 26px;
+            padding: 0 28px;
             background: rgba(255, 255, 255, .04);
-            border: 1px solid rgba(255, 255, 255, .07);
-            border-radius: 24px;
+            border: none;
+            border-bottom: 1px solid rgba(255, 255, 255, .06);
+            border-radius: 0;
             cursor: pointer;
-            transition: background .18s, border-color .18s;
+            transition: background .18s;
             -webkit-tap-highlight-color: transparent;
             flex-shrink: 0;
         }
 
+        .big-btn:first-child {
+            border-top: 1px solid rgba(255, 255, 255, .06);
+        }
+
         .big-btn:active {
             background: rgba(255, 255, 255, .10);
-            border-color: rgba(255, 255, 255, .14);
         }
 
         .big-btn-icon {
-            width: 72px;
-            height: 72px;
-            border-radius: 20px;
+            width: 68px;
+            height: 68px;
+            border-radius: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2.2rem;
+            font-size: 2rem;
             flex-shrink: 0;
         }
 
@@ -260,21 +265,21 @@
         }
 
         .big-btn-text h2 {
-            font-size: 1.45rem;
+            font-size: 1.55rem;
             font-weight: 800;
             letter-spacing: -.02em;
         }
 
         .big-btn-text p {
-            font-size: .95rem;
+            font-size: .88rem;
             font-weight: 400;
-            opacity: .4;
-            margin-top: 4px;
+            opacity: .38;
+            margin-top: 5px;
         }
 
         .big-btn-arrow {
-            font-size: 1.1rem;
-            opacity: .25;
+            font-size: 1.6rem;
+            opacity: .22;
             flex-shrink: 0;
         }
 
@@ -306,9 +311,10 @@
         .sub-header {
             display: flex;
             align-items: center;
-            gap: 18px;
-            padding: 48px 24px 20px;
+            gap: 16px;
+            padding: 32px 22px 18px;
             border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
         }
 
         .back-btn {
@@ -332,18 +338,18 @@
         }
 
         .sub-header h2 {
-            font-size: 1.5rem;
+            font-size: 1.35rem;
             font-weight: 800
         }
 
-        /* Actions sub-screen – same full-screen tiles */
+        /* Interaction sub-screen – equal full-height tiles */
         .action-item {
             flex: 1;
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             align-items: center;
-            justify-content: center;
-            gap: 14px;
+            gap: 20px;
+            padding: 0 24px;
             cursor: pointer;
             border-bottom: 1px solid var(--border);
             transition: background .18s;
@@ -360,39 +366,33 @@
         }
 
         .ai-icon {
-            width: 100px;
-            height: 100px;
-            border-radius: 32px;
+            width: 72px;
+            height: 72px;
+            border-radius: 22px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 3rem;
-            flex-shrink: 0
+            flex-shrink: 0;
         }
 
         .action-item-text h3 {
-            font-size: 2.2rem;
-            font-weight: 900;
-            letter-spacing: -.03em;
-            text-align: center
+            font-size: 1.45rem;
+            font-weight: 800;
+            letter-spacing: -.02em;
         }
 
         .action-item-text p {
-            font-size: 1rem;
-            opacity: .4;
-            margin-top: 6px;
-            text-align: center
+            font-size: .82rem;
+            opacity: .38;
+            margin-top: 5px;
         }
 
-        /* Explore sub-screen */
+        /* Exploration sub-screen */
         #explore-body {
             flex: 1;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 24px;
-            padding: 32px
+            overflow: hidden;
         }
 
         .explore-toggle-wrap {
@@ -1628,16 +1628,25 @@
             background: #555;
         }
 
-        /* ══ EXPLORE SCREEN EXTRAS ══ */
+        /* ══ EXPLORATION SCREEN EXTRAS ══ */
         .explore-mode-row {
+            flex: 1;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 18px 20px;
-            background: rgba(255, 255, 255, .04);
-            border-radius: 18px;
-            margin-bottom: 12px;
+            padding: 0 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, .06);
             cursor: pointer;
+            transition: background .18s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .explore-mode-row:last-child {
+            border-bottom: none;
+        }
+
+        .explore-mode-row:active {
+            background: rgba(255, 255, 255, .06);
         }
 
         .explore-mode-row-left {
@@ -1646,19 +1655,25 @@
         }
 
         .explore-mode-row-left h4 {
-            font-size: .95rem;
-            font-weight: 700;
-            margin: 0 0 3px;
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin: 0 0 4px;
             color: #fff;
+            letter-spacing: -.01em;
         }
 
         .explore-mode-row-left p {
-            font-size: .73rem;
-            opacity: .45;
+            font-size: .8rem;
+            opacity: .38;
             margin: 0;
         }
 
-        /* ══ ENV SCAN SCREEN ══ */
+        /* Settings body (System Controls) */
+        #settings-body>.vol-section,
+        #settings-body>.setting-row {
+            flex-shrink: 0;
+        }
+
         #scan-objects {
             display: flex;
             flex-direction: column;
@@ -1756,7 +1771,7 @@
     <div class="screen" id="screen-menu">
         <div class="sub-header">
             <button class="back-btn" onclick="goBack()">&#8249;</button>
-            <h2>Menu</h2>
+            <h2>KENZA</h2>
         </div>
         <div class="menu-cards">
             <div class="big-btn" onclick="enterState('actions')">
@@ -1765,10 +1780,10 @@
                             d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2m-4 9a2 2 0 1 0 0 4 2 2 0 0 0 0-4m8 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4m-4 5c-1.5 0-2.6-.5-3-1h6c-.4.5-1.5 1-3 1z" />
                     </svg></div>
                 <div class="big-btn-text">
-                    <h2>Actions</h2>
-                    <p>AI Mode · Telepresence</p>
+                    <h2>Interaction</h2>
+                    <p>AI Mode &middot; Telepresence &middot; Env Scan</p>
                 </div>
-                <span class="big-btn-arrow">›</span>
+                <span class="big-btn-arrow">&rsaquo;</span>
             </div>
             <div class="big-btn" onclick="enterState('explore')">
                 <div class="big-btn-icon icon-explore"><svg viewBox="0 0 24 24">
@@ -1776,10 +1791,10 @@
                             d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5.5-2.5l7.51-3.49L17.5 6.5 9.99 9.99 6.5 17.5zm5.5-6.6c.61 0 1.1.49 1.1 1.1s-.49 1.1-1.1 1.1-1.1-.49-1.1-1.1.49-1.1 1.1-1.1z" />
                     </svg></div>
                 <div class="big-btn-text">
-                    <h2>Explore</h2>
-                    <p>Autonomous · Sentry Mode</p>
+                    <h2>Exploration</h2>
+                    <p>Sentry &middot; Patrol &middot; Follow Mode</p>
                 </div>
-                <span class="big-btn-arrow">›</span>
+                <span class="big-btn-arrow">&rsaquo;</span>
             </div>
             <div class="big-btn" onclick="enterState('settings')">
                 <div class="big-btn-icon icon-settings"><svg viewBox="0 0 24 24">
@@ -1787,26 +1802,26 @@
                             d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84a.48.48 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z" />
                     </svg></div>
                 <div class="big-btn-text">
-                    <h2>Settings</h2>
-                    <p>Speaker Volume</p>
+                    <h2>System Controls</h2>
+                    <p>Audio &middot; Display &middot; Connection &middot; Power</p>
                 </div>
-                <span class="big-btn-arrow">›</span>
+                <span class="big-btn-arrow">&rsaquo;</span>
             </div>
         </div>
 
     </div>
 
 
-    <!-- ══ ACTIONS SUB-MENU ══ -->
+    <!-- ══ INTERACTION (formerly Actions) ══ -->
     <div class="screen" id="screen-actions">
         <div class="sub-header">
-            <button class="back-btn" onclick="goBack()">‹</button>
-            <h2>Actions</h2>
+            <button class="back-btn" onclick="goBack()">&#8249;</button>
+            <h2>Interaction</h2>
         </div>
         <div class="action-item" onclick="enterAIMode()">
             <div class="ai-icon"
                 style="background:linear-gradient(135deg,rgba(79,195,247,.3),rgba(0,229,255,.18));box-shadow:0 4px 22px rgba(79,195,247,.22)">
-                <svg viewBox="0 0 24 24" style="width:48px;height:48px;fill:#fff">
+                <svg viewBox="0 0 24 24" style="width:38px;height:38px;fill:#fff">
                     <path
                         d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2m-4 9a2 2 0 1 0 0 4 2 2 0 0 0 0-4m8 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4m-4 5c-1.5 0-2.6-.5-3-1h6c-.4.5-1.5 1-3 1z" />
                 </svg>
@@ -1819,7 +1834,7 @@
         <div class="action-item" onclick="enterState('contacts')">
             <div class="ai-icon"
                 style="background:linear-gradient(135deg,rgba(100,200,255,.25),rgba(50,100,255,.18));box-shadow:0 4px 22px rgba(100,180,255,.2)">
-                <svg viewBox="0 0 24 24" style="width:48px;height:48px;fill:#fff">
+                <svg viewBox="0 0 24 24" style="width:38px;height:38px;fill:#fff">
                     <path
                         d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24c1.12.37 2.33.57 3.58.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.46.57 3.58a1 1 0 0 1-.25 1.02l-2.2 2.19z" />
                 </svg>
@@ -1833,7 +1848,7 @@
         <div class="action-item" onclick="enterState('scan')">
             <div class="ai-icon"
                 style="background:linear-gradient(135deg,rgba(150,100,255,.3),rgba(80,200,255,.18));box-shadow:0 4px 22px rgba(150,100,255,.2)">
-                <svg viewBox="0 0 24 24" style="width:48px;height:48px;fill:#fff">
+                <svg viewBox="0 0 24 24" style="width:38px;height:38px;fill:#fff">
                     <path
                         d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
                 </svg>
@@ -1876,18 +1891,18 @@
         </div>
     </div>
 
-    <!-- ══ EXPLORE ══ -->
+    <!-- ══ EXPLORATION (formerly Explore) ══ -->
     <div class="screen" id="screen-explore">
         <div class="sub-header">
             <button class="back-btn" onclick="goBack()">&#8249;</button>
-            <h2>Explore</h2>
+            <h2>Exploration</h2>
         </div>
-        <div id="explore-body" style="padding:16px;overflow-y:auto;flex:1">
+        <div id="explore-body">
 
-            <!-- Sentry Mode -->
+            <!-- Sentry Surveillance -->
             <div class="explore-mode-row" id="explore-wrap" onclick="toggleExplore()">
                 <div class="explore-mode-row-left">
-                    <h4>&#128737; Sentry Mode</h4>
+                    <h4>&#128737; Sentry Surveillance</h4>
                     <p id="explore-desc">Person detection &middot; Auto-recording</p>
                 </div>
                 <div class="tog" id="explore-tog"></div>
@@ -1914,11 +1929,11 @@
         </div>
     </div>
 
-    <!-- ══ SETTINGS ══ -->
+    <!-- ══ SYSTEM CONTROLS (formerly Settings) ══ -->
     <div class="screen" id="screen-settings">
         <div class="sub-header">
             <button class="back-btn" onclick="goBack()">&#8249;</button>
-            <h2>Settings</h2>
+            <h2>System Controls</h2>
         </div>
         <div id="settings-body" style="padding:16px;overflow-y:auto;flex:1">
 
