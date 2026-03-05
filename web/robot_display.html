@@ -1891,7 +1891,7 @@
         </div>
     </div>
 
-    <!-- ══ EXPLORATION (formerly Explore) ══ -->
+    <!-- ══ EXPLORATION ══ -->
     <div class="screen" id="screen-explore">
         <div class="sub-header">
             <button class="back-btn" onclick="goBack()">&#8249;</button>
@@ -1899,11 +1899,11 @@
         </div>
         <div id="explore-body">
 
-            <!-- Sentry Surveillance -->
+            <!-- Sentry Mode -->
             <div class="explore-mode-row" id="explore-wrap" onclick="toggleExplore()">
                 <div class="explore-mode-row-left">
-                    <h4>&#128737; Sentry Surveillance</h4>
-                    <p id="explore-desc">Person detection &middot; Auto-recording</p>
+                    <h4>&#128737; Sentry Mode</h4>
+                    <p id="explore-desc">Surveillance &middot; Person Detection &middot; Auto-Recording</p>
                 </div>
                 <div class="tog" id="explore-tog"></div>
             </div>
@@ -1912,7 +1912,7 @@
             <div class="explore-mode-row" id="patrol-wrap" onclick="togglePatrol()">
                 <div class="explore-mode-row-left">
                     <h4>&#128205; Patrol Mode</h4>
-                    <p id="patrol-desc">Robot slowly scans the environment</p>
+                    <p id="patrol-desc">Autonomous roaming to locate and detect a person</p>
                 </div>
                 <div class="tog" id="patrol-tog"></div>
             </div>
@@ -1929,68 +1929,72 @@
         </div>
     </div>
 
-    <!-- ══ SYSTEM CONTROLS (formerly Settings) ══ -->
+    <!-- ══ SYSTEM CONTROLS ══ -->
     <div class="screen" id="screen-settings">
         <div class="sub-header">
             <button class="back-btn" onclick="goBack()">&#8249;</button>
             <h2>System Controls</h2>
         </div>
-        <div id="settings-body" style="padding:16px;overflow-y:auto;flex:1">
+        <div id="settings-body"
+            style="padding:12px 14px;overflow-y:hidden;flex:1;display:flex;flex-direction:column;gap:8px">
 
             <!-- Speaker Volume -->
-            <div class="vol-section" style="margin-bottom:16px">
-                <div class="vol-header">
-                    <h3>&#128266; Speaker Volume</h3>
-                    <span class="vol-level" id="vol-level-txt">80%</span>
+            <div style="background:rgba(255,255,255,.04);border-radius:14px;padding:10px 16px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                    <span style="font-size:.8rem;font-weight:700;opacity:.7">&#128266; Volume</span>
+                    <span style="font-size:.75rem;opacity:.5" id="vol-level-txt">80%</span>
                 </div>
-                <div class="vol-icons">
-                    <span class="vol-icon">&#128263;</span>
+                <div style="display:flex;align-items:center;gap:8px">
+                    <span style="font-size:.85rem;opacity:.35">&#128263;</span>
                     <input type="range" class="vol-slider" id="vol-slider" min="0" max="100" value="80"
-                        oninput="setVolume(this.value)">
-                    <span class="vol-icon">&#128266;</span>
+                        style="flex:1;height:6px" oninput="setVolume(this.value)">
+                    <span style="font-size:.85rem;opacity:.7">&#128266;</span>
                 </div>
             </div>
 
             <!-- Display Brightness -->
-            <div class="vol-section" style="margin-bottom:16px">
-                <div class="vol-header">
-                    <h3>&#9728; Display Brightness</h3>
-                    <span class="vol-level" id="brightness-txt">100%</span>
+            <div style="background:rgba(255,255,255,.04);border-radius:14px;padding:10px 16px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                    <span style="font-size:.8rem;font-weight:700;opacity:.7">&#9728; Brightness</span>
+                    <span style="font-size:.75rem;opacity:.5" id="brightness-txt">100%</span>
                 </div>
-                <div class="vol-icons">
-                    <span class="vol-icon" style="opacity:.4">&#9728;</span>
+                <div style="display:flex;align-items:center;gap:8px">
+                    <span style="font-size:.85rem;opacity:.35">&#9728;</span>
                     <input type="range" class="vol-slider" id="brightness-slider" min="20" max="100" value="100"
-                        oninput="setBrightness(this.value)">
-                    <span class="vol-icon">&#9728;</span>
+                        style="flex:1;height:6px" oninput="setBrightness(this.value)">
+                    <span style="font-size:.85rem;opacity:.7">&#9728;</span>
                 </div>
             </div>
 
-            <!-- Night Mode -->
-            <div class="setting-row">
-                <div class="setting-row-label">
-                    <h4>&#127763; Night Mode</h4>
-                    <p>Dims display &amp; reduces eye glow</p>
+            <!-- Night Mode + Connection (side by side) -->
+            <div style="display:flex;gap:8px">
+                <!-- Night Mode -->
+                <div style="flex:1;background:rgba(255,255,255,.04);border-radius:14px;padding:14px 16px;
+                    display:flex;flex-direction:column;gap:8px">
+                    <span style="font-size:.82rem;font-weight:700">&#127763; Night Mode</span>
+                    <div style="display:flex;justify-content:center">
+                        <div class="setting-tog" id="night-tog" onclick="toggleNightMode()"></div>
+                    </div>
                 </div>
-                <div class="setting-tog" id="night-tog" onclick="toggleNightMode()"></div>
+                <!-- Connection -->
+                <div style="flex:1;background:rgba(255,255,255,.04);border-radius:14px;padding:14px 16px;
+                    display:flex;flex-direction:column;gap:8px">
+                    <span style="font-size:.82rem;font-weight:700">&#128268; Connection</span>
+                    <div style="display:flex;justify-content:center;align-items:center;gap:8px">
+                        <div class="conn-dot off" id="conn-dot"></div>
+                        <span style="font-size:.7rem;opacity:.45" id="conn-status-txt">No controller</span>
+                    </div>
+                </div>
             </div>
 
-            <!-- Connection Status -->
-            <div class="setting-row">
-                <div class="setting-row-label">
-                    <h4>&#128268; Controller Connection</h4>
-                    <p id="conn-status-txt">No controller connected</p>
-                </div>
-                <div class="conn-dot off" id="conn-dot"></div>
-            </div>
-
-            <!-- System Controls -->
-            <div style="display:flex;gap:12px;margin-top:8px">
+            <!-- Power Controls -->
+            <div style="display:flex;gap:8px;margin-top:auto">
                 <button class="danger-btn"
-                    style="background:rgba(255,160,0,.15);border:1.5px solid rgba(255,160,0,.4);color:#ffa000"
-                    onclick="systemControl('restart')">&#9851; Restart Robot</button>
+                    style="background:rgba(255,160,0,.15);border:1.5px solid rgba(255,160,0,.4);color:#ffa000;font-size:.82rem"
+                    onclick="systemControl('restart')">&#9851; Restart</button>
                 <button class="danger-btn"
-                    style="background:rgba(244,67,54,.12);border:1.5px solid rgba(244,67,54,.35);color:#f44336"
-                    onclick="systemControl('shutdown')">&#9210; Shutdown Robot</button>
+                    style="background:rgba(244,67,54,.12);border:1.5px solid rgba(244,67,54,.35);color:#f44336;font-size:.82rem"
+                    onclick="systemControl('shutdown')">&#9210; Shutdown</button>
             </div>
 
         </div>
@@ -2705,8 +2709,8 @@
 
             document.getElementById('explore-tog').classList.toggle('on', S.exploreOn);
             document.getElementById('explore-desc').textContent = S.exploreOn
-                ? 'ACTIVE — scanning for people'
-                : 'Person detection · Auto-recording';
+                ? 'ACTIVE — recording on detection'
+                : 'Surveillance · Person Detection · Auto-Recording';
             document.getElementById('explore-badge').style.display =
                 S.exploreOn ? 'flex' : 'none';
 
@@ -2714,7 +2718,7 @@
 
             if (!S.exploreOn) {
                 clearPersonAlert();
-                setTimeout(() => enterState('menu'), 500);
+                // Stay on Exploration screen — user navigates back manually
             }
         }
 
