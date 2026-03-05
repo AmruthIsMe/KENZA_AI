@@ -1512,130 +1512,10 @@
                 </div>
                 <span class="big-btn-arrow">›</span>
             </div>
-            <!-- Eye Style card -->
-            <div class="big-btn" onclick="enterState('eyes')">
-                <div class="big-btn-icon"
-                    style="background:linear-gradient(135deg,rgba(120,80,255,.35),rgba(200,100,255,.18));box-shadow:0 4px 18px rgba(150,80,255,.22)">
-                    <svg viewBox="0 0 24 24">
-                        <path
-                            d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
-                    </svg>
-                </div>
-                <div class="big-btn-text">
-                    <h2>Eye Style</h2>
-                    <p>Shape &middot; Color &middot; Expression</p>
-                </div>
-                <span class="big-btn-arrow">&rsaquo;</span>
-            </div>
         </div>
 
     </div>
 
-    <!-- ══ EYE CUSTOMIZATION SCREEN ══ -->
-    <div class="screen" id="screen-eyes">
-        <div class="sub-header">
-            <button class="back-btn" onclick="goBack()">&#8249;</button>
-            <h2>Eye Style</h2>
-        </div>
-        <div class="eye-picker-body">
-
-            <!-- Shape picker -->
-            <div>
-                <div class="eye-section-label">Shape</div>
-                <div class="shape-row" id="shape-row">
-                    <div class="shape-chip sel" data-shape="round" onclick="pickShape('round',this)">
-                        <div class="shape-chip-eye e-round"></div>
-                        <span class="shape-chip-label">Round</span>
-                    </div>
-                    <div class="shape-chip" data-shape="oval" onclick="pickShape('oval',this)">
-                        <div class="shape-chip-eye e-oval"></div>
-                        <span class="shape-chip-label">Oval</span>
-                    </div>
-                    <div class="shape-chip" data-shape="cute" onclick="pickShape('cute',this)">
-                        <div class="shape-chip-eye e-cute"></div>
-                        <span class="shape-chip-label">Cute</span>
-                    </div>
-                    <div class="shape-chip" data-shape="anime" onclick="pickShape('anime',this)">
-                        <div class="shape-chip-eye e-anime"></div>
-                        <span class="shape-chip-label">Anime</span>
-                    </div>
-                    <div class="shape-chip" data-shape="robot" onclick="pickShape('robot',this)">
-                        <div class="shape-chip-eye e-robot"></div>
-                        <span class="shape-chip-label">Robot</span>
-                    </div>
-                    <div class="shape-chip" data-shape="line" onclick="pickShape('line',this)">
-                        <div class="shape-chip-eye e-line"></div>
-                        <span class="shape-chip-label">Line</span>
-                    </div>
-                    <div class="shape-chip" data-shape="almond" onclick="pickShape('almond',this)">
-                        <div class="shape-chip-eye e-almond"></div>
-                        <span class="shape-chip-label">Almond</span>
-                    </div>
-                    <div class="shape-chip" data-shape="alien" onclick="pickShape('alien',this)">
-                        <div class="shape-chip-eye e-alien"></div>
-                        <span class="shape-chip-label">Alien</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Color picker -->
-            <div>
-                <div class="eye-section-label">Color</div>
-                <div class="color-grid" id="color-grid">
-                    <div class="color-swatch sel" data-color="cyan" onclick="pickColor('cyan',this)"
-                        style="background:linear-gradient(135deg,#2aaad4,#0a5580)"></div>
-                    <div class="color-swatch" data-color="teal" onclick="pickColor('teal',this)"
-                        style="background:linear-gradient(135deg,#00b899,#006655)"></div>
-                    <div class="color-swatch" data-color="orange" onclick="pickColor('orange',this)"
-                        style="background:linear-gradient(135deg,#ff8c00,#cc4400)"></div>
-                    <div class="color-swatch" data-color="pink" onclick="pickColor('pink',this)"
-                        style="background:linear-gradient(135deg,#ff5fa6,#cc0066)"></div>
-                    <div class="color-swatch" data-color="purple" onclick="pickColor('purple',this)"
-                        style="background:linear-gradient(135deg,#9b59f7,#5500cc)"></div>
-                    <div class="color-swatch" data-color="green" onclick="pickColor('green',this)"
-                        style="background:linear-gradient(135deg,#22dd66,#006622)"></div>
-                    <div class="color-swatch" data-color="red" onclick="pickColor('red',this)"
-                        style="background:linear-gradient(135deg,#f44336,#880000)"></div>
-                    <div class="color-swatch" data-color="gold" onclick="pickColor('gold',this)"
-                        style="background:linear-gradient(135deg,#ffd700,#aa7700)"></div>
-                    <div class="color-swatch" data-color="white" onclick="pickColor('white',this)"
-                        style="background:linear-gradient(135deg,#eee,#aaa)"></div>
-                </div>
-            </div>
-
-            <!-- Expression tester -->
-            <div>
-                <div class="eye-section-label">Test Expression</div>
-                <div class="shape-row" style="gap:8px">
-                    <div class="shape-chip" style="width:auto;padding:0 18px;height:52px;border-radius:14px"
-                        onclick="setEmotion('neutral');startEyes()"><span class="shape-chip-label"
-                            style="font-size:.75rem">Neutral</span></div>
-                    <div class="shape-chip" style="width:auto;padding:0 18px;height:52px;border-radius:14px"
-                        onclick="setEmotion('happy')"><span class="shape-chip-label"
-                            style="font-size:.75rem">Happy</span></div>
-                    <div class="shape-chip" style="width:auto;padding:0 18px;height:52px;border-radius:14px"
-                        onclick="setEmotion('thinking')"><span class="shape-chip-label"
-                            style="font-size:.75rem">Thinking</span></div>
-                    <div class="shape-chip" style="width:auto;padding:0 18px;height:52px;border-radius:14px"
-                        onclick="setEmotion('excited')"><span class="shape-chip-label"
-                            style="font-size:.75rem">Excited</span></div>
-                    <div class="shape-chip" style="width:auto;padding:0 18px;height:52px;border-radius:14px"
-                        onclick="setEmotion('sleepy')"><span class="shape-chip-label"
-                            style="font-size:.75rem">Sleepy</span></div>
-                    <div class="shape-chip" style="width:auto;padding:0 18px;height:52px;border-radius:14px"
-                        onclick="setEmotion('surprised')"><span class="shape-chip-label"
-                            style="font-size:.75rem">Surprised</span></div>
-                    <div class="shape-chip" style="width:auto;padding:0 18px;height:52px;border-radius:14px"
-                        onclick="setEmotion('curious')"><span class="shape-chip-label"
-                            style="font-size:.75rem">Curious</span></div>
-                    <div class="shape-chip" style="width:auto;padding:0 18px;height:52px;border-radius:14px"
-                        onclick="setEmotion('sad')"><span class="shape-chip-label" style="font-size:.75rem">Sad</span>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </div>
 
     <!-- ══ ACTIONS SUB-MENU ══ -->
     <div class="screen" id="screen-actions">
@@ -2095,7 +1975,6 @@
             contacts: 'actions',
             explore: 'menu',
             settings: 'menu',
-            eyes: 'menu',
             // call states return to idle via their own buttons
         };
 
@@ -2204,19 +2083,6 @@
                     hideEyes();
                     _showScreen('settings');
                     drawQR();
-                    break;
-
-                case 'eyes':
-                    // Keep eyes visible behind the picker at low opacity as live preview
-                    eyesActive = true;
-                    document.getElementById('eye-layer').style.opacity = '0.35';
-                    applyEyeStyle();
-                    _showScreen('eyes');
-                    // Sync selected shape/color chips
-                    document.querySelectorAll('#shape-row .shape-chip').forEach(c =>
-                        c.classList.toggle('sel', c.dataset.shape === eyeState.eyeShape));
-                    document.querySelectorAll('#color-grid .color-swatch').forEach(c =>
-                        c.classList.toggle('sel', c.dataset.color === eyeState.eyeColor));
                     break;
 
                 default:
@@ -2464,25 +2330,6 @@
             if (pb) pb.style.display = 'none';
             if (ad) ad.style.display = 'none';
             if (eyesActive) setEmotion('neutral');
-        }
-
-        // ═══════════════════════════════════════════════════════════
-        // EYE CUSTOMIZATION
-        // ═══════════════════════════════════════════════════════════
-        function pickShape(shape, el) {
-            eyeState.eyeShape = shape;
-            document.querySelectorAll('#shape-row .shape-chip').forEach(c => c.classList.remove('sel'));
-            el.classList.add('sel');
-            applyEyeStyle();
-        }
-
-        function pickColor(color, el) {
-            const preset = colorPresets[color] || colorPresets.cyan;
-            eyeState.eyeColor = color;
-            eyeState.customColor = { ...preset };
-            document.querySelectorAll('#color-grid .color-swatch').forEach(c => c.classList.remove('sel'));
-            el.classList.add('sel');
-            applyEyeStyle();
         }
 
         // ═══════════════════════════════════════════════════════════
