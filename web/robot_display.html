@@ -35,46 +35,6 @@
             user-select: none
         }
 
-        /* TOP BAR */
-        #top-bar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 38px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 16px;
-            z-index: 300;
-            pointer-events: none;
-            background: linear-gradient(to bottom, rgba(7, 7, 16, .98), transparent);
-        }
-
-        .tb-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: .85rem;
-            font-weight: 700;
-            opacity: .85;
-            letter-spacing: .02em
-        }
-
-        #tb-wifi {
-            font-size: 1.1rem
-        }
-
-        #alert-dot {
-            display: none;
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: var(--orange);
-            box-shadow: 0 0 6px var(--orange);
-            animation: pulse 1.2s infinite
-        }
-
         @keyframes pulse {
 
             0%,
@@ -94,21 +54,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: clamp(60px, 12vw, 140px);
-            z-index: 1;
-            cursor: pointer;
-            transition: opacity .4s ease, filter .4s;
-        }
-
-        /* EYE LAYER - Massive & Organic */
-        #eye-layer {
-            position: fixed;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             gap: 40px;
-            /* Tighter gap for massive eyes */
             z-index: 1;
             cursor: pointer;
             transition: opacity .4s ease, filter .4s;
@@ -117,68 +63,72 @@
         .eye {
             width: clamp(280px, 48vw, 460px);
             height: clamp(280px, 48vw, 460px);
-            /* Organic elliptical shape */
             border-radius: 44% 44% 50% 50%;
             position: relative;
             overflow: hidden;
-            /* Limbus Ring + Iris Gradient */
             background:
-                radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.08) 0%, transparent 60%),
-                /* iris shine layer */
-                radial-gradient(circle at 50% 50%, #2aaad4 0%, #1a88aa 40%, #0a6680 85%, #053340 100%);
-            /* Depth Iris */
-
-            /* Soft, deep shadow for a lens look (less "popped up") */
+                radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.1) 0%, transparent 55%),
+                radial-gradient(circle at 50% 48%, rgba(255, 255, 255, 0.04) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, #2aaad4 0%, #1a88aa 35%, #0a6680 70%, #053340 100%);
             box-shadow:
-                0 0 70px rgba(77, 210, 255, .25),
-                inset 0 0 40px rgba(0, 0, 0, 0.6),
-                inset 0 -10px 20px rgba(0, 0, 0, 0.4);
-
-            /* Calibrated transform for a more natural gaze */
+                0 0 80px rgba(77, 210, 255, .3),
+                0 0 160px rgba(77, 210, 255, .08),
+                inset 0 0 50px rgba(0, 0, 0, 0.55),
+                inset 0 -12px 25px rgba(0, 0, 0, 0.35);
             transform: scaleY(.84) translateY(4%);
-            transition: transform .5s cubic-bezier(.25, 1, .5, 1), box-shadow .5s, filter .4s;
-            border: 2px solid rgba(0, 0, 0, 0.4);
-            /* Subtle lid definition */
+            transition: transform .5s cubic-bezier(.25, 1, .5, 1), box-shadow .6s ease, filter .4s, background .8s ease;
+            border: 2px solid rgba(0, 0, 0, 0.35);
+            animation: eyeBreath 4s ease-in-out infinite;
+        }
+
+        @keyframes eyeBreath {
+
+            0%,
+            100% {
+                box-shadow: 0 0 80px rgba(77, 210, 255, .25), 0 0 160px rgba(77, 210, 255, .06), inset 0 0 50px rgba(0, 0, 0, .55), inset 0 -12px 25px rgba(0, 0, 0, .35);
+            }
+
+            50% {
+                box-shadow: 0 0 100px rgba(77, 210, 255, .4), 0 0 200px rgba(77, 210, 255, .12), inset 0 0 50px rgba(0, 0, 0, .55), inset 0 -12px 25px rgba(0, 0, 0, .35);
+            }
         }
 
         .pupil {
             position: absolute;
             width: 44%;
-            /* Larger, more expressive pupil */
             height: 44%;
-            background: radial-gradient(circle at 40% 40%, #1a1a1a 0%, #000 70%);
+            background: radial-gradient(circle at 38% 38%, #222 0%, #0a0a0a 50%, #000 70%);
             border-radius: 50%;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            transition: transform .18s cubic-bezier(.25, 1, .5, 1);
-            filter: blur(0.5px);
-            /* Softer human-like edge */
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+            transition: transform .18s cubic-bezier(.25, 1, .5, 1), width .4s ease, height .4s ease;
+            filter: blur(0.3px);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.9), inset 0 0 8px rgba(77, 210, 255, .08);
         }
 
         .hl {
             position: absolute;
             border-radius: 50%;
-            background: rgba(255, 255, 255, .8);
-            filter: blur(0.5px);
+            background: rgba(255, 255, 255, .85);
+            filter: blur(0.8px);
             pointer-events: none;
         }
 
         .hl.big {
-            width: 20%;
-            height: 20%;
-            top: 15%;
-            left: 55%;
-            opacity: 0.9;
+            width: 18%;
+            height: 18%;
+            top: 16%;
+            left: 56%;
+            opacity: 0.85;
         }
 
         .hl.sm {
-            width: 10%;
-            height: 10%;
-            top: 42%;
-            left: 25%;
-            opacity: .4
+            width: 9%;
+            height: 9%;
+            top: 44%;
+            left: 24%;
+            opacity: .35
         }
 
         /* SCREENS (full-screen overlays) */
@@ -1309,18 +1259,200 @@
             }
         }
     </style>
+    <style>
+        /* SVG icon sizing for buttons */
+        .call-ctl svg,
+        .inc-accept svg,
+        .inc-reject svg,
+        .call-end-round svg {
+            width: 24px;
+            height: 24px;
+            fill: #fff;
+        }
+
+        .call-ctl.end svg {
+            width: 28px;
+            height: 28px;
+        }
+
+        .big-btn-icon svg {
+            width: 36px;
+            height: 36px;
+            fill: #fff;
+        }
+
+        .ai-icon svg {
+            width: 48px;
+            height: 48px;
+            fill: #fff;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+    </style>
+    <style>
+        /* ══ EYE CUSTOMIZATION SCREEN ══ */
+        #screen-eyes {
+            z-index: 50;
+            background: rgba(7, 7, 16, .97);
+        }
+
+        .eye-picker-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 18px 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+            touch-action: pan-y;
+        }
+
+        .eye-section-label {
+            font-size: .65rem;
+            font-weight: 700;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            opacity: .35;
+            margin-bottom: 10px;
+        }
+
+        .shape-row {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            scrollbar-width: none;
+        }
+
+        .shape-row::-webkit-scrollbar {
+            display: none;
+        }
+
+        .shape-chip {
+            flex-shrink: 0;
+            width: 88px;
+            height: 88px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, .05);
+            border: 2px solid rgba(255, 255, 255, .08);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            cursor: pointer;
+            transition: border-color .18s, background .18s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .shape-chip.sel {
+            border-color: var(--accent);
+            background: rgba(79, 195, 247, .12);
+        }
+
+        .shape-chip:active {
+            background: rgba(255, 255, 255, .10);
+        }
+
+        .shape-chip-eye {
+            background: linear-gradient(135deg, #2aaad4, #0a6680);
+            box-shadow: 0 0 10px rgba(77, 210, 255, .4);
+        }
+
+        .e-round {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+        }
+
+        .e-oval {
+            width: 32px;
+            height: 48px;
+            border-radius: 50%;
+        }
+
+        .e-cute {
+            width: 40px;
+            height: 46px;
+            border-radius: 55% 55% 42% 42%;
+        }
+
+        .e-anime {
+            width: 40px;
+            height: 50px;
+            border-radius: 50% 50% 44% 44%;
+        }
+
+        .e-robot {
+            width: 44px;
+            height: 40px;
+            border-radius: 8px;
+        }
+
+        .e-line {
+            width: 52px;
+            height: 16px;
+            border-radius: 8px;
+        }
+
+        .e-almond {
+            width: 50px;
+            height: 34px;
+            border-radius: 50% 50% 44% 44%;
+        }
+
+        .e-alien {
+            width: 28px;
+            height: 52px;
+            border-radius: 44% 44% 50% 50%;
+        }
+
+        .shape-chip-label {
+            font-size: .62rem;
+            font-weight: 700;
+            opacity: .6;
+            letter-spacing: .03em;
+        }
+
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .color-swatch {
+            height: 64px;
+            border-radius: 16px;
+            border: 3px solid transparent;
+            cursor: pointer;
+            transition: border-color .15s, transform .12s;
+            -webkit-tap-highlight-color: transparent;
+            position: relative;
+        }
+
+        .color-swatch:active {
+            transform: scale(.93);
+        }
+
+        .color-swatch.sel {
+            border-color: #fff;
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, .18);
+        }
+    </style>
 </head>
 
 <body>
 
-    <!-- TOP BAR: only battery + wifi -->
-    <div id="top-bar">
-        <div class="tb-item"><span id="tb-wifi">📶</span></div>
-        <div class="tb-item">
-            <span id="alert-dot"></span>
-            <span id="tb-battery">--<span style="font-size:.6rem;opacity:.55">%</span></span>
-        </div>
-    </div>
+
 
     <div id="person-badge">👁 PERSON DETECTED</div>
 
@@ -1348,7 +1480,10 @@
         <div class="menu-title-bar">Menu</div>
         <div class="menu-cards">
             <div class="big-btn" onclick="enterState('actions')">
-                <div class="big-btn-icon icon-actions">🤖</div>
+                <div class="big-btn-icon icon-actions"><svg viewBox="0 0 24 24">
+                        <path
+                            d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2m-4 9a2 2 0 1 0 0 4 2 2 0 0 0 0-4m8 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4m-4 5c-1.5 0-2.6-.5-3-1h6c-.4.5-1.5 1-3 1z" />
+                    </svg></div>
                 <div class="big-btn-text">
                     <h2>Actions</h2>
                     <p>AI Mode · Telepresence</p>
@@ -1356,7 +1491,10 @@
                 <span class="big-btn-arrow">›</span>
             </div>
             <div class="big-btn" onclick="enterState('explore')">
-                <div class="big-btn-icon icon-explore">🧭</div>
+                <div class="big-btn-icon icon-explore"><svg viewBox="0 0 24 24">
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5.5-2.5l7.51-3.49L17.5 6.5 9.99 9.99 6.5 17.5zm5.5-6.6c.61 0 1.1.49 1.1 1.1s-.49 1.1-1.1 1.1-1.1-.49-1.1-1.1.49-1.1 1.1-1.1z" />
+                    </svg></div>
                 <div class="big-btn-text">
                     <h2>Explore</h2>
                     <p>Autonomous · Sentry Mode</p>
@@ -1364,17 +1502,139 @@
                 <span class="big-btn-arrow">›</span>
             </div>
             <div class="big-btn" onclick="enterState('settings')">
-                <div class="big-btn-icon icon-settings">⚙️</div>
+                <div class="big-btn-icon icon-settings"><svg viewBox="0 0 24 24">
+                        <path
+                            d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84a.48.48 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z" />
+                    </svg></div>
                 <div class="big-btn-text">
                     <h2>Settings</h2>
                     <p>Speaker Volume</p>
                 </div>
                 <span class="big-btn-arrow">›</span>
             </div>
+            <!-- Eye Style card -->
+            <div class="big-btn" onclick="enterState('eyes')">
+                <div class="big-btn-icon"
+                    style="background:linear-gradient(135deg,rgba(120,80,255,.35),rgba(200,100,255,.18));box-shadow:0 4px 18px rgba(150,80,255,.22)">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
+                    </svg>
+                </div>
+                <div class="big-btn-text">
+                    <h2>Eye Style</h2>
+                    <p>Shape &middot; Color &middot; Expression</p>
+                </div>
+                <span class="big-btn-arrow">&rsaquo;</span>
+            </div>
         </div>
-        <button class="menu-close-btn" onclick="enterState('idle')">
-            ✕&ensp;Close Menu
-        </button>
+
+    </div>
+
+    <!-- ══ EYE CUSTOMIZATION SCREEN ══ -->
+    <div class="screen" id="screen-eyes">
+        <div class="sub-header">
+            <button class="back-btn" onclick="goBack()">&#8249;</button>
+            <h2>Eye Style</h2>
+        </div>
+        <div class="eye-picker-body">
+
+            <!-- Shape picker -->
+            <div>
+                <div class="eye-section-label">Shape</div>
+                <div class="shape-row" id="shape-row">
+                    <div class="shape-chip sel" data-shape="round" onclick="pickShape('round',this)">
+                        <div class="shape-chip-eye e-round"></div>
+                        <span class="shape-chip-label">Round</span>
+                    </div>
+                    <div class="shape-chip" data-shape="oval" onclick="pickShape('oval',this)">
+                        <div class="shape-chip-eye e-oval"></div>
+                        <span class="shape-chip-label">Oval</span>
+                    </div>
+                    <div class="shape-chip" data-shape="cute" onclick="pickShape('cute',this)">
+                        <div class="shape-chip-eye e-cute"></div>
+                        <span class="shape-chip-label">Cute</span>
+                    </div>
+                    <div class="shape-chip" data-shape="anime" onclick="pickShape('anime',this)">
+                        <div class="shape-chip-eye e-anime"></div>
+                        <span class="shape-chip-label">Anime</span>
+                    </div>
+                    <div class="shape-chip" data-shape="robot" onclick="pickShape('robot',this)">
+                        <div class="shape-chip-eye e-robot"></div>
+                        <span class="shape-chip-label">Robot</span>
+                    </div>
+                    <div class="shape-chip" data-shape="line" onclick="pickShape('line',this)">
+                        <div class="shape-chip-eye e-line"></div>
+                        <span class="shape-chip-label">Line</span>
+                    </div>
+                    <div class="shape-chip" data-shape="almond" onclick="pickShape('almond',this)">
+                        <div class="shape-chip-eye e-almond"></div>
+                        <span class="shape-chip-label">Almond</span>
+                    </div>
+                    <div class="shape-chip" data-shape="alien" onclick="pickShape('alien',this)">
+                        <div class="shape-chip-eye e-alien"></div>
+                        <span class="shape-chip-label">Alien</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Color picker -->
+            <div>
+                <div class="eye-section-label">Color</div>
+                <div class="color-grid" id="color-grid">
+                    <div class="color-swatch sel" data-color="cyan" onclick="pickColor('cyan',this)"
+                        style="background:linear-gradient(135deg,#2aaad4,#0a5580)"></div>
+                    <div class="color-swatch" data-color="teal" onclick="pickColor('teal',this)"
+                        style="background:linear-gradient(135deg,#00b899,#006655)"></div>
+                    <div class="color-swatch" data-color="orange" onclick="pickColor('orange',this)"
+                        style="background:linear-gradient(135deg,#ff8c00,#cc4400)"></div>
+                    <div class="color-swatch" data-color="pink" onclick="pickColor('pink',this)"
+                        style="background:linear-gradient(135deg,#ff5fa6,#cc0066)"></div>
+                    <div class="color-swatch" data-color="purple" onclick="pickColor('purple',this)"
+                        style="background:linear-gradient(135deg,#9b59f7,#5500cc)"></div>
+                    <div class="color-swatch" data-color="green" onclick="pickColor('green',this)"
+                        style="background:linear-gradient(135deg,#22dd66,#006622)"></div>
+                    <div class="color-swatch" data-color="red" onclick="pickColor('red',this)"
+                        style="background:linear-gradient(135deg,#f44336,#880000)"></div>
+                    <div class="color-swatch" data-color="gold" onclick="pickColor('gold',this)"
+                        style="background:linear-gradient(135deg,#ffd700,#aa7700)"></div>
+                    <div class="color-swatch" data-color="white" onclick="pickColor('white',this)"
+                        style="background:linear-gradient(135deg,#eee,#aaa)"></div>
+                </div>
+            </div>
+
+            <!-- Expression tester -->
+            <div>
+                <div class="eye-section-label">Test Expression</div>
+                <div class="shape-row" style="gap:8px">
+                    <div class="shape-chip" style="width:auto;padding:0 18px;height:52px;border-radius:14px"
+                        onclick="setEmotion('neutral');startEyes()"><span class="shape-chip-label"
+                            style="font-size:.75rem">Neutral</span></div>
+                    <div class="shape-chip" style="width:auto;padding:0 18px;height:52px;border-radius:14px"
+                        onclick="setEmotion('happy')"><span class="shape-chip-label"
+                            style="font-size:.75rem">Happy</span></div>
+                    <div class="shape-chip" style="width:auto;padding:0 18px;height:52px;border-radius:14px"
+                        onclick="setEmotion('thinking')"><span class="shape-chip-label"
+                            style="font-size:.75rem">Thinking</span></div>
+                    <div class="shape-chip" style="width:auto;padding:0 18px;height:52px;border-radius:14px"
+                        onclick="setEmotion('excited')"><span class="shape-chip-label"
+                            style="font-size:.75rem">Excited</span></div>
+                    <div class="shape-chip" style="width:auto;padding:0 18px;height:52px;border-radius:14px"
+                        onclick="setEmotion('sleepy')"><span class="shape-chip-label"
+                            style="font-size:.75rem">Sleepy</span></div>
+                    <div class="shape-chip" style="width:auto;padding:0 18px;height:52px;border-radius:14px"
+                        onclick="setEmotion('surprised')"><span class="shape-chip-label"
+                            style="font-size:.75rem">Surprised</span></div>
+                    <div class="shape-chip" style="width:auto;padding:0 18px;height:52px;border-radius:14px"
+                        onclick="setEmotion('curious')"><span class="shape-chip-label"
+                            style="font-size:.75rem">Curious</span></div>
+                    <div class="shape-chip" style="width:auto;padding:0 18px;height:52px;border-radius:14px"
+                        onclick="setEmotion('sad')"><span class="shape-chip-label" style="font-size:.75rem">Sad</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </div>
 
     <!-- ══ ACTIONS SUB-MENU ══ -->
@@ -1386,7 +1646,10 @@
         <div class="action-item" onclick="enterAIMode()">
             <div class="ai-icon"
                 style="background:linear-gradient(135deg,rgba(79,195,247,.3),rgba(0,229,255,.18));box-shadow:0 4px 22px rgba(79,195,247,.22)">
-                🤖
+                <svg viewBox="0 0 24 24" style="width:48px;height:48px;fill:#fff">
+                    <path
+                        d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2m-4 9a2 2 0 1 0 0 4 2 2 0 0 0 0-4m8 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4m-4 5c-1.5 0-2.6-.5-3-1h6c-.4.5-1.5 1-3 1z" />
+                </svg>
             </div>
             <div class="action-item-text">
                 <h3>AI Mode</h3>
@@ -1396,7 +1659,11 @@
         <div class="action-item" onclick="enterState('contacts')">
             <div class="ai-icon"
                 style="background:linear-gradient(135deg,rgba(100,200,255,.25),rgba(50,100,255,.18));box-shadow:0 4px 22px rgba(100,180,255,.2)">
-                📡
+                <svg viewBox="0 0 24 24" style="width:48px;height:48px;fill:#fff">
+                    <path
+                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm3.5 13.5l-3.5-3.5V8h1.5v3.5l3 3-1 1z" />
+                    <path d="M3.9 4.85L5.66 4l3.35 6.6-1.76.85z" />
+                </svg>
             </div>
             <div class="action-item-text">
                 <h3>Telepresence</h3>
@@ -1484,25 +1751,39 @@
 
     <!-- ══ OUTGOING CALL ══ -->
     <div class="screen" id="screen-calling">
-        <div class="call-ring">📞</div>
+        <div class="call-ring"><svg viewBox="0 0 24 24" style="width:48px;height:48px;fill:#fff">
+                <path
+                    d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24c1.12.37 2.33.57 3.58.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.46.57 3.58a1 1 0 0 1-.25 1.02l-2.2 2.19z" />
+            </svg></div>
         <div class="call-name" id="calling-name">Calling…</div>
         <div class="call-status">RINGING</div>
-        <button class="call-end-round" onclick="cancelCall()" title="Cancel">📵</button>
+        <button class="call-end-round" onclick="cancelCall()" title="Cancel"><svg viewBox="0 0 24 24">
+                <path
+                    d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28a1 1 0 0 1-.71-.3L.29 13.08a.96.96 0 0 1 0-1.36C3.55 8.93 7.55 7 12 7s8.45 1.93 11.71 4.72c.38.37.38.98 0 1.36l-2.48 2.48a1 1 0 0 1-.7.29 1 1 0 0 1-.71-.29c-.79-.73-1.68-1.36-2.66-1.85a1 1 0 0 1-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z" />
+            </svg></button>
     </div>
 
     <!-- ══ INCOMING CALL ══ -->
     <div class="screen" id="screen-incoming">
-        <div class="inc-ring" id="inc-ring-icon">📹</div>
+        <div class="inc-ring" id="inc-ring-icon"><svg viewBox="0 0 24 24" style="width:48px;height:48px;fill:#fff">
+                <path
+                    d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" />
+            </svg></div>
         <div class="inc-caller" id="incoming-name">Incoming Call</div>
         <div class="inc-sub">INCOMING VIDEO CALL</div>
         <div style="font-size:0.78rem;opacity:0.35;letter-spacing:.04em;margin-bottom:28px">TAP ACCEPT TO START</div>
         <div class="inc-btns">
             <div class="inc-btn-wrap">
-                <button class="inc-accept" onclick="acceptCall()">✓</button>
+                <button class="inc-accept" onclick="acceptCall()"><svg viewBox="0 0 24 24">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+                    </svg></button>
                 <div class="inc-label">Accept</div>
             </div>
             <div class="inc-btn-wrap">
-                <button class="inc-reject" onclick="rejectCall()">✕</button>
+                <button class="inc-reject" onclick="rejectCall()"><svg viewBox="0 0 24 24">
+                        <path
+                            d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z" />
+                    </svg></button>
                 <div class="inc-label">Decline</div>
             </div>
         </div>
@@ -1519,15 +1800,32 @@
             <span id="call-timer" style="opacity:.5;font-weight:400">0:00</span>
         </div>
         <div id="call-bar">
-            <button class="call-ctl" id="btn-cam" onclick="toggleCam()" title="Camera">📷</button>
-            <button class="call-ctl end" onclick="endCall()" title="End call">📵</button>
-            <button class="call-ctl" id="btn-mic" onclick="toggleMic()" title="Mic">🎙️</button>
+            <button class="call-ctl" id="btn-cam" onclick="toggleCam()" title="Camera"><svg viewBox="0 0 24 24">
+                    <path
+                        d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" />
+                </svg></button>
+            <button class="call-ctl end" onclick="endCall()" title="End call"><svg viewBox="0 0 24 24">
+                    <path
+                        d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28a1 1 0 0 1-.71-.3L.29 13.08a.96.96 0 0 1 0-1.36C3.55 8.93 7.55 7 12 7s8.45 1.93 11.71 4.72c.38.37.38.98 0 1.36l-2.48 2.48a1 1 0 0 1-.7.29 1 1 0 0 1-.71-.29c-.79-.73-1.68-1.36-2.66-1.85a1 1 0 0 1-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z" />
+                </svg></button>
+            <button class="call-ctl" id="btn-mic" onclick="toggleMic()" title="Mic"><svg viewBox="0 0 24 24">
+                    <path
+                        d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+                </svg></button>
         </div>
     </div>
 
     <script>
         'use strict';
 
+        // SVG icon constants for buttons (render reliably on all systems)
+        const SVG_ICONS = {
+            camera: '<svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>',
+            cameraOff: '<svg viewBox="0 0 24 24"><path d="M21 6.5l-4 4V7c0-.55-.45-1-1-1H9.82L21 17.18V6.5zM3.27 2L2 3.27 4.73 6H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.21 0 .39-.08.55-.18L19.73 21 21 19.73 3.27 2z"/></svg>',
+            mic: '<svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>',
+            micOff: '<svg viewBox="0 0 24 24"><path d="M19 11h-1.7c0 .74-.16 1.43-.43 2.05l1.23 1.23c.56-.98.9-2.09.9-3.28zm-4.02.17c0-.06.02-.11.02-.17V5c0-1.66-1.34-3-3-3S9 3.34 9 5v.18l5.98 5.99zM4.27 3L3 4.27l6.01 6.01V11c0 1.66 1.33 3 2.99 3 .22 0 .44-.03.65-.08l1.66 1.66c-.71.33-1.5.52-2.31.52-2.76 0-5.3-2.1-5.3-5.1H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c.91-.13 1.77-.45 2.55-.9l4.18 4.18L21 19.73 4.27 3z"/></svg>',
+            phoneEnd: '<svg viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28a1 1 0 0 1-.71-.3L.29 13.08a.96.96 0 0 1 0-1.36C3.55 8.93 7.55 7 12 7s8.45 1.93 11.71 4.72c.38.37.38.98 0 1.36l-2.48 2.48a1 1 0 0 1-.7.29 1 1 0 0 1-.71-.29c-.79-.73-1.68-1.36-2.66-1.85a1 1 0 0 1-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>',
+        };
         // ══ EYE STATE (Synchronized from Controller) ══
         const eyeState = {
             eyeColor: 'cyan',
@@ -1797,6 +2095,7 @@
             contacts: 'actions',
             explore: 'menu',
             settings: 'menu',
+            eyes: 'menu',
             // call states return to idle via their own buttons
         };
 
@@ -1907,6 +2206,19 @@
                     drawQR();
                     break;
 
+                case 'eyes':
+                    // Keep eyes visible behind the picker at low opacity as live preview
+                    eyesActive = true;
+                    document.getElementById('eye-layer').style.opacity = '0.35';
+                    applyEyeStyle();
+                    _showScreen('eyes');
+                    // Sync selected shape/color chips
+                    document.querySelectorAll('#shape-row .shape-chip').forEach(c =>
+                        c.classList.toggle('sel', c.dataset.shape === eyeState.eyeShape));
+                    document.querySelectorAll('#color-grid .color-swatch').forEach(c =>
+                        c.classList.toggle('sel', c.dataset.color === eyeState.eyeColor));
+                    break;
+
                 default:
                     console.warn('[KENZA] Unknown state:', name);
                     enterState('idle');
@@ -1919,15 +2231,8 @@
                 case 'ai':
                     sendWS({ type: 'ai_mode_exit' });
                     break;
-                case 'explore':
-                    // Leaving explore screen: stop exploration if running
-                    if (S.exploreOn) {
-                        S.exploreOn = false;
-                        document.getElementById('explore-badge').style.display = 'none';
-                        sendWS({ type: 'explore', active: false });
-                        clearPersonAlert();
-                    }
-                    break;
+                // NOTE: Leaving the explore screen does NOT stop exploration.
+                // Sentry mode persists until the user manually toggles it off.
             }
         }
 
@@ -1963,19 +2268,27 @@
         function setEmotion(emo) {
             const map = {
                 neutral: { sy: .78, sh: '0 0 50px rgba(77,210,255,.35)' },
-                happy: { sy: .35, sh: '0 0 65px rgba(77,210,255,.6)' },
-                thinking: { sy: .70, sh: '0 0 50px rgba(170,100,255,.5)' },
-                listening: { sy: .78, sh: '0 0 50px rgba(100,255,150,.45)' },
-                speaking: { sy: .78, sh: '0 0 50px rgba(77,210,255,.4)' },
-                excited: { sy: .95, sh: '0 0 70px rgba(77,210,255,.8)' },
-                alert: { sy: .52, sh: '0 0 50px rgba(255,170,0,.55)' },
+                happy: { sy: .35, sh: '0 0 65px rgba(77,210,255,.7)' },
+                thinking: { sy: .70, sh: '0 0 55px rgba(170,100,255,.55)' },
+                listening: { sy: .85, sh: '0 0 60px rgba(100,255,150,.5)' },
+                speaking: { sy: .80, sh: '0 0 60px rgba(77,210,255,.55)' },
+                excited: { sy: 1.0, sh: '0 0 80px rgba(77,210,255,.9)' },
+                alert: { sy: 1.0, sh: '0 0 70px rgba(255,170,0,.7)' },
+                curious: { sy: .92, sh: '0 0 65px rgba(130,200,255,.55)' },
+                confused: { sy: .60, sh: '0 0 45px rgba(200,150,100,.45)' },
+                sad: { sy: .50, sh: '0 0 40px rgba(100,140,200,.4)' },
+                sleepy: { sy: .22, sh: '0 0 30px rgba(77,150,255,.25)' },
+                surprised: { sy: 1.0, sh: '0 0 90px rgba(200,240,255,.9)' },
+                bored: { sy: .55, sh: '0 0 35px rgba(120,120,180,.3)' },
                 sleep: { sy: 0, sh: 'none' },
             };
             const e = map[emo] || map.neutral;
             eyes.forEach(eye => {
+                eye.style.transition = 'transform .5s cubic-bezier(.25,1,.5,1), box-shadow .6s ease';
                 eye.style.transform = `scaleY(${e.sy}) translateY(8%)`;
-                eye.style.boxShadow = e.sh + (e.sh !== 'none'
-                    ? ', inset 0 -12px 30px rgba(0,0,0,.25)' : '');
+                eye.style.boxShadow = e.sh !== 'none'
+                    ? e.sh + ', inset 0 -12px 30px rgba(0,0,0,.25)'
+                    : 'none';
             });
         }
 
@@ -2125,7 +2438,7 @@
             document.getElementById('explore-wrap').classList.toggle('active', S.exploreOn);
             document.getElementById('explore-desc').textContent = S.exploreOn
                 ? 'Sentry mode ACTIVE — scanning for people'
-                : 'Sentry mode activates automatically';
+                : 'Sentry mode deactivated';
             document.getElementById('explore-badge').style.display =
                 S.exploreOn ? 'flex' : 'none';
 
@@ -2133,8 +2446,8 @@
 
             if (!S.exploreOn) {
                 clearPersonAlert();
-                // Return to idle after short delay so user sees toggle snap off
-                setTimeout(() => enterState('idle'), 500);
+                // Return to MENU (not idle) when sentry is turned off
+                setTimeout(() => enterState('menu'), 500);
             }
         }
 
@@ -2151,6 +2464,25 @@
             if (pb) pb.style.display = 'none';
             if (ad) ad.style.display = 'none';
             if (eyesActive) setEmotion('neutral');
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // EYE CUSTOMIZATION
+        // ═══════════════════════════════════════════════════════════
+        function pickShape(shape, el) {
+            eyeState.eyeShape = shape;
+            document.querySelectorAll('#shape-row .shape-chip').forEach(c => c.classList.remove('sel'));
+            el.classList.add('sel');
+            applyEyeStyle();
+        }
+
+        function pickColor(color, el) {
+            const preset = colorPresets[color] || colorPresets.cyan;
+            eyeState.eyeColor = color;
+            eyeState.customColor = { ...preset };
+            document.querySelectorAll('#color-grid .color-swatch').forEach(c => c.classList.remove('sel'));
+            el.classList.add('sel');
+            applyEyeStyle();
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -2377,8 +2709,8 @@
             S.callState = 'idle'; S.camOn = true; S.micOn = true;
             const bc = document.getElementById('btn-cam');
             const bm = document.getElementById('btn-mic');
-            if (bc) { bc.textContent = '📷'; bc.classList.remove('off'); }
-            if (bm) { bm.textContent = '🎙️'; bm.classList.remove('off'); }
+            if (bc) { bc.innerHTML = SVG_ICONS.camera; bc.classList.remove('off'); }
+            if (bm) { bm.innerHTML = SVG_ICONS.mic; bm.classList.remove('off'); }
 
             // Always return to idle
             enterState('idle');
@@ -2410,7 +2742,7 @@
             // Send message to laptop to hide the Pi's video stream
             sendWS({ type: 'cam_toggle', state: S.camOn, to: 'controller' });
             const b = document.getElementById('btn-cam');
-            if (b) { b.classList.toggle('off', !S.camOn); b.textContent = S.camOn ? '📷' : '🚫'; }
+            if (b) { b.classList.toggle('off', !S.camOn); b.innerHTML = S.camOn ? SVG_ICONS.camera : SVG_ICONS.cameraOff; }
         }
 
         function toggleMic() {
@@ -2419,7 +2751,7 @@
             if (S.localStream)
                 S.localStream.getAudioTracks().forEach(t => t.enabled = S.micOn);
             const b = document.getElementById('btn-mic');
-            if (b) { b.classList.toggle('off', !S.micOn); b.textContent = S.micOn ? '🎙️' : '🔇'; }
+            if (b) { b.classList.toggle('off', !S.micOn); b.innerHTML = S.micOn ? SVG_ICONS.mic : SVG_ICONS.micOff; }
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -2436,15 +2768,10 @@
                     console.log('[KENZA] WS open');
                     clearTimeout(wsReconn);
                     sendWS({ type: 'register', role: 'robot', name: 'KENZA Robot' });
-                    // Update top-bar wifi icon
-                    const w = document.getElementById('tb-wifi');
-                    if (w) w.textContent = '📶';
                 };
                 ws.onclose = () => {
                     console.log('[KENZA] WS closed — reconnecting…');
                     ws = null;
-                    const w = document.getElementById('tb-wifi');
-                    if (w) w.textContent = '❌';
                     wsReconn = setTimeout(connectWS, 3000);
                 };
                 ws.onerror = err => console.warn('[KENZA] WS error', err);
@@ -2500,6 +2827,11 @@
 
                 case 'ai_state':
                     if (S.state === 'ai') setAIStatus(d.state);
+                    // Wake-word moment: flash eyes alert→listening when idle
+                    if (d.state === 'listening' && S.state === 'idle' && eyesActive) {
+                        setEmotion('alert');
+                        setTimeout(() => { if (eyesActive) setEmotion('listening'); }, 700);
+                    }
                     break;
 
                 case 'ai_message':
@@ -2507,14 +2839,11 @@
                     break;
 
                 case 'battery':
-                    const b = document.getElementById('tb-battery');
-                    if (b) b.innerHTML = d.level + '<span style="font-size:.6rem;opacity:.55">%</span>';
+                    // Top bar removed — battery status not displayed
                     break;
 
                 case 'wifi':
-                    const icons = ['❌', '📶', '📶', '📶'];
-                    const w = document.getElementById('tb-wifi');
-                    if (w) w.textContent = icons[Math.min(d.signal, 3)] || '📶';
+                    // Top bar removed — wifi status not displayed
                     break;
 
                 case 'peer_online':
