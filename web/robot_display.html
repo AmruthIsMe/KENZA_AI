@@ -1448,6 +1448,261 @@
             box-shadow: 0 0 0 4px rgba(255, 255, 255, .18);
         }
     </style>
+    <style>
+        /* ══ FOLLOW / REC / PATROL BADGES ══ */
+        #follow-badge,
+        #rec-badge,
+        #patrol-badge {
+            position: fixed;
+            top: 18px;
+            right: 18px;
+            z-index: 200;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: .75rem;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            backdrop-filter: blur(10px);
+        }
+
+        #follow-badge {
+            background: rgba(79, 195, 247, .22);
+            border: 1.5px solid rgba(79, 195, 247, .5);
+            color: #4fc3f7;
+            top: 18px;
+        }
+
+        #rec-badge {
+            background: rgba(244, 67, 54, .18);
+            border: 1.5px solid rgba(244, 67, 54, .5);
+            color: #f44336;
+            top: 18px;
+            left: 18px;
+            right: auto;
+        }
+
+        #patrol-badge {
+            background: rgba(100, 200, 100, .18);
+            border: 1.5px solid rgba(100, 200, 100, .5);
+            color: #66bb6a;
+            top: 60px;
+            right: 18px;
+        }
+
+        #rec-badge .rec-dot {
+            width: 10px;
+            height: 10px;
+            background: #f44336;
+            border-radius: 50%;
+            animation: rec-blink 1s step-end infinite;
+        }
+
+        @keyframes rec-blink {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: 0
+            }
+        }
+
+        /* ══ TOAST NOTIFICATION ══ */
+        #kenza-toast {
+            position: fixed;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(20, 20, 40, .95);
+            border: 1px solid rgba(255, 255, 255, .12);
+            color: #fff;
+            font-size: .85rem;
+            padding: 12px 24px;
+            border-radius: 24px;
+            z-index: 300;
+            opacity: 0;
+            transition: opacity .3s;
+            pointer-events: none;
+            text-align: center;
+            max-width: 320px;
+        }
+
+        #kenza-toast.show {
+            opacity: 1;
+        }
+
+        /* ══ SETTINGS IMPROVEMENTS ══ */
+        .setting-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, .04);
+            border-radius: 18px;
+            margin-bottom: 12px;
+        }
+
+        .setting-row-label {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .setting-row-label h4 {
+            font-size: .9rem;
+            font-weight: 700;
+            margin: 0 0 2px;
+            color: #fff;
+        }
+
+        .setting-row-label p {
+            font-size: .72rem;
+            opacity: .45;
+            margin: 0;
+        }
+
+        .setting-tog {
+            width: 50px;
+            height: 28px;
+            background: rgba(255, 255, 255, .1);
+            border-radius: 14px;
+            position: relative;
+            cursor: pointer;
+            transition: background .2s;
+            flex-shrink: 0;
+        }
+
+        .setting-tog.on {
+            background: var(--accent);
+        }
+
+        .setting-tog::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: #fff;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+            transition: left .2s;
+        }
+
+        .setting-tog.on::after {
+            left: 25px;
+        }
+
+        .danger-btn {
+            flex: 1;
+            padding: 14px 0;
+            border: none;
+            border-radius: 16px;
+            font-size: .85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity .15s;
+        }
+
+        .danger-btn:active {
+            opacity: .7;
+        }
+
+        .conn-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .conn-dot.on {
+            background: #4caf50;
+            box-shadow: 0 0 8px #4caf50;
+        }
+
+        .conn-dot.off {
+            background: #555;
+        }
+
+        /* ══ EXPLORE SCREEN EXTRAS ══ */
+        .explore-mode-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 20px;
+            background: rgba(255, 255, 255, .04);
+            border-radius: 18px;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+
+        .explore-mode-row-left {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .explore-mode-row-left h4 {
+            font-size: .95rem;
+            font-weight: 700;
+            margin: 0 0 3px;
+            color: #fff;
+        }
+
+        .explore-mode-row-left p {
+            font-size: .73rem;
+            opacity: .45;
+            margin: 0;
+        }
+
+        /* ══ ENV SCAN SCREEN ══ */
+        #scan-objects {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .scan-obj-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 18px;
+            background: rgba(255, 255, 255, .05);
+            border-radius: 16px;
+        }
+
+        .scan-obj-icon {
+            font-size: 1.5rem;
+        }
+
+        .scan-obj-label {
+            font-size: .9rem;
+            font-weight: 600;
+        }
+
+        .scan-obj-loc {
+            font-size: .75rem;
+            opacity: .45;
+        }
+
+        .scan-empty {
+            text-align: center;
+            padding: 40px 0;
+            opacity: .3;
+            font-size: .85rem;
+        }
+
+        #scan-status {
+            font-size: .8rem;
+            opacity: .5;
+            text-align: center;
+            margin-top: 8px;
+        }
+    </style>
 </head>
 
 <body>
@@ -1455,6 +1710,28 @@
 
 
     <div id="person-badge">👁 PERSON DETECTED</div>
+    <!-- Follow Mode badge (top-right) -->
+    <div id="follow-badge">
+        <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor">
+            <path
+                d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+        </svg>
+        FOLLOW MODE
+    </div>
+    <!-- REC badge (top-left) -->
+    <div id="rec-badge">
+        <span class="rec-dot"></span> REC
+    </div>
+    <!-- Patrol badge (right below follow) -->
+    <div id="patrol-badge">
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor">
+            <path
+                d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+        </svg>
+        PATROLLING
+    </div>
+    <!-- Toast notification -->
+    <div id="kenza-toast"></div>
 
     <!-- EYE LAYER -->
     <div id="eye-layer" onclick="goScreen('menu')">
@@ -1536,7 +1813,7 @@
             </div>
             <div class="action-item-text">
                 <h3>AI Mode</h3>
-                <p>Chat with KENZA · Voice enabled</p>
+                <p>Chat with KENZA &middot; Voice enabled</p>
             </div>
         </div>
         <div class="action-item" onclick="enterState('contacts')">
@@ -1544,13 +1821,26 @@
                 style="background:linear-gradient(135deg,rgba(100,200,255,.25),rgba(50,100,255,.18));box-shadow:0 4px 22px rgba(100,180,255,.2)">
                 <svg viewBox="0 0 24 24" style="width:48px;height:48px;fill:#fff">
                     <path
-                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm3.5 13.5l-3.5-3.5V8h1.5v3.5l3 3-1 1z" />
-                    <path d="M3.9 4.85L5.66 4l3.35 6.6-1.76.85z" />
+                        d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24c1.12.37 2.33.57 3.58.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.46.57 3.58a1 1 0 0 1-.25 1.02l-2.2 2.19z" />
                 </svg>
             </div>
             <div class="action-item-text">
                 <h3>Telepresence</h3>
                 <p>Video call a remote user</p>
+            </div>
+        </div>
+        <!-- Environment Scan -->
+        <div class="action-item" onclick="enterState('scan')">
+            <div class="ai-icon"
+                style="background:linear-gradient(135deg,rgba(150,100,255,.3),rgba(80,200,255,.18));box-shadow:0 4px 22px rgba(150,100,255,.2)">
+                <svg viewBox="0 0 24 24" style="width:48px;height:48px;fill:#fff">
+                    <path
+                        d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
+                </svg>
+            </div>
+            <div class="action-item-text">
+                <h3>Environment Scan</h3>
+                <p>Scan surroundings &middot; Object memory</p>
             </div>
         </div>
     </div>
@@ -1589,46 +1879,128 @@
     <!-- ══ EXPLORE ══ -->
     <div class="screen" id="screen-explore">
         <div class="sub-header">
-            <button class="back-btn" onclick="goBack()">‹</button>
+            <button class="back-btn" onclick="goBack()">&#8249;</button>
             <h2>Explore</h2>
         </div>
-        <div id="explore-body">
-            <div class="explore-toggle-wrap" id="explore-wrap" onclick="toggleExplore()">
-                <div class="explore-toggle-icon">🧭</div>
-                <div class="explore-toggle-text">
-                    <h3>Autonomous Explore</h3>
-                    <p id="explore-desc">Sentry mode activates automatically</p>
+        <div id="explore-body" style="padding:16px;overflow-y:auto;flex:1">
+
+            <!-- Sentry Mode -->
+            <div class="explore-mode-row" id="explore-wrap" onclick="toggleExplore()">
+                <div class="explore-mode-row-left">
+                    <h4>&#128737; Sentry Mode</h4>
+                    <p id="explore-desc">Person detection &middot; Auto-recording</p>
                 </div>
                 <div class="tog" id="explore-tog"></div>
             </div>
+
+            <!-- Patrol Mode -->
+            <div class="explore-mode-row" id="patrol-wrap" onclick="togglePatrol()">
+                <div class="explore-mode-row-left">
+                    <h4>&#128205; Patrol Mode</h4>
+                    <p id="patrol-desc">Robot slowly scans the environment</p>
+                </div>
+                <div class="tog" id="patrol-tog"></div>
+            </div>
+
+            <!-- Follow Mode -->
+            <div class="explore-mode-row" id="follow-wrap" onclick="toggleFollow()">
+                <div class="explore-mode-row-left">
+                    <h4>&#128100; Follow Mode</h4>
+                    <p id="follow-desc">Say &#8220;follow me&#8221; to activate</p>
+                </div>
+                <div class="tog" id="follow-tog"></div>
+            </div>
+
         </div>
     </div>
 
     <!-- ══ SETTINGS ══ -->
     <div class="screen" id="screen-settings">
         <div class="sub-header">
-            <button class="back-btn" onclick="goBack()">‹</button>
+            <button class="back-btn" onclick="goBack()">&#8249;</button>
             <h2>Settings</h2>
         </div>
-        <div id="settings-body">
+        <div id="settings-body" style="padding:16px;overflow-y:auto;flex:1">
 
             <!-- Speaker Volume -->
-            <div class="vol-section">
+            <div class="vol-section" style="margin-bottom:16px">
                 <div class="vol-header">
-                    <h3>🔊 Speaker Volume</h3>
+                    <h3>&#128266; Speaker Volume</h3>
                     <span class="vol-level" id="vol-level-txt">80%</span>
                 </div>
                 <div class="vol-icons">
-                    <span class="vol-icon">🔇</span>
+                    <span class="vol-icon">&#128263;</span>
                     <input type="range" class="vol-slider" id="vol-slider" min="0" max="100" value="80"
                         oninput="setVolume(this.value)">
-                    <span class="vol-icon">🔊</span>
+                    <span class="vol-icon">&#128266;</span>
                 </div>
             </div>
 
-            <!-- Connection status removed -->
+            <!-- Display Brightness -->
+            <div class="vol-section" style="margin-bottom:16px">
+                <div class="vol-header">
+                    <h3>&#9728; Display Brightness</h3>
+                    <span class="vol-level" id="brightness-txt">100%</span>
+                </div>
+                <div class="vol-icons">
+                    <span class="vol-icon" style="opacity:.4">&#9728;</span>
+                    <input type="range" class="vol-slider" id="brightness-slider" min="20" max="100" value="100"
+                        oninput="setBrightness(this.value)">
+                    <span class="vol-icon">&#9728;</span>
+                </div>
+            </div>
 
+            <!-- Night Mode -->
+            <div class="setting-row">
+                <div class="setting-row-label">
+                    <h4>&#127763; Night Mode</h4>
+                    <p>Dims display &amp; reduces eye glow</p>
+                </div>
+                <div class="setting-tog" id="night-tog" onclick="toggleNightMode()"></div>
+            </div>
 
+            <!-- Connection Status -->
+            <div class="setting-row">
+                <div class="setting-row-label">
+                    <h4>&#128268; Controller Connection</h4>
+                    <p id="conn-status-txt">No controller connected</p>
+                </div>
+                <div class="conn-dot off" id="conn-dot"></div>
+            </div>
+
+            <!-- System Controls -->
+            <div style="display:flex;gap:12px;margin-top:8px">
+                <button class="danger-btn"
+                    style="background:rgba(255,160,0,.15);border:1.5px solid rgba(255,160,0,.4);color:#ffa000"
+                    onclick="systemControl('restart')">&#9851; Restart Robot</button>
+                <button class="danger-btn"
+                    style="background:rgba(244,67,54,.12);border:1.5px solid rgba(244,67,54,.35);color:#f44336"
+                    onclick="systemControl('shutdown')">&#9210; Shutdown Robot</button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ══ ENVIRONMENT SCAN ══ -->
+    <div class="screen" id="screen-scan">
+        <div class="sub-header">
+            <button class="back-btn" onclick="goBack()">&#8249;</button>
+            <h2>Environment Scan</h2>
+        </div>
+        <div style="padding:16px;overflow-y:auto;flex:1">
+            <p style="font-size:.8rem;opacity:.4;margin-bottom:16px;text-align:center">
+                Robot scans surroundings and remembers objects on surfaces.
+            </p>
+            <button onclick="startEnvScan()" style="width:100%;padding:16px;border:none;border-radius:18px;
+                background:linear-gradient(135deg,rgba(150,100,255,.3),rgba(80,200,255,.18));
+                color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;margin-bottom:20px">
+                &#128270; Start Scan
+            </button>
+            <div id="scan-status">Ready to scan</div>
+            <div id="scan-objects">
+                <div class="scan-empty">No objects indexed yet.<br>Run a scan to detect objects in the environment.
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1970,6 +2342,10 @@
             connectedPeers: {},     // name → {role}
         };
 
+        // Extended state flags
+        S.followOn = false;
+        S.patrolOn = false;
+
         // Where "Back" goes from each state
         const BACK_MAP = {
             menu: 'idle',
@@ -1978,6 +2354,7 @@
             contacts: 'actions',
             explore: 'menu',
             settings: 'menu',
+            scan: 'actions',
             // call states return to idle via their own buttons
         };
 
@@ -2071,21 +2448,29 @@
                 case 'explore':
                     hideEyes();
                     _showScreen('explore');
-                    // Sync toggle UI with current explore state
-                    document.getElementById('explore-tog')
-                        .classList.toggle('on', S.exploreOn);
-                    document.getElementById('explore-wrap')
-                        .classList.toggle('active', S.exploreOn);
+                    // Sync all three toggles
+                    document.getElementById('explore-tog').classList.toggle('on', S.exploreOn);
+                    document.getElementById('patrol-tog').classList.toggle('on', S.patrolOn);
+                    document.getElementById('follow-tog').classList.toggle('on', S.followOn);
                     document.getElementById('explore-desc').textContent =
-                        S.exploreOn
-                            ? 'Sentry mode ACTIVE — scanning for people'
-                            : 'Sentry mode activates automatically';
+                        S.exploreOn ? 'ACTIVE — scanning for people' : 'Person detection · Auto-recording';
+                    document.getElementById('patrol-desc').textContent =
+                        S.patrolOn ? 'ACTIVE — scanning environment' : 'Robot slowly scans the environment';
+                    document.getElementById('follow-desc').textContent =
+                        S.followOn ? 'ACTIVE — following you' : 'Say “follow me” to activate';
                     break;
 
                 case 'settings':
                     hideEyes();
                     _showScreen('settings');
                     drawQR();
+                    // Refresh connection status
+                    _updateConnStatus();
+                    break;
+
+                case 'scan':
+                    hideEyes();
+                    _showScreen('scan');
                     break;
 
                 default:
@@ -2304,10 +2689,9 @@
             S.exploreOn = !S.exploreOn;
 
             document.getElementById('explore-tog').classList.toggle('on', S.exploreOn);
-            document.getElementById('explore-wrap').classList.toggle('active', S.exploreOn);
             document.getElementById('explore-desc').textContent = S.exploreOn
-                ? 'Sentry mode ACTIVE — scanning for people'
-                : 'Sentry mode deactivated';
+                ? 'ACTIVE — scanning for people'
+                : 'Person detection · Auto-recording';
             document.getElementById('explore-badge').style.display =
                 S.exploreOn ? 'flex' : 'none';
 
@@ -2315,16 +2699,48 @@
 
             if (!S.exploreOn) {
                 clearPersonAlert();
-                // Return to MENU (not idle) when sentry is turned off
                 setTimeout(() => enterState('menu'), 500);
             }
         }
 
+        function togglePatrol() {
+            S.patrolOn = !S.patrolOn;
+            document.getElementById('patrol-tog').classList.toggle('on', S.patrolOn);
+            document.getElementById('patrol-desc').textContent = S.patrolOn
+                ? 'ACTIVE — scanning environment'
+                : 'Robot slowly scans the environment';
+            document.getElementById('patrol-badge').style.display =
+                S.patrolOn ? 'flex' : 'none';
+            sendWS({ type: 'patrol', active: S.patrolOn });
+            if (S.patrolOn) showToast('&#128205; Patrol Mode activated');
+            else showToast('Patrol Mode stopped');
+        }
+
+        function toggleFollow() {
+            S.followOn = !S.followOn;
+            _applyFollowUI();
+            sendWS({ type: 'follow_mode', data: { enabled: S.followOn } });
+        }
+
+        function _applyFollowUI() {
+            document.getElementById('follow-tog').classList.toggle('on', S.followOn);
+            document.getElementById('follow-desc').textContent = S.followOn
+                ? 'ACTIVE — following you'
+                : 'Say “follow me” to activate';
+            document.getElementById('follow-badge').style.display =
+                S.followOn ? 'flex' : 'none';
+        }
+
         function showPersonAlert() {
             document.getElementById('person-badge').style.display = 'block';
-            document.getElementById('alert-dot').style.display = 'block';
+            const ad = document.getElementById('alert-dot');
+            if (ad) ad.style.display = 'block';
+            // Show REC badge + toast
+            document.getElementById('rec-badge').style.display = 'flex';
+            showToast('&#9888; Person detected — recording');
             setEmotion('alert');
             sendWS({ type: 'sentry_alert', detected: true });
+            sendWS({ type: 'start_recording' });
         }
 
         function clearPersonAlert() {
@@ -2332,7 +2748,71 @@
             const ad = document.getElementById('alert-dot');
             if (pb) pb.style.display = 'none';
             if (ad) ad.style.display = 'none';
+            document.getElementById('rec-badge').style.display = 'none';
+            sendWS({ type: 'stop_recording' });
             if (eyesActive) setEmotion('neutral');
+        }
+
+        // Toast utility
+        let _toastTm = null;
+        function showToast(msg) {
+            const t = document.getElementById('kenza-toast');
+            if (!t) return;
+            t.innerHTML = msg;
+            t.classList.add('show');
+            if (_toastTm) clearTimeout(_toastTm);
+            _toastTm = setTimeout(() => t.classList.remove('show'), 3500);
+        }
+
+        // Night Mode
+        function toggleNightMode() {
+            const tog = document.getElementById('night-tog');
+            const on = tog.classList.toggle('on');
+            document.body.classList.toggle('night-mode', on);
+            // Dim the eye layer in night mode
+            const el = document.getElementById('eye-layer');
+            if (el && eyesActive) el.style.filter = on ? 'brightness(.5)' : '';
+        }
+
+        // Display Brightness
+        function setBrightness(val) {
+            document.getElementById('brightness-txt').textContent = val + '%';
+            document.body.style.filter = `brightness(${val / 100})`;
+        }
+
+        // Connection Status indicator
+        function _updateConnStatus() {
+            const peers = Object.keys(S.connectedPeers || {});
+            const controllers = peers.filter(n => S.connectedPeers[n]?.role === 'controller');
+            const dot = document.getElementById('conn-dot');
+            const txt = document.getElementById('conn-status-txt');
+            if (!dot || !txt) return;
+            if (controllers.length > 0) {
+                dot.className = 'conn-dot on';
+                txt.textContent = 'Connected: ' + controllers.join(', ');
+            } else {
+                dot.className = 'conn-dot off';
+                txt.textContent = 'No controller connected';
+            }
+        }
+
+        // System control (restart / shutdown)
+        function systemControl(action) {
+            const label = action === 'restart' ? 'Restart' : 'Shutdown';
+            if (!confirm(`${label} the robot?`)) return;
+            showToast(label + ' command sent…');
+            sendWS({ type: 'system_control', action });
+        }
+
+        // Environment Scan
+        function startEnvScan() {
+            const status = document.getElementById('scan-status');
+            if (status) status.textContent = 'Scanning…';
+            sendWS({ type: 'env_scan', action: 'start' });
+            // Simulate progress for now (real result comes from WS)
+            setTimeout(() => {
+                if (status) status.textContent = 'Scan complete — waiting for results…';
+            }, 2000);
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -2673,6 +3153,41 @@
 
                 case 'person_detected':
                     if (S.exploreOn) d.detected ? showPersonAlert() : clearPersonAlert();
+                    // Also alert during patrol
+                    if (S.patrolOn && d.detected) showToast('&#128100; Found someone during patrol!');
+                    break;
+
+                case 'follow_activate':
+                    // Voice command triggered follow mode
+                    if (!S.followOn) {
+                        S.followOn = true;
+                        _applyFollowUI();
+                        sendWS({ type: 'follow_mode', data: { enabled: true } });
+                        showToast('&#128100; Follow Mode activated by voice');
+                    }
+                    break;
+
+                case 'scan_result':
+                    // Server sent back scan objects
+                    {
+                        const objs = d.objects || [];
+                        const container = document.getElementById('scan-objects');
+                        const status = document.getElementById('scan-status');
+                        if (container) {
+                            if (objs.length === 0) {
+                                container.innerHTML = '<div class="scan-empty">No objects detected.<br>Try again in a different area.</div>';
+                            } else {
+                                container.innerHTML = objs.map(o =>
+                                    `<div class="scan-obj-row">
+                                        <div class="scan-obj-icon">${o.icon || '&#128230;'}</div>
+                                        <div><div class="scan-obj-label">${o.name}</div>
+                                        <div class="scan-obj-loc">${o.location || ''}</div></div>
+                                    </div>`
+                                ).join('');
+                            }
+                        }
+                        if (status) status.textContent = `Scanned at ${new Date().toLocaleTimeString()}`;
+                    }
                     break;
 
                 case 'ai_state':

@@ -182,6 +182,20 @@ class CommandHandler:
                 return await self._ai_message(data)
             elif cmd_type == 'set_volume':
                 return await self._set_volume(cmd)
+            elif cmd_type == 'patrol':
+                return await self._patrol(data)
+            elif cmd_type == 'system_control':
+                return await self._system_control(data)
+            elif cmd_type == 'env_scan':
+                return await self._env_scan(data)
+            elif cmd_type == 'start_recording':
+                return await self._start_recording()
+            elif cmd_type == 'stop_recording':
+                return await self._stop_recording()
+            elif cmd_type in ('sentry_alert', 'explore'):
+                # Acknowledge and log; broadcast handled by UI
+                print(f"[SENTRY] {cmd_type}: {data or cmd}")
+                return None
             else:
                 print(f"[CMD] Unknown command: {cmd_type}")
                 return None
@@ -367,12 +381,12 @@ class CommandHandler:
         print(f"[VOICE] Selected: {voice}")
         # TODO: Connect to TTS system with voice profiles
         return {'type': 'voice_changed', 'data': {'voice': voice}}
-    
+
     async def _ai_message(self, data: Dict) -> Dict:
-        """Process AI chat message"""
-        message = data.get('message', '')
+        """Process AI chat message and detect follow-me trigger"""
+        message = data.get('message', '').lower()
         print(f"[AI] User: {message}")
-        
+
         # Detect emotion
         emotion = "neutral"
         if HAS_EMOTION:
@@ -380,17 +394,70 @@ class CommandHandler:
             emotion = engine.detect(message)
             print(f"[EMOTION] Detected: {emotion}")
 
+        # Follow-me voice trigger
+        if any(kw in message for kw in ['follow me', 'follow along', 'come with me']):
+            print("[FOLLOW] Voice trigger: activating follow mode")
+            self._broadcast_from_thread({'type': 'follow_activate'})
+
         # Placeholder response
-        response = f"I heard you say: '{message}'. AI backend integration pending."
-        
-        # Broadcast emotion to UI
+        response = f"I heard you say: '{data.get('message','')}'. AI backend integration pending."
+
         return {
-            'type': 'ai_response', 
+            'type': 'ai_response',
             'data': {
                 'message': response,
                 'emotion': emotion
             }
         }
+
+    async def _patrol(self, data: Dict) -> Optional[Dict]:
+        """Toggle Patrol Mode — slow environment scan"""
+        active = data.get('active', False)
+        print(f"[PATROL] {'STARTED' if active else 'STOPPED'}")
+        # TODO: drive motors in slow sweep pattern
+        # If person detected during patrol, TTS says 'Hey there, I found you'
+        return {'type': 'patrol_status', 'data': {'active': active}}
+
+    async def _system_control(self, data: Dict) -> Optional[Dict]:
+        """Restart or shutdown the Raspberry Pi"""
+        action = data.get('action', '')
+        print(f"[SYSTEM] Control command: {action}")
+        try:
+            if action == 'restart':
+                await asyncio.create_subprocess_shell(
+                    'sudo reboot',
+                    stdout=asyncio.subprocess.DEVNULL,
+                    stderr=asyncio.subprocess.DEVNULL
+                )
+            elif action == 'shutdown':
+                await asyncio.create_subprocess_shell(
+                    'sudo poweroff',
+                    stdout=asyncio.subprocess.DEVNULL,
+                    stderr=asyncio.subprocess.DEVNULL
+                )
+        except Exception as e:
+            print(f"[SYSTEM] Error: {e}")
+        return {'type': 'system_ack', 'action': action}
+
+    async def _env_scan(self, data: Dict) -> Optional[Dict]:
+        """Environment scan — placeholder for future vision-based object detection"""
+        action = data.get('action', 'start')
+        print(f"[SCAN] Environment scan: {action}")
+        # In the future: capture camera frame, run object detection, return object list
+        # For now return empty result
+        return {'type': 'scan_result', 'data': {'objects': []}}
+
+    async def _start_recording(self) -> Optional[Dict]:
+        """Start recording video clip (Pi camera via ffmpeg)"""
+        print("[REC] Recording started")
+        # TODO: subprocess ffmpeg -i /dev/video0 -t 60 /tmp/kenza_event.mp4
+        return {'type': 'recording_status', 'active': True}
+
+    async def _stop_recording(self) -> Optional[Dict]:
+        """Stop any active recording"""
+        print("[REC] Recording stopped")
+        # TODO: terminate ffmpeg subprocess
+        return {'type': 'recording_status', 'active': False}
 
     async def _set_volume(self, cmd: Dict) -> Optional[Dict]:
         """Set RPi speaker volume via ALSA amixer or PulseAudio pactl"""
