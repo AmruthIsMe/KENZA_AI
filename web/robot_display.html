@@ -1717,6 +1717,89 @@
             text-align: center;
             margin-top: 8px;
         }
+
+        /* ══ AVATARS SCREEN ══ */
+        #screen-avatars {
+            z-index: 50;
+        }
+
+        .avatar-subtitle {
+            font-size: .78rem;
+            opacity: .4;
+            text-align: center;
+            margin: 0 0 12px;
+            letter-spacing: .03em;
+        }
+
+        .avatar-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            padding: 0 16px;
+            flex: 1;
+            align-content: center;
+        }
+
+        .avatar-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, .05);
+            border: 2px solid transparent;
+            border-radius: 18px;
+            padding: 12px 8px;
+            cursor: pointer;
+            transition: all .25s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .avatar-card:active {
+            transform: scale(.93);
+        }
+
+        .avatar-card.selected {
+            border-color: var(--accent);
+            background: rgba(79, 195, 247, .12);
+            box-shadow: 0 0 20px rgba(79, 195, 247, .2), inset 0 0 12px rgba(79, 195, 247, .08);
+        }
+
+        .avatar-card img {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 8px;
+            border: 2px solid rgba(255, 255, 255, .1);
+            transition: border-color .25s;
+        }
+
+        .avatar-card.selected img {
+            border-color: var(--accent);
+        }
+
+        .avatar-card span {
+            font-size: .78rem;
+            font-weight: 700;
+            letter-spacing: .02em;
+            opacity: .7;
+            transition: opacity .25s;
+        }
+
+        .avatar-card.selected span {
+            opacity: 1;
+            color: var(--accent);
+        }
+
+        /* ══ SYSTEM CONTROLS FILL FIX ══ */
+        #settings-body>div {
+            flex: 1;
+            min-height: 0;
+        }
+
+        #settings-body>div:last-child {
+            flex: 0 0 auto;
+        }
     </style>
 </head>
 
@@ -1781,7 +1864,7 @@
                     </svg></div>
                 <div class="big-btn-text">
                     <h2>Interaction</h2>
-                    <p>AI Mode &middot; Telepresence &middot; Env Scan</p>
+                    <p>AI Mode &middot; Telepresence &middot; Environment Scan &middot; Avatars</p>
                 </div>
                 <span class="big-btn-arrow">&rsaquo;</span>
             </div>
@@ -1858,6 +1941,20 @@
                 <p>Scan surroundings &middot; Object memory</p>
             </div>
         </div>
+        <!-- Avatars -->
+        <div class="action-item" onclick="enterState('avatars')">
+            <div class="ai-icon"
+                style="background:linear-gradient(135deg,rgba(255,170,0,.3),rgba(255,100,150,.18));box-shadow:0 4px 22px rgba(255,170,0,.2)">
+                <svg viewBox="0 0 24 24" style="width:38px;height:38px;fill:#fff">
+                    <path
+                        d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                </svg>
+            </div>
+            <div class="action-item-text">
+                <h3>Avatars</h3>
+                <p>Change personality &middot; Voice &amp; Identity</p>
+            </div>
+        </div>
     </div>
 
     <!-- ══ AI MODE OVERLAY ══ -->
@@ -1929,6 +2026,41 @@
         </div>
     </div>
 
+    <!-- ══ AVATARS ══ -->
+    <div class="screen" id="screen-avatars">
+        <div class="sub-header">
+            <button class="back-btn" onclick="goBack()">&#8249;</button>
+            <h2>Avatars</h2>
+        </div>
+        <p class="avatar-subtitle">Select Robot Personality &mdash; Voice &amp; Identity</p>
+        <div class="avatar-grid" id="avatar-grid">
+            <div class="avatar-card selected" data-avatar="aria" onclick="selectAvatar(this)">
+                <img src="avatars/aria.png" alt="Aria">
+                <span>Aria</span>
+            </div>
+            <div class="avatar-card" data-avatar="drake" onclick="selectAvatar(this)">
+                <img src="avatars/drake.png" alt="Drake">
+                <span>Drake</span>
+            </div>
+            <div class="avatar-card" data-avatar="leo" onclick="selectAvatar(this)">
+                <img src="avatars/leo.png" alt="Leo">
+                <span>Leo</span>
+            </div>
+            <div class="avatar-card" data-avatar="luna" onclick="selectAvatar(this)">
+                <img src="avatars/luna.png" alt="Luna">
+                <span>Luna</span>
+            </div>
+            <div class="avatar-card" data-avatar="nova" onclick="selectAvatar(this)">
+                <img src="avatars/nova.png" alt="Nova">
+                <span>Nova</span>
+            </div>
+            <div class="avatar-card" data-avatar="rex" onclick="selectAvatar(this)">
+                <img src="avatars/rex.png" alt="Rex">
+                <span>Rex</span>
+            </div>
+        </div>
+    </div>
+
     <!-- ══ SYSTEM CONTROLS ══ -->
     <div class="screen" id="screen-settings">
         <div class="sub-header">
@@ -1936,64 +2068,64 @@
             <h2>System Controls</h2>
         </div>
         <div id="settings-body"
-            style="padding:12px 14px;overflow-y:hidden;flex:1;display:flex;flex-direction:column;gap:8px">
+            style="padding:12px 14px;overflow-y:hidden;flex:1;display:flex;flex-direction:column;gap:10px">
 
             <!-- Speaker Volume -->
-            <div style="background:rgba(255,255,255,.04);border-radius:14px;padding:10px 16px">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                    <span style="font-size:.8rem;font-weight:700;opacity:.7">&#128266; Volume</span>
-                    <span style="font-size:.75rem;opacity:.5" id="vol-level-txt">80%</span>
+            <div
+                style="flex:1;background:rgba(255,255,255,.04);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;justify-content:center">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                    <span style="font-size:.85rem;font-weight:700;opacity:.7">&#128266; Volume</span>
+                    <span style="font-size:.8rem;opacity:.5" id="vol-level-txt">80%</span>
                 </div>
                 <div style="display:flex;align-items:center;gap:8px">
-                    <span style="font-size:.85rem;opacity:.35">&#128263;</span>
+                    <span style="font-size:.9rem;opacity:.35">&#128263;</span>
                     <input type="range" class="vol-slider" id="vol-slider" min="0" max="100" value="80"
                         style="flex:1;height:6px" oninput="setVolume(this.value)">
-                    <span style="font-size:.85rem;opacity:.7">&#128266;</span>
+                    <span style="font-size:.9rem;opacity:.7">&#128266;</span>
                 </div>
             </div>
 
             <!-- Display Brightness -->
-            <div style="background:rgba(255,255,255,.04);border-radius:14px;padding:10px 16px">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                    <span style="font-size:.8rem;font-weight:700;opacity:.7">&#9728; Brightness</span>
-                    <span style="font-size:.75rem;opacity:.5" id="brightness-txt">100%</span>
+            <div
+                style="flex:1;background:rgba(255,255,255,.04);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;justify-content:center">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                    <span style="font-size:.85rem;font-weight:700;opacity:.7">&#9728; Brightness</span>
+                    <span style="font-size:.8rem;opacity:.5" id="brightness-txt">100%</span>
                 </div>
                 <div style="display:flex;align-items:center;gap:8px">
-                    <span style="font-size:.85rem;opacity:.35">&#9728;</span>
+                    <span style="font-size:.9rem;opacity:.35">&#9728;</span>
                     <input type="range" class="vol-slider" id="brightness-slider" min="20" max="100" value="100"
                         style="flex:1;height:6px" oninput="setBrightness(this.value)">
-                    <span style="font-size:.85rem;opacity:.7">&#9728;</span>
+                    <span style="font-size:.9rem;opacity:.7">&#9728;</span>
                 </div>
             </div>
 
             <!-- Night Mode + Connection (side by side) -->
-            <div style="display:flex;gap:8px">
+            <div style="flex:1;display:flex;gap:10px">
                 <!-- Night Mode -->
-                <div style="flex:1;background:rgba(255,255,255,.04);border-radius:14px;padding:14px 16px;
-                    display:flex;flex-direction:column;gap:8px">
-                    <span style="font-size:.82rem;font-weight:700">&#127763; Night Mode</span>
-                    <div style="display:flex;justify-content:center">
-                        <div class="setting-tog" id="night-tog" onclick="toggleNightMode()"></div>
-                    </div>
+                <div style="flex:1;background:rgba(255,255,255,.04);border-radius:14px;padding:16px;
+                    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+                    <span style="font-size:.88rem;font-weight:700">&#127763; Night Mode</span>
+                    <div class="setting-tog" id="night-tog" onclick="toggleNightMode()"></div>
                 </div>
                 <!-- Connection -->
-                <div style="flex:1;background:rgba(255,255,255,.04);border-radius:14px;padding:14px 16px;
-                    display:flex;flex-direction:column;gap:8px">
-                    <span style="font-size:.82rem;font-weight:700">&#128268; Connection</span>
-                    <div style="display:flex;justify-content:center;align-items:center;gap:8px">
+                <div style="flex:1;background:rgba(255,255,255,.04);border-radius:14px;padding:16px;
+                    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+                    <span style="font-size:.88rem;font-weight:700">&#128268; Connection</span>
+                    <div style="display:flex;align-items:center;gap:8px">
                         <div class="conn-dot off" id="conn-dot"></div>
-                        <span style="font-size:.7rem;opacity:.45" id="conn-status-txt">No controller</span>
+                        <span style="font-size:.75rem;opacity:.45" id="conn-status-txt">No controller</span>
                     </div>
                 </div>
             </div>
 
             <!-- Power Controls -->
-            <div style="display:flex;gap:8px;margin-top:auto">
+            <div style="flex:1;display:flex;gap:10px">
                 <button class="danger-btn"
-                    style="background:rgba(255,160,0,.15);border:1.5px solid rgba(255,160,0,.4);color:#ffa000;font-size:.82rem"
+                    style="flex:1;background:rgba(255,160,0,.15);border:1.5px solid rgba(255,160,0,.4);color:#ffa000;font-size:.9rem;display:flex;align-items:center;justify-content:center"
                     onclick="systemControl('restart')">&#9851; Restart</button>
                 <button class="danger-btn"
-                    style="background:rgba(244,67,54,.12);border:1.5px solid rgba(244,67,54,.35);color:#f44336;font-size:.82rem"
+                    style="flex:1;background:rgba(244,67,54,.12);border:1.5px solid rgba(244,67,54,.35);color:#f44336;font-size:.9rem;display:flex;align-items:center;justify-content:center"
                     onclick="systemControl('shutdown')">&#9210; Shutdown</button>
             </div>
 
@@ -2374,6 +2506,7 @@
             explore: 'menu',
             settings: 'menu',
             scan: 'actions',
+            avatars: 'actions',
             // call states return to idle via their own buttons
         };
 
@@ -2490,6 +2623,11 @@
                 case 'scan':
                     hideEyes();
                     _showScreen('scan');
+                    break;
+
+                case 'avatars':
+                    hideEyes();
+                    _showScreen('avatars');
                     break;
 
                 default:
@@ -2813,6 +2951,19 @@
                 dot.className = 'conn-dot off';
                 txt.textContent = 'No controller connected';
             }
+        }
+
+        // Avatar selection
+        function selectAvatar(card) {
+            // Deselect all
+            document.querySelectorAll('.avatar-card').forEach(c => c.classList.remove('selected'));
+            // Select this one
+            card.classList.add('selected');
+            const avatar = card.dataset.avatar;
+            console.log('[KENZA] Avatar selected:', avatar);
+            // Send voice change to server
+            sendWS({ type: 'voice_select', voice: avatar });
+            showToast('Avatar changed to ' + avatar.charAt(0).toUpperCase() + avatar.slice(1));
         }
 
         // System control (restart / shutdown)
