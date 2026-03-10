@@ -83,7 +83,7 @@ def generate_report():
     
     features = [
         "Two-way AV communication: Full-duplex audio/video streaming with Acoustic Echo Cancellation (AEC).",
-        "Real-time video streaming: Low-latency WebRTC (VP8/VP9) via PiCamera2.",
+        "Real-time video streaming: Low-latency WebRTC (VP8/VP9) via PiCamera Module 3.",
         "Obstacle Avoidance: Zone-based collision detection using MobileNet-SSD or contour analysis.",
         "Edge Processing: All core logic (Motor control, STT, TTS, Vision) runs locally on Raspberry Pi 5.",
         "Local IP Based: Zero-configuration local network discovery and control.",
@@ -91,7 +91,8 @@ def generate_report():
         "Gesture Control: MediaPipe-based hand tracking for driving and UI interaction (11 supported gestures).",
         "Human Following: Autonomous person tracking using Pose estimation and Histograms for re-identification.",
         "Wake Word Activation: \"Kenza\" wake word detection using Google Speech Recognition.",
-        "Conversation Engine: Tri-model pipeline routing queries to Cloud (Groq/Llama-3.3, Gemini 2.0) or Local (Llama 3.2 3B) models.",
+        "Conversation Engine: Multi-model pipeline routing queries to Groq (Llama-3.3-70b) for fast responses, and Gemini 2.0 Flash for vision tasks.",
+        "Local LLM Fallback: Offline support via Ollama (Gemma 3 Nano) or Llama 3.2 3B when internet is unavailable.",
         "Autonomous Exploration: Random-walk exploration with obstacle avoidance behavior.",
         "Multiple Avatar Selection: 5 distinct TTS voice presets (Kenza, Glitch, Kawaii, Titan, Jarvis).",
         "Overnight Surveillance: 'Sentry Mode' utilizing object detection for monitoring (Human detection triggers).",
@@ -131,8 +132,9 @@ def generate_report():
         ["Language", "Python", "3.11+"],
         ["Speech-to-Text (SST)", "SpeechRecognition (Google API)", ">=3.10.0"],
         ["Text-to-Speech (TTS)", "Edge-TTS (Microsoft Azure Neural)", ">=6.1.0"],
-        ["LLM (Cloud)", "Groq (Llama-3.3-70b), Gemini 2.0 Flash", "API-based"],
-        ["LLM (Local)", "Llama 3.2 3B (Quantized GGUF)", "llama-cpp-python >=0.2.0"],
+        ["LLM (Conversational)", "Groq (Llama-3.3-70b)", "Primary Chat"],
+        ["LLM (Vision AI)", "Gemini 2.0 Flash", "Multimodal / Vision"],
+        ["LLM (Local)", "Llama 3.2 3B / Ollama", "llama-cpp-python >=0.2.0"],
         ["Vision / Face", "MediaPipe, Face_Recognition (dlib)", "mediapipe>=0.10.0"],
         ["Object Detection", "MobileNet-SSD (Caffe)", "OpenCV DNN"],
         ["Streaming", "WebRTC (aiortc)", "aiortc>=1.6.0"],
@@ -146,13 +148,13 @@ def generate_report():
     # 4.1 Conversation
     add_heading(doc, "4.1 Conversation Engine", level=2)
     add_paragraph(doc, 
-        "The conversation system uses a sophisticated 'Tri-Model' routing architecture. "
+        "The conversation system uses a high-performance routing architecture designed for zero-latency interaction. "
         "Audio is captured via PyAudio and processed by a Voice Activity Detector (RMS-based) to handle interruptions. "
         "Speech is transcribed using Google's Speech Recognition API. "
-        "The text is sent to a Smart Router which decides the backend: "
-        "1) Groq (Llama 3.3) for fast, general conversation. "
-        "2) Gemini 2.0 Flash for vision-related queries (e.g., 'What do you see?'). "
-        "3) Local Llama 3.2 if internet is unavailable. "
+        "The text is sent to a Smart Router which determines the backend: "
+        "1) Groq (Llama 3.3) is the primary engine for lightning-fast, general conversation. "
+        "2) Gemini 2.0 Flash is utilized for vision-related queries (e.g., 'What do you see?') and as a secondary fallback. "
+        "3) Local Llama 3.2 / Ollama provides seamless interaction if internet connectivity is lost. "
         "Responses are converted to audio using Microsoft Edge-TTS with selectable voice personalities."
     )
     

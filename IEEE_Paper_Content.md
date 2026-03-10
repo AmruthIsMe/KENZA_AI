@@ -6,9 +6,9 @@
 
 ## Abstract
 
-This paper presents KENZA, a sentient robotic companion system that integrates conversational artificial intelligence, computer vision, hand gesture recognition, and real-time telepresence capabilities. The system employs a hybrid AI architecture combining cloud-based LLMs (Gemini, Groq/Llama-3.3-70b) with local inference (llama-cpp) for intelligent offline/online routing. KENZA features MediaPipe-based face detection and recognition, WebRTC-powered bidirectional audio/video streaming with acoustic echo cancellation (AEC), and a WebSocket-based control interface for real-time robot state synchronization. The modular architecture runs on Raspberry Pi 5, making it an affordable yet powerful platform for human-robot interaction research.
+This paper presents KENZA, a sentient robotic companion system that integrates conversational artificial intelligence, computer vision, hand gesture recognition, and real-time telepresence capabilities. The system employs a hybrid AI architecture combining cloud-based LLMs (Groq/Llama-3.3-70b, Gemini 2.0) with local inference (Ollama/llama-cpp) for intelligent offline/online routing. KENZA features MediaPipe-based face detection and recognition, WebRTC-powered bidirectional audio/video streaming with acoustic echo cancellation (AEC), and a WebSocket-based control interface for real-time robot state synchronization. The modular architecture runs on Raspberry Pi 5, making it an affordable yet powerful platform for human-robot interaction research.
 
-**Keywords:** Robotic Companion, Conversational AI, Face Recognition, Hand Gesture Control, WebRTC Telepresence, Raspberry Pi, LLM Integration
+**Keywords:** Robotic Companion, Conversational AI, Groq, Gemini, Multi-modal Interaction, Raspberry Pi, LLM Integration
 
 ---
 
@@ -20,7 +20,7 @@ The demand for intelligent robotic companions has grown significantly with advan
 
 ### B. Contributions
 
-- **Hybrid AI Architecture**: Smart routing between cloud (Gemini/Groq) and local (Llama) LLMs based on query complexity
+- **Hybrid AI Architecture**: Smart routing between cloud (Groq/Gemini) and local (Ollama/Llama) LLMs based on query complexity
 - **Multi-Modal Interaction**: Voice, vision, and gesture-based interfaces
 - **Real-Time Telepresence**: Low-latency WebRTC streaming with acoustic echo cancellation
 - **Expressive Eye Interface**: Animated OLED display with customizable expressions
@@ -156,18 +156,20 @@ Audio Input (PyAudio)
 
 ```python
 # Classification Logic (Llama Router)
-if requires_real_time_info or complex_query:
-    route → Gemini (Online) / Groq (Cloud)
+if vision_task:
+    route → Gemini (Online, Multimodal)
+elif requires_real_time_info or complex_query:
+    route → Groq (Cloud)
 else:
-    route → Llama (Offline, Local)
+    route → Ollama / Llama (Offline, Local)
 ```
 
 **Cloud Providers:**
 | Provider | Model | Use Case |
 |----------|-------|----------|
-| **Gemini** | gemini-2.0-flash | Multimodal (vision + text) |
-| **Groq** | llama-3.3-70b-versatile | Fast cloud inference |
-| **Local** | llama-3.2-3b-instruct.Q4_K_M | Offline fallback |
+| **Groq** | llama-3.3-70b-versatile | Primary conversational LLM |
+| **Gemini** | gemini-2.0-flash | Vision & Multimodal reasoning |
+| **Local** | llama-3.2-3b-instruct / gemma3 | Offline fallback |
 
 #### 3. Text-to-Speech System
 
@@ -250,7 +252,7 @@ if abs(error_y) > deadzone:
 #### 1. Video Pipeline
 
 ```
-PiCamera2 / OpenCV Capture
+PiCamera Module 3 / OpenCV Capture
     → Frame Resize (640×360)
     → VP8/VP9 Encoding
     → WebRTC MediaStreamTrack
@@ -530,12 +532,12 @@ KENZA demonstrates a successful integration of conversational AI, computer visio
 │   │  L298N      │◄──┼──│  │   • Command Processing                 │  │     │
 │   │Motor Driver │   │  │  └────────────────────────────────────────┘  │     │
 │   │ (4 Motors)  │   │  │                                              │     │
-│   └─────────────┘   │  │  ┌──────────────┐    ┌───────────────────┐   │     │
-│                     └──┼──│ Audio Engine │    │   AI Backbone     │   │     │
-│   ┌─────────────┐      │  │  • STT       │◄──►│  • Gemini/Groq    │   │     │
-│   │  OLED/HDMI  │◄─────┼──│  • TTS       │    │  • Local Llama    │   │     │
-│   │  (Eyes)     │      │  │  • AEC       │    │  • Smart Router   │   │     │
-│   └─────────────┘      │  └──────────────┘    └───────────────────┘   │     │
+│   ┌─────────────┐      │  ┌──────────────┐    ┌───────────────────┐   │     │
+│   │  OLED/HDMI  │◄─────┼──│ Audio Engine │    │   AI Backbone     │   │     │
+│   │  (Eyes)     │      │  │  • STT       │◄──►│  • Groq/Gemini    │   │     │
+│   │  (Eyes)     │      │  │  • TTS       │    │  • Local Llama    │   │     │
+│   └─────────────┘      │  │  • AEC       │    │  • Smart Router   │   │     │
+│                        │  └──────────────┘    └───────────────────┘   │     │
 │                        │                                              │     │
 │   ┌─────────────┐      │  ┌──────────────────────────────────────┐   │     │
 │   │    LEDs     │◄─────┼──│         WebSocket Server             │   │     │
