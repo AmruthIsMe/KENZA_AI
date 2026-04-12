@@ -14,17 +14,22 @@
         }
 
         :root {
-            --bg-dark: #0a0a0f;
-            --bg-card: rgba(25, 25, 35, 0.6);
-            --accent: #4fc3f7;
-            --accent-glow: rgba(79, 195, 247, 0.4);
-            --pink: #ff66aa;
-            --green: #4caf50;
-            --orange: #ffaa00;
-            --red: #f44336;
-            --text: #ffffff;
-            --text-dim: rgba(255, 255, 255, 0.5);
-            --glass-border: rgba(255, 255, 255, 0.1);
+            --bg-dark: #eef1f7;
+            --bg-mid: #f8f9fc;
+            --bg-card: rgba(255, 255, 255, 0.82);
+            --accent: #00b4d8;
+            --accent-deep: #0077a8;
+            --accent-glow: rgba(0, 180, 216, 0.35);
+            --pink: #e040fb;
+            --green: #00c07f;
+            --orange: #f5a623;
+            --red: #e53935;
+            --text: #0d1117;
+            --text-dim: rgba(13, 17, 23, 0.48);
+            --glass-border: rgba(0, 0, 0, 0.08);
+            --glass-border-strong: rgba(0, 180, 216, 0.3);
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+            --shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.13);
         }
 
         body {
@@ -41,23 +46,17 @@
             position: fixed;
             inset: 0;
             background:
-                radial-gradient(ellipse at 20% 20%, rgba(79, 195, 247, 0.08) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 80%, rgba(255, 102, 170, 0.06) 0%, transparent 50%),
-                linear-gradient(135deg, #0a0a0f 0%, #12121a 50%, #0a0a0f 100%);
+                radial-gradient(ellipse at 15% 10%, rgba(0, 180, 216, 0.12) 0%, transparent 45%),
+                radial-gradient(ellipse at 85% 90%, rgba(0, 119, 168, 0.08) 0%, transparent 45%),
+                radial-gradient(ellipse at 50% 50%, rgba(224, 64, 251, 0.03) 0%, transparent 60%),
+                linear-gradient(160deg, #eef1f7 0%, #f4f7fb 50%, #edf0f6 100%);
             z-index: -1;
-            animation: gradientShift 20s ease-in-out infinite;
+            animation: gradientShift 18s ease-in-out infinite;
         }
 
         @keyframes gradientShift {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.8;
-            }
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.92; }
         }
 
         /* Header */
@@ -65,13 +64,17 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 16px 20px;
+            padding: 12px 20px;
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             z-index: 100;
-            background: linear-gradient(to bottom, rgba(10, 10, 15, 0.95), transparent);
+            background: rgba(248, 249, 252, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+            box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
         }
 
         .header-left {
@@ -81,20 +84,23 @@
         }
 
         .back-btn {
-            width: 36px;
-            height: 36px;
-            border: none;
-            background: rgba(255, 255, 255, 0.1);
+            width: 34px;
+            height: 34px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.9);
             border-radius: 10px;
             color: var(--text);
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             cursor: pointer;
             display: none;
             transition: all 0.2s;
+            box-shadow: var(--shadow);
         }
 
         .back-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(0, 180, 216, 0.08);
+            border-color: var(--accent);
+            color: var(--accent);
         }
 
         .back-btn.visible {
@@ -107,18 +113,21 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 1.3rem;
-            font-weight: 700;
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--text);
         }
 
         .logo-icon {
-            width: 36px;
-            height: 36px;
-            background: linear-gradient(135deg, var(--accent), var(--pink));
-            border-radius: 10px;
+            width: 34px;
+            height: 34px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+            border-radius: 9px;
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 4px 12px var(--accent-glow);
         }
 
         .status-badge {
@@ -126,45 +135,47 @@
             align-items: center;
             gap: 8px;
             padding: 6px 14px;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid var(--glass-border);
             border-radius: 20px;
-            font-size: 0.8rem;
-            backdrop-filter: blur(10px);
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--text-dim);
+            box-shadow: var(--shadow);
         }
 
         .status-dot {
-            width: 10px;
-            height: 10px;
+            width: 9px;
+            height: 9px;
             border-radius: 50%;
-            background: #666;
+            background: #c9cdd6;
         }
 
         .status-dot.connected {
             background: var(--green);
-            box-shadow: 0 0 10px var(--green);
+            box-shadow: 0 0 8px rgba(0, 192, 127, 0.5);
             animation: pulse 2s infinite;
         }
 
         @keyframes pulse {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.5;
-            }
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
         /* View Container */
         .view-container {
             position: fixed;
-            top: 70px;
+            top: 58px;
             bottom: 0;
             left: 0;
             right: 0;
             overflow: hidden;
+        }
+
+        /* Login view spans full height including header space */
+        #view-login {
+            top: -58px !important;
+            height: calc(100% + 58px) !important;
         }
 
         .view {
@@ -197,89 +208,186 @@
             align-items: center;
             justify-content: center;
             height: 100%;
-            padding: 40px 20px;
+            padding: 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ── LOGIN BACKGROUND ── */
+        .login-bg {
+            position: absolute;
+            inset: 0;
+            background-image: url('Kenza.jpeg');
+            background-size: cover;
+            background-position: center 40%;
+            filter: blur(18px) brightness(0.55) saturate(0.8);
+            transform: scale(1.08);
+            z-index: 0;
+        }
+
+        .login-bg-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(160deg,
+                rgba(0, 20, 50, 0.55) 0%,
+                rgba(0, 60, 100, 0.35) 50%,
+                rgba(0, 20, 40, 0.65) 100%);
+            z-index: 1;
+        }
+
+        /* Form panel – centered over the background */
+        .login-form-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 20px;
+            position: relative;
+            z-index: 2;
+            animation: formSlideIn 0.7s cubic-bezier(0.16,1,0.3,1) both;
+        }
+
+        @keyframes formSlideIn {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .login-card {
-            background: var(--bg-card);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            padding: 40px 30px;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(32px) saturate(1.4);
+            -webkit-backdrop-filter: blur(32px) saturate(1.4);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            border-radius: 28px;
+            padding: 40px 36px;
             width: 100%;
-            max-width: 340px;
+            max-width: 380px;
             text-align: center;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.45), 0 1px 0 rgba(255,255,255,0.15) inset;
         }
 
-        .login-logo {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, var(--accent), var(--pink));
-            border-radius: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.5rem;
-            margin: 0 auto 20px;
-            box-shadow: 0 10px 40px rgba(79, 195, 247, 0.3);
+        .login-wordmark {
+            color: #fff;
         }
 
         .login-card h1 {
-            font-size: 1.8rem;
-            margin-bottom: 8px;
+            color: rgba(255,255,255,0.92) !important;
         }
 
-        .login-card p {
-            color: var(--text-dim);
-            font-size: 0.9rem;
-            margin-bottom: 30px;
+        .login-card > p {
+            color: rgba(255,255,255,0.55) !important;
         }
+
+        .login-logo {
+            width: 72px;
+            height: 72px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            margin: 0 auto 18px;
+            box-shadow: 0 8px 32px var(--accent-glow);
+        }
+
+        .login-wordmark {
+            font-size: 2rem;
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .login-card h1 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: var(--text);
+        }
+
+        .login-card > p {
+            color: var(--text-dim);
+            font-size: 0.87rem;
+            margin-bottom: 28px;
+        }
+
+        .login-input-wrap {
+            position: relative;
+            margin-bottom: 12px;
+        }
+
+
 
         .login-input {
             width: 100%;
-            padding: 14px 18px;
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.05);
+            padding: 14px 16px 14px 42px;
+            border: 1.5px solid rgba(255, 255, 255, 0.2);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.1);
             color: #fff;
-            font-size: 1rem;
-            margin-bottom: 14px;
-            transition: border-color 0.2s;
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
         }
 
         .login-input:focus {
             outline: none;
             border-color: var(--accent);
+            background: rgba(255,255,255,0.18);
+            box-shadow: 0 0 0 4px rgba(0,180,216,0.25);
         }
 
         .login-input::placeholder {
-            color: var(--text-dim);
+            color: rgba(255,255,255,0.45);
+        }
+
+        .login-input-wrap .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255,255,255,0.5);
+            font-size: 1rem;
+            pointer-events: none;
         }
 
         .login-btn {
             width: 100%;
-            padding: 16px;
+            padding: 15px;
             border: none;
-            border-radius: 12px;
-            background: linear-gradient(135deg, var(--accent), #00a8cc);
-            color: #000;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+            color: #fff;
             font-size: 1rem;
-            font-weight: 600;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
             cursor: pointer;
-            margin-top: 10px;
-            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 8px;
+            letter-spacing: 0.01em;
+            transition: transform 0.18s, box-shadow 0.18s;
+            box-shadow: 0 6px 24px var(--accent-glow);
         }
 
         .login-btn:hover {
-            transform: scale(1.02);
-            box-shadow: 0 5px 20px var(--accent-glow);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 32px var(--accent-glow);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 3px 12px var(--accent-glow);
         }
 
         .login-error {
             color: var(--red);
-            font-size: 0.85rem;
-            margin-top: 14px;
+            font-size: 0.83rem;
+            margin-top: 12px;
             display: none;
+            padding: 10px 14px;
+            background: rgba(229, 57, 53, 0.08);
+            border-radius: 10px;
+            border: 1px solid rgba(229, 57, 53, 0.2);
         }
 
         .login-error.visible {
@@ -288,59 +396,106 @@
 
         /* Glass Card */
         .glass-card {
-            background: var(--bg-card);
+            background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 0, 0, 0.07);
             border-radius: 20px;
-            padding: 24px;
-            margin-bottom: 16px;
+            padding: 22px;
+            margin-bottom: 14px;
+            box-shadow: var(--shadow);
             transition: transform 0.2s, box-shadow 0.2s;
         }
 
         .glass-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            box-shadow: var(--shadow-hover);
         }
 
         /* Dashboard Grid */
         .dashboard-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-            padding-top: 10px;
+            gap: 14px;
+            padding-top: 8px;
         }
 
         .hub-card {
-            background: var(--bg-card);
+            background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            padding: 30px 20px;
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 0, 0, 0.07);
+            border-radius: 22px;
+            padding: 28px 16px 22px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.28s cubic-bezier(0.22,1,0.36,1);
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
         }
 
+        .hub-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-deep));
+            opacity: 0;
+            transition: opacity 0.22s;
+            border-radius: 22px 22px 0 0;
+        }
+
+        .hub-card:hover::before { opacity: 1; }
+
         .hub-card:hover {
-            transform: translateY(-4px);
-            border-color: var(--accent);
-            box-shadow: 0 15px 50px rgba(79, 195, 247, 0.15);
+            transform: translateY(-5px);
+            border-color: rgba(0, 180, 216, 0.25);
+            box-shadow: var(--shadow-hover), 0 0 0 1px rgba(0, 180, 216, 0.12);
+        }
+
+        .hub-icon-wrap {
+            width: 58px;
+            height: 58px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, rgba(0, 180, 216, 0.12), rgba(0, 119, 168, 0.06));
+            border: 1px solid rgba(0, 180, 216, 0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 14px;
+            transition: all 0.2s;
+        }
+
+        .hub-card:hover .hub-icon-wrap {
+            background: linear-gradient(135deg, rgba(0, 180, 216, 0.2), rgba(0, 119, 168, 0.12));
+            box-shadow: 0 4px 16px var(--accent-glow);
         }
 
         .hub-icon {
-            font-size: 3rem;
-            margin-bottom: 14px;
-            display: block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+        }
+
+        .hub-icon svg {
+            width: 26px;
+            height: 26px;
+            stroke: var(--accent);
         }
 
         .hub-card h3 {
-            font-size: 1.1rem;
-            margin-bottom: 6px;
+            font-size: 0.98rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: var(--text);
         }
 
         .hub-card p {
-            font-size: 0.75rem;
+            font-size: 0.73rem;
             color: var(--text-dim);
+            line-height: 1.4;
         }
 
         /* Settings List */
@@ -354,18 +509,22 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 18px 20px;
-            background: var(--bg-card);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
+            padding: 16px 18px;
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 0, 0, 0.07);
             border-radius: 16px;
             cursor: pointer;
             transition: all 0.2s;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
 
         .settings-item:hover {
-            background: rgba(40, 40, 55, 0.7);
-            border-color: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 1);
+            border-color: rgba(0, 180, 216, 0.22);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.09);
+            transform: translateY(-1px);
         }
 
         .settings-item-left {
@@ -375,30 +534,32 @@
         }
 
         .settings-item-icon {
-            width: 40px;
-            height: 40px;
-            background: rgba(79, 195, 247, 0.15);
-            border-radius: 12px;
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, rgba(0, 180, 216, 0.14), rgba(0, 119, 168, 0.06));
+            border: 1px solid rgba(0, 180, 216, 0.18);
+            border-radius: 11px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
         }
 
         .settings-item h3 {
-            font-size: 1rem;
-            font-weight: 500;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text);
         }
 
         .settings-item p {
-            font-size: 0.75rem;
+            font-size: 0.73rem;
             color: var(--text-dim);
             margin-top: 2px;
         }
 
         .chevron {
             color: var(--text-dim);
-            font-size: 1.2rem;
+            font-size: 1.1rem;
         }
 
         /* Sub-settings controls */
@@ -465,11 +626,12 @@
         .toggle {
             width: 52px;
             height: 28px;
-            background: rgba(60, 60, 60, 0.8);
+            background: rgba(0, 0, 0, 0.12);
             border-radius: 14px;
             position: relative;
             cursor: pointer;
             transition: background 0.3s;
+            flex-shrink: 0;
         }
 
         .toggle.active {
@@ -845,34 +1007,53 @@
         }
 
         .hud-btn {
-            width: 50px;
-            height: 50px;
+            width: 52px;
+            height: 52px;
             border: none;
             border-radius: 50%;
-            font-size: 1.2rem;
             cursor: pointer;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(10px);
-            color: #fff;
-            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* DEFAULT = OFF STATE: dark translucent circle */
+            background: rgba(20, 20, 30, 0.75);
+            backdrop-filter: blur(12px);
+            color: rgba(255,255,255,0.6);
+            transition: all 0.22s cubic-bezier(0.22,1,0.36,1);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.35);
+            border: 1.5px solid rgba(255,255,255,0.1);
         }
 
         .hud-btn:hover {
             transform: scale(1.1);
+            background: rgba(40, 44, 60, 0.9);
         }
 
+        /* ON STATE: vivid accent-coloured circle, bright icon */
+        .hud-btn.on {
+            background: var(--accent);
+            color: #fff;
+            border-color: transparent;
+            box-shadow: 0 4px 20px var(--accent-glow), 0 0 0 3px rgba(0,180,216,0.18);
+        }
+
+        .hud-btn.on:hover {
+            background: var(--accent-deep);
+            transform: scale(1.1);
+        }
+
+        /* MUTED STATE: red circle clearly indicates off/muted */
         .hud-btn.muted {
-            background: var(--red);
+            background: rgba(229, 57, 53, 0.88);
+            color: #fff;
+            border-color: transparent;
+            box-shadow: 0 4px 16px rgba(229,57,53,0.4);
         }
 
         .hud-btn.recording {
-            background: var(--red);
+            background: rgba(229, 57, 53, 0.88);
+            color: #fff;
             animation: pulse 1s infinite;
-        }
-
-        .hud-btn.active {
-            background: var(--accent);
-            transform: scale(1.2);
         }
 
         /* Auto Mode */
@@ -891,12 +1072,13 @@
 
         /* Autonomy Status Panel */
         .autonomy-status {
-            background: rgba(15, 15, 25, 0.7);
+            background: rgba(255, 255, 255, 0.82);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(79, 195, 247, 0.2);
+            border: 1px solid rgba(0, 180, 216, 0.18);
             border-radius: 16px;
             padding: 20px;
             margin-bottom: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
         }
 
         .autonomy-status h4 {
@@ -978,8 +1160,9 @@
             flex: 1;
             overflow-y: auto;
             padding: 16px;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(255, 255, 255, 0.7);
             border-radius: 16px;
+            border: 1px solid rgba(0,0,0,0.06);
             margin-bottom: 12px;
             scroll-behavior: smooth;
         }
@@ -1013,7 +1196,9 @@
         }
 
         .chat-msg.ai {
-            background: rgba(60, 60, 60, 0.6);
+            background: rgba(255, 255, 255, 0.88);
+            border: 1px solid rgba(0,0,0,0.07);
+            color: var(--text);
             border-bottom-left-radius: 4px;
         }
 
@@ -1354,15 +1539,16 @@
             padding: 14px 18px;
             border: 1px solid var(--glass-border);
             border-radius: 12px;
-            background: rgba(255, 255, 255, 0.05);
-            color: #fff;
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--text);
             font-size: 0.95rem;
-            transition: border-color 0.2s;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
         .chat-input-row input:focus {
             outline: none;
             border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
         }
 
         .chat-input-row button {
@@ -1553,9 +1739,11 @@
 
         /* View Title */
         .view-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 20px;
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin-bottom: 16px;
+            color: var(--text);
+            letter-spacing: -0.02em;
         }
 
         /* Eye Preview */
@@ -2382,6 +2570,146 @@
             padding: 10px 15px;
             border-radius: 12px;
         }
+        /* ── DARK MODE ────────────────────────────────────────────── */
+        body.dark-mode {
+            --bg-dark: #0f1117;
+            --bg-mid: #161822;
+            --bg-card: rgba(22, 26, 38, 0.88);
+            --accent: #00c8f0;
+            --accent-deep: #0090b8;
+            --accent-glow: rgba(0, 200, 240, 0.32);
+            --text: #e8eaf0;
+            --text-dim: rgba(232, 234, 240, 0.45);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-border-strong: rgba(0, 200, 240, 0.28);
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+            --shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        body.dark-mode {
+            background: var(--bg-dark);
+        }
+
+        body.dark-mode .bg-gradient {
+            background:
+                radial-gradient(ellipse at 15% 10%, rgba(0, 200, 240, 0.09) 0%, transparent 45%),
+                radial-gradient(ellipse at 85% 90%, rgba(0, 100, 160, 0.07) 0%, transparent 45%),
+                linear-gradient(160deg, #0f1117 0%, #13161f 50%, #0d1015 100%);
+        }
+
+        body.dark-mode header {
+            background: rgba(15, 17, 23, 0.94);
+            border-bottom-color: rgba(255,255,255,0.06);
+        }
+
+        body.dark-mode .glass-card,
+        body.dark-mode .hub-card,
+        body.dark-mode .settings-item {
+            background: var(--bg-card);
+            border-color: var(--glass-border);
+        }
+
+        body.dark-mode .hub-card:hover {
+            border-color: rgba(0, 200, 240, 0.3);
+        }
+
+        body.dark-mode .settings-item:hover {
+            background: rgba(30, 34, 50, 0.95);
+            border-color: rgba(0, 200, 240, 0.2);
+        }
+
+        body.dark-mode .status-badge,
+        body.dark-mode .back-btn {
+            background: rgba(22, 26, 38, 0.9);
+        }
+
+        body.dark-mode .chat-messages {
+            background: rgba(15, 17, 23, 0.7);
+        }
+
+        body.dark-mode .chat-msg.ai {
+            background: rgba(22, 26, 38, 0.95);
+            border-color: rgba(255,255,255,0.06);
+            color: var(--text);
+        }
+
+        body.dark-mode .login-input {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.15);
+            color: #fff;
+        }
+
+        body.dark-mode .autonomy-status {
+            background: rgba(22, 26, 38, 0.88);
+            border-color: rgba(0, 200, 240, 0.15);
+        }
+
+        #theme-toggle {
+            width: 34px;
+            height: 34px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            box-shadow: var(--shadow);
+            flex-shrink: 0;
+            padding: 0;
+        }
+
+        #theme-toggle:hover {
+            background: rgba(0, 180, 216, 0.08);
+            border-color: var(--accent);
+        }
+
+        #theme-toggle .icon-dark { display: none; }
+
+        body.dark-mode #theme-toggle {
+            background: rgba(22, 26, 38, 0.9);
+            border-color: rgba(255,255,255,0.1);
+            color: var(--text);
+        }
+
+        body.dark-mode #theme-toggle .icon-light { display: none; }
+        body.dark-mode #theme-toggle .icon-dark { display: block; }
+
+        /* ── RESPONSIVE: Mobile login stacks vertically ────────────── */
+        @media (max-width: 600px) {
+            .login-card {
+                padding: 32px 20px;
+                max-width: 95vw;
+            }
+            .login-form-panel {
+                padding: 24px 12px;
+            }
+        }
+
+        /* ── Scrollbar styling for light theme ──────────────────────── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0,180,216,0.35); }
+
+        /* ── View transitions polish ─────────────────────────────────── */
+        .view {
+            transition: transform 0.32s cubic-bezier(0.22,1,0.36,1), opacity 0.28s ease;
+        }
+        .view.hidden {
+            transform: translateX(100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+        .view.hidden-left {
+            transform: translateX(-22%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
     </style>
 </head>
 
@@ -2392,42 +2720,69 @@
         <div class="header-left">
             <button class="back-btn" id="back-btn">←</button>
             <div class="logo">
-                <div class="logo-icon">🤖</div>
+                <div class="logo-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="12" rx="2"/><circle cx="9" cy="14" r="2"/><circle cx="15" cy="14" r="2"/><path d="M12 2v4"/><path d="M7 20v2m10-2v2"/></svg></div>
                 <span>Kenza</span>
             </div>
         </div>
-        <div class="status-badge"
-            onclick="(function(){const p=document.getElementById('dev-panel');p.style.display=p.style.display==='flex'?'none':'flex';})()"
-            style="cursor:pointer" title="Tap to configure IP">
-            <div class="status-dot" id="status-dot"></div>
-            <span id="status-text">Tap to connect</span>
+        <div style="display:flex;align-items:center;gap:10px;">
+            <button id="theme-toggle" title="Toggle Dark Mode" onclick="document.body.classList.toggle('dark-mode');">
+                <svg class="icon-light" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                <svg class="icon-dark" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            </button>
+            <div class="status-badge"
+                onclick="(function(){const p=document.getElementById('dev-panel');p.style.display=p.style.display==='flex'?'none':'flex';})()"
+                style="cursor:pointer" title="Tap to configure IP">
+                <div class="status-dot" id="status-dot"></div>
+                <span id="status-text">Tap to connect</span>
+            </div>
         </div>
     </header>
 
     <div class="view-container">
         <!-- LOGIN VIEW -->
         <div class="view" id="view-login">
-            <div class="login-card">
-                <div class="login-logo">🤖</div>
-                <h1>Welcome</h1>
-                <p>Sign in to control Kenza</p>
-                <input type="text" class="login-input" id="login-user" placeholder="Username" autocomplete="off">
-                <input type="password" class="login-input" id="login-pass" placeholder="Password">
-                <button class="login-btn" id="btn-login">Sign In</button>
-                <div class="login-error" id="login-error">Incorrect credentials</div>
-                <div style="margin-top:20px;text-align:center;">
-                    <span style="color:var(--text-dim);font-size:0.85rem;">No account?</span>
-                    <button id="btn-show-register"
-                        style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;font-weight:600;">Register</button>
-                </div>
-                <div id="register-fields" style="display:none;margin-top:16px;">
-                    <input type="text" class="login-input" id="reg-user" placeholder="New Username" autocomplete="off">
-                    <input type="text" class="login-input" id="reg-display" placeholder="Display Name"
-                        autocomplete="off">
-                    <input type="password" class="login-input" id="reg-pass" placeholder="New Password">
-                    <button class="login-btn" id="btn-register"
-                        style="background:linear-gradient(135deg, var(--pink), #cc3388);">Register</button>
-                    <div class="login-error" id="reg-error">Username already taken</div>
+            <!-- Full-screen blurred background -->
+            <div class="login-bg"></div>
+            <div class="login-bg-overlay"></div>
+            <!-- Centered login form -->
+            <div class="login-form-panel">
+                <div class="login-card">
+                    <div class="login-logo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="12" rx="2"/><circle cx="9" cy="14" r="2"/><circle cx="15" cy="14" r="2"/><path d="M12 2v4"/><path d="M7 20v2m10-2v2"/></svg></div>
+                    <div class="login-wordmark">KENZA</div>
+                    <h1>Welcome back</h1>
+                    <p>Sign in to control your robot</p>
+                    <div class="login-input-wrap">
+                        <span class="input-icon">👤</span>
+                        <input type="text" class="login-input" id="login-user" placeholder="Username" autocomplete="off">
+                    </div>
+                    <div class="login-input-wrap">
+                        <span class="input-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+                        <input type="password" class="login-input" id="login-pass" placeholder="Password">
+                    </div>
+                    <button class="login-btn" id="btn-login">Sign In →</button>
+                    <div class="login-error" id="login-error">Incorrect credentials</div>
+                    <div style="margin-top:18px;text-align:center;">
+                        <span style="color:var(--text-dim);font-size:0.83rem;">No account? </span>
+                        <button id="btn-show-register"
+                            style="background:none;border:none;color:var(--accent);font-size:0.83rem;cursor:pointer;font-weight:700;">Register</button>
+                    </div>
+                    <div id="register-fields" style="display:none;margin-top:14px;">
+                        <div class="login-input-wrap">
+                            <span class="input-icon">👤</span>
+                            <input type="text" class="login-input" id="reg-user" placeholder="New Username" autocomplete="off">
+                        </div>
+                        <div class="login-input-wrap">
+                            <span class="input-icon">✏️</span>
+                            <input type="text" class="login-input" id="reg-display" placeholder="Display Name" autocomplete="off">
+                        </div>
+                        <div class="login-input-wrap">
+                            <span class="input-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+                            <input type="password" class="login-input" id="reg-pass" placeholder="New Password">
+                        </div>
+                        <button class="login-btn" id="btn-register"
+                            style="background:linear-gradient(135deg, var(--pink), #9c27b0);">Create Account</button>
+                        <div class="login-error" id="reg-error">Username already taken</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2437,22 +2792,22 @@
             <h2 class="view-title">Dashboard</h2>
             <div class="dashboard-grid">
                 <div class="hub-card pilot" data-target="view-remote-pilot" id="btn-remote-pilot">
-                    <span class="hub-icon">👨‍✈️</span>
+                    <div class="hub-icon-wrap"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3"/><path d="M3 21v-2a7 7 0 0 1 14 0v2"/><path d="M19 8h2m-2 4h2m-2-8h2"/></svg></div>
                     <h3>Remote Pilot</h3>
                     <p>Call & Drive Robot</p>
                 </div>
                 <div class="hub-card" data-target="view-auto">
-                    <span class="hub-icon">🤖</span>
+                    <div class="hub-icon-wrap"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="12" rx="2"/><circle cx="9" cy="14" r="2"/><circle cx="15" cy="14" r="2"/><path d="M12 2v4m0 0H9m3 0h3"/><path d="M7 20v2m10-2v2"/></svg></div>
                     <h3>Autonomous</h3>
                     <p>Follow &amp; Sentry</p>
                 </div>
                 <div class="hub-card" data-target="view-ai">
-                    <span class="hub-icon">🧠</span>
+                    <div class="hub-icon-wrap"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-1.66Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-1.66Z"/></svg></div>
                     <h3>AI Chat</h3>
                     <p>Talk to Kenza</p>
                 </div>
                 <div class="hub-card" data-target="view-settings">
-                    <span class="hub-icon">⚙️</span>
+                    <div class="hub-icon-wrap"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
                     <h3>Settings</h3>
                     <p>Customize &amp; Pair</p>
                 </div>
@@ -2500,7 +2855,7 @@
 
             <!-- Follow Me -->
             <div class="glass-card auto-card">
-                <div class="card-title">🚶 Follow Me</div>
+                <div class="card-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><path d="M12 7v8m-4 3 4-3 4 3"/><path d="m8 15 1.5-3M16 15l-1.5-3"/></svg> Follow Me</div>
                 <div class="setting-row">
                     <div class="setting-label">
                         <h3>Person Tracking</h3>
@@ -2512,7 +2867,7 @@
 
             <!-- Autonomous Explore -->
             <div class="glass-card auto-card">
-                <div class="card-title">🧭 Explore</div>
+                <div class="card-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg> Explore</div>
                 <div class="setting-row">
                     <div class="setting-label">
                         <h3>Autonomous Roaming</h3>
@@ -2524,7 +2879,7 @@
 
             <!-- Sentry Patrol -->
             <div class="glass-card auto-card">
-                <div class="card-title">🔒 Sentry Patrol</div>
+                <div class="card-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Sentry Patrol</div>
                 <div class="setting-row">
                     <div class="setting-label">
                         <h3>Motion Detection</h3>
@@ -2536,7 +2891,7 @@
 
             <!-- Collision Avoidance -->
             <div class="glass-card auto-card">
-                <div class="card-title">🛡️ Collision Avoidance</div>
+                <div class="card-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>️ Collision Avoidance</div>
                 <div class="setting-row">
                     <div class="setting-label">
                         <h3>Obstacle Shield</h3>
@@ -2548,7 +2903,7 @@
 
             <!-- Gesture Navigation -->
             <div class="glass-card auto-card">
-                <div class="card-title">✋ Gesture Navigation</div>
+                <div class="card-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg> Gesture Navigation</div>
                 <div class="setting-row">
                     <div class="setting-label">
                         <h3>Hand Control</h3>
@@ -2559,7 +2914,7 @@
             </div>
 
             <!-- Emergency Stop -->
-            <button class="auto-emergency-btn" id="btn-auto-emergency">🛑 EMERGENCY STOP</button>
+            <button class="auto-emergency-btn" id="btn-auto-emergency"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> EMERGENCY STOP</button>
         </div>
 
         <!-- AI CHAT -->
@@ -2587,7 +2942,7 @@
             <div class="settings-list">
                 <div class="settings-item" data-target="view-settings-eyes">
                     <div class="settings-item-left">
-                        <div class="settings-item-icon">👁️</div>
+                        <div class="settings-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>️</div>
                         <div>
                             <h3>Eye Customization</h3>
                             <p>Color & style</p>
@@ -2597,7 +2952,7 @@
                 </div>
                 <div class="settings-item" data-target="view-settings-voice">
                     <div class="settings-item-left">
-                        <div class="settings-item-icon">🗣️</div>
+                        <div class="settings-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>️</div>
                         <div>
                             <h3>Voice Selection</h3>
                             <p>Change Kenza's voice</p>
@@ -2607,7 +2962,7 @@
                 </div>
                 <div class="settings-item" data-target="view-settings-privacy">
                     <div class="settings-item-left">
-                        <div class="settings-item-icon">🔒</div>
+                        <div class="settings-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
                         <div>
                             <h3>Privacy & Security</h3>
                             <p>Camera & mic controls</p>
@@ -2627,7 +2982,7 @@
                 </div>
                 <div class="settings-item" data-target="view-settings-network">
                     <div class="settings-item-left">
-                        <div class="settings-item-icon">📶</div>
+                        <div class="settings-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg></div>
                         <div>
                             <h3>Network &amp; Pairing</h3>
                             <p>WiFi QR code</p>
@@ -2840,7 +3195,7 @@
                 <h4 style="margin-bottom:16px;font-size:0.95rem;">Expressions</h4>
                 <div class="anim-btn-grid">
                     <button class="anim-btn" data-anim="idle">🔄 Reset</button>
-                    <button class="anim-btn" data-anim="blink">👁️ Blink</button>
+                    <button class="anim-btn" data-anim="blink"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>️ Blink</button>
                     <button class="anim-btn" data-anim="happy">😊 Happy</button>
                     <button class="anim-btn" data-anim="sad">😢 Sad</button>
                     <button class="anim-btn" data-anim="angry">😠 Angry</button>
@@ -2966,7 +3321,7 @@
                         <input type="text" id="wifi-ssid" placeholder="WiFi Network Name (SSID)">
                         <input type="password" id="wifi-pass" placeholder="WiFi Password">
                     </div>
-                    <button class="btn btn-primary" id="btn-generate-qr" style="width:100%;">📶 Generate QR
+                    <button class="btn btn-primary" id="btn-generate-qr" style="width:100%;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg> Generate QR
                         Code</button>
 
                     <div id="qr-status-msg" class="qr-status-msg"></div>
@@ -2987,7 +3342,7 @@
 
             <!-- Saved Networks -->
             <div class="glass-card saved-networks">
-                <h4>📡 Saved Networks</h4>
+                <h4><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg> Saved Networks</h4>
                 <div id="saved-networks-list">
                     <p style="color:var(--text-dim);font-size:0.85rem;text-align:center;">No saved networks yet</p>
                 </div>
@@ -2999,13 +3354,13 @@
             <h2 class="view-title">Telepresence</h2>
             <div class="tp-hero">
                 <div class="tp-robot-avatar">
-                    🤖
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><path d="M8 16v.01"/><path d="M16 16v.01"/></svg>
                     <div class="tp-robot-status" id="tp-status-dot"></div>
                 </div>
                 <div class="tp-robot-name">KENZA HomeBot</div>
                 <div class="tp-robot-state" id="tp-robot-state">Offline — connect to robot first</div>
                 <button class="tp-call-btn" id="tp-call-btn" disabled onclick="tpStartCall()">
-                    📞 Call Robot
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;vertical-align:middle"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg> Call Robot
                 </button>
             </div>
         </div>
@@ -3015,15 +3370,15 @@
 
     <!-- Outgoing call overlay -->
     <div class="call-overlay" id="ov-calling">
-        <div class="ov-ring-blue">📞</div>
+        <div class="ov-ring-blue"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
         <div class="ov-caller-name" id="ov-calling-name">KENZA HomeBot</div>
         <div class="ov-sub">CALLING…</div>
-        <button class="ov-cancel-btn" onclick="tpCancelCall()">📵</button>
+        <button class="ov-cancel-btn" onclick="tpCancelCall()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.34-3.61m-2.1-4.24a19.79 19.79 0 0 1-1.07-5.07A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="23" y1="1" x2="1" y2="23"/></svg></button>
     </div>
 
     <!-- Incoming call overlay -->
     <div class="call-overlay" id="ov-incoming">
-        <div class="ov-ring-green">📹</div>
+        <div class="ov-ring-green"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></div>
         <div class="ov-inc-name" id="ov-incoming-name">KENZA HomeBot</div>
         <div class="ov-inc-sub">INCOMING VIDEO CALL</div>
         <div class="ov-inc-btns">
@@ -3047,7 +3402,7 @@
         <div class="hud-overlay">
             <div class="telemetry-bar">
                 <span>🔋 <span id="tp-hud-battery">--%</span></span>
-                <span>📶 <span id="tp-hud-wifi">--dB</span></span>
+                <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg> <span id="tp-hud-wifi">--dB</span></span>
                 <span>🌡️ <span id="tp-hud-temp">--°C</span></span>
             </div>
             <div class="direction-hud">
@@ -3067,7 +3422,7 @@
             </div>
         </div>
 
-        <div id="ov-call-quality">📶 <span id="ov-quality-txt">Connecting…</span></div>
+        <div id="ov-call-quality"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg> <span id="ov-quality-txt">Connecting…</span></div>
         <div id="ov-call-top">
             <div id="ov-call-top-pill">
                 <div class="ov-live-dot"></div>
@@ -4540,7 +4895,7 @@
                 'idle': { text: 'Ready', class: '' },
                 'listening': { text: '👂 Listening...', class: 'listening' },
                 'thinking': { text: '🧠 Thinking...', class: 'thinking' },
-                'speaking': { text: '🔊 Speaking...', class: 'speaking' }
+                'speaking': { text: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg> Speaking...', class: 'speaking' }
             };
 
             const config = states[state] || states['idle'];
@@ -4618,7 +4973,7 @@
                 if (typeof QRCode === 'undefined') {
                     showQRStatus('❌ QR library not loaded', 'error');
                     btn.disabled = false;
-                    btn.textContent = '📶 Generate QR Code';
+                    btn.textContent = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg> Generate QR Code';
                     return;
                 }
 
@@ -4626,7 +4981,7 @@
                     width: 180, margin: 1, color: { dark: '#000', light: '#fff' }
                 }, (error) => {
                     btn.disabled = false;
-                    btn.textContent = '📶 Generate QR Code';
+                    btn.textContent = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg> Generate QR Code';
 
                     if (error) {
                         showQRStatus('❌ Failed to generate QR code', 'error');
@@ -4691,7 +5046,7 @@
             container.innerHTML = networks.map((n, i) => `
                 <div class="saved-network-item" data-index="${i}">
                     <div class="ssid-name">
-                        <span>📶</span>
+                        <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg></span>
                         <span>${n.ssid}</span>
                     </div>
                     <button class="delete-btn" data-index="${i}">🗑️</button>
