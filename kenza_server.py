@@ -34,6 +34,17 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
 
+# ── Load .env file so API keys (GROQ_API_KEY, GEMINI_API_KEY) are available ──
+try:
+    from dotenv import load_dotenv
+    _env_path = Path(__file__).parent / '.env'
+    load_dotenv(dotenv_path=_env_path, override=False)
+    print(f"[ENV] Loaded .env from {_env_path}")
+except ImportError:
+    print("[ENV] python-dotenv not installed — run: pip install python-dotenv")
+except Exception as e:
+    print(f"[ENV] Could not load .env: {e}")
+
 try:
     import websockets
     HAS_WEBSOCKETS = True
@@ -138,9 +149,11 @@ class RobotState:
 class CommandHandler:
     """Handles incoming commands from the app"""
     
-    def __init__(self, state: RobotState):
+    def __init__(self, state: RobotState, server_ref=None):
         self.state = state
         self.callbacks = {}
+        self._server_ref = server_ref  # Reference to KenzaServer for accessing _conv_engine
+        self._conv_engine = None       # Set directly by KenzaServer after engine init
     
     async def handle(self, message: str, websocket) -> Optional[Dict]:
         """Process incoming command and return response"""
@@ -383,32 +396,160 @@ class CommandHandler:
         return {'type': 'voice_changed', 'data': {'voice': voice}}
 
     async def _ai_message(self, data: Dict) -> Dict:
-        """Process AI chat message and detect follow-me trigger"""
-        message = data.get('message', '').lower()
-        print(f"[AI] User: {message}")
-
-        # Detect emotion
+        """
+        Process AI chat message from the web UI.
+        Path 1: Use ConversationEngine.process_input() if available (also fires TTS).
+        Path 2: Directly call Groq/Gemini/Ollama — no mic/audio dependency.
+        This guarantees web chat always works regardless of engine startup state.
+        """
+        message = data.get('message', '')
+        print(f"[AI-Chat] User: {message}")
         emotion = "neutral"
-        if HAS_EMOTION:
-            engine = EmotionEngine()
-            emotion = engine.detect(message)
-            print(f"[EMOTION] Detected: {emotion}")
+        clean_response = ""
 
-        # Follow-me voice trigger
-        if any(kw in message for kw in ['follow me', 'follow along', 'come with me']):
-            print("[FOLLOW] Voice trigger: activating follow mode")
-            self._broadcast_from_thread({'type': 'follow_activate'})
+        # Refresh engine cache from server reference (handles late init)
+        if self._conv_engine is None:
+            server = getattr(self, '_server_ref', None)
+            if server is not None:
+                eng = getattr(server, '_conv_engine', None)
+                if eng is not None:
+                    self._conv_engine = eng
 
-        # Placeholder response
-        response = f"I heard you say: '{data.get('message','')}'. AI backend integration pending."
+        # Path 1: Full engine available
+        if self._conv_engine is not None:
+            try:
+                loop = asyncio.get_event_loop()
+                raw = await loop.run_in_executor(
+                    None, self._conv_engine.process_input, message
+                )
+                emotion, clean_response = self._conv_engine._parse_and_strip_emotion(raw)
+                print(f"[AI-Chat] Kenza (engine): {clean_response}")
+                # Speak via TTS
+                _eng = self._conv_engine
+                _resp = clean_response
+                _emo = emotion
+                def _speak():
+                    try:
+                        _eng.speak_with_interrupt(_resp, emotion=_emo)
+                    except Exception as tts_err:
+                        print(f"[AI-Chat] TTS error: {tts_err}")
+                threading.Thread(target=_speak, daemon=True, name="WebChat-TTS").start()
+            except Exception as e:
+                print(f"[AI-Chat] Engine path error: {e}")
+                clean_response = ""  # fall through to direct path
 
-        return {
-            'type': 'ai_response',
-            'data': {
-                'message': response,
-                'emotion': emotion
-            }
-        }
+        # Path 2: Direct LLM call (no ConversationEngine needed)
+        if not clean_response and HAS_CONVERSATION:
+            try:
+                loop = asyncio.get_event_loop()
+                clean_response = await loop.run_in_executor(
+                    None, self._direct_llm_query, message
+                )
+                print(f"[AI-Chat] Kenza (direct): {clean_response}")
+            except Exception as e:
+                print(f"[AI-Chat] Direct LLM error: {e}")
+                clean_response = "Sorry, I had trouble reaching my AI backend."
+
+        if not clean_response:
+            clean_response = "AI module not loaded. Check server logs."
+
+        # Follow-me trigger
+        if any(kw in message.lower() for kw in ['follow me', 'follow along', 'come with me']):
+            server = getattr(self, '_server_ref', None)
+            if server and hasattr(server, '_broadcast_from_thread'):
+                server._broadcast_from_thread({'type': 'follow_activate'})
+
+        return {'type': 'ai_response', 'data': {'message': clean_response, 'emotion': emotion}}
+
+    def _direct_llm_query(self, message: str) -> str:
+        """
+        Directly call LLMs without needing ConversationEngine.
+        Chain: Groq -> Gemini -> Ollama. Safe to call from a thread executor.
+        """
+        import traceback, re
+
+        try:
+            from kenza_conversation import (
+                ConversationConfig, KenzaPersonality,
+                GroqChat, GeminiChat, OllamaChat
+            )
+        except Exception as e:
+            print(f"[AI-Direct] Import failed: {e}")
+            traceback.print_exc()
+            raise  # Let caller show proper error
+
+        try:
+            config = ConversationConfig.load()
+        except Exception as e:
+            print(f"[AI-Direct] Config load failed: {e}")
+            traceback.print_exc()
+            raise
+
+        # Diagnostic: show which keys were loaded
+        groq_loaded = bool(config.groq_api_key)
+        gemini_loaded = bool(config.gemini_api_key)
+        print(f"[AI-Direct] Keys loaded — Groq: {'YES' if groq_loaded else 'NO'}, "
+              f"Gemini: {'YES' if gemini_loaded else 'NO'}")
+
+        personality = KenzaPersonality(config)
+
+        def _strip(raw):
+            m = re.match(
+                r'^\[(happy|sad|excited|neutral|confused|thinking)\]\s*',
+                raw.strip(), re.IGNORECASE
+            )
+            return raw[m.end():].strip() if m else raw.strip()
+
+        # Groq (fastest)
+        if config.groq_api_key:
+            try:
+                g = GroqChat(config, personality)
+                print(f"[AI-Direct] Groq available: {g.is_available()}")
+                if g.is_available():
+                    raw = g.send(message)
+                    if raw:
+                        result = _strip(raw)
+                        print(f"[AI-Direct] Groq responded: {result[:80]}...")
+                        return result
+            except Exception as e:
+                print(f"[AI-Direct] Groq error: {e}")
+                traceback.print_exc()
+        else:
+            print("[AI-Direct] Groq skipped — no API key")
+
+        # Gemini
+        if config.gemini_api_key:
+            try:
+                gm = GeminiChat(config, personality)
+                print(f"[AI-Direct] Gemini available: {gm.is_available()}")
+                if gm.is_available():
+                    raw = gm.send(message)
+                    if raw and not raw.startswith("I'm"):
+                        result = _strip(raw)
+                        print(f"[AI-Direct] Gemini responded: {result[:80]}...")
+                        return result
+            except Exception as e:
+                print(f"[AI-Direct] Gemini error: {e}")
+                traceback.print_exc()
+        else:
+            print("[AI-Direct] Gemini skipped — no API key")
+
+        # Ollama (local, no key needed)
+        try:
+            ol = OllamaChat(config, personality)
+            print(f"[AI-Direct] Ollama available: {ol.is_available()}")
+            if ol.is_available():
+                raw = ol.send(message)
+                if raw:
+                    result = _strip(raw)
+                    print(f"[AI-Direct] Ollama responded: {result[:80]}...")
+                    return result
+        except Exception as e:
+            print(f"[AI-Direct] Ollama error: {e}")
+            traceback.print_exc()
+
+        return "I couldn't reach any AI backend. Check that your API keys are in the .env file."
+
 
     async def _patrol(self, data: Dict) -> Optional[Dict]:
         """Toggle Patrol Mode — slow environment scan"""
@@ -513,7 +654,7 @@ class KenzaServer:
     
     def __init__(self, enable_gesture: bool = True):
         self.state = RobotState()
-        self.handler = CommandHandler(self.state)
+        self.handler = CommandHandler(self.state, server_ref=self)
         self.clients: Set = set()
         # Role-indexed clients for call signaling
         self.clients_by_role: Dict[str, Set] = {'robot': set(), 'controller': set()}
@@ -879,7 +1020,6 @@ class KenzaServer:
 
         def on_user_speech(text: str):
             print(f"[AI] User: {text}")
-            # Always broadcast speech — display shows it only when AI Mode overlay is active
             self._broadcast_from_thread({
                 'type': 'ai_message',
                 'role': 'user',
@@ -895,34 +1035,42 @@ class KenzaServer:
             })
 
         def on_state_change(state: str):
-            # Map conversation states → WebSocket events for the display
             if state == 'wake_word':
                 self._broadcast_from_thread({'type': 'wake_word'})
             else:
                 self._broadcast_from_thread({'type': 'ai_state', 'state': state})
 
         def on_emotion(emotion: str):
-            """Broadcast emotion directly to display without WS round-trip."""
             self._broadcast_from_thread({'type': 'emotion', 'state': emotion})
 
-        config = ConversationConfig.load()
-        self._conv_engine = ConversationEngine(
-            config=config,
-            on_user_speech=on_user_speech,
-            on_ai_response=on_ai_response,
-            on_state_change=on_state_change,
-            on_emotion=on_emotion,
-        )
+        try:
+            config = ConversationConfig.load()
+            self._conv_engine = ConversationEngine(
+                config=config,
+                on_user_speech=on_user_speech,
+                on_ai_response=on_ai_response,
+                on_state_change=on_state_change,
+                on_emotion=on_emotion,
+            )
+            # Give CommandHandler direct access to the engine for web chat
+            self.handler._conv_engine = self._conv_engine
+            print("[AI] ConversationEngine initialized — Groq/Gemini/Ollama chain ready")
+        except Exception as e:
+            import traceback
+            print(f"[AI] FAILED to initialize ConversationEngine: {e}")
+            traceback.print_exc()
+            self._conv_engine = None
+            return
 
         def _run():
             try:
                 self._conv_engine.run_voice_loop(use_wake_word=use_wake_word)
             except Exception as e:
-                print(f"[AI] Engine stopped: {e}")
+                print(f"[AI] Voice loop stopped: {e}")
 
         self._conv_thread = threading.Thread(target=_run, daemon=True, name="ConversationEngine")
         self._conv_thread.start()
-        print("[AI] ConversationEngine started (always-on)")
+        print("[AI] ConversationEngine voice loop started (always-on)")
 
     def _stop_conversation_engine(self):
         """Stop the ConversationEngine (called on server shutdown only)."""

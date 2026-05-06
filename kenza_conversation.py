@@ -223,16 +223,24 @@ class ConversationConfig:
     def load(cls, config_path: str = "config/settings.yaml") -> "ConversationConfig":
         """Load from YAML file"""
         import yaml
+
+        # Load .env so GROQ_API_KEY / GEMINI_API_KEY are available via os.getenv()
+        try:
+            from dotenv import load_dotenv
+            _env = Path(__file__).parent / '.env'
+            load_dotenv(dotenv_path=_env, override=False)
+        except Exception:
+            pass  # dotenv not installed or .env missing — rely on shell env vars
+
         config = cls()
+        # Resolve path relative to this file's directory so it works regardless
+        # of the working directory the server was launched from.
         path = Path(config_path)
-        
+        if not path.is_absolute():
+            path = Path(__file__).parent / config_path
+
         if path.exists():
-            # Read as bytes and strip non-printable/special characters that
-            # would cause yaml.reader.ReaderError (e.g. #x0080 at position N).
             raw = path.read_bytes()
-            # Decode with 'replace' so bad bytes become the replacement char,
-            # then strip every character YAML's SafeLoader rejects (anything
-            # outside the printable ASCII + common whitespace range).
             text = raw.decode('utf-8', errors='replace')
             text = ''.join(
                 ch for ch in text
@@ -240,8 +248,8 @@ class ConversationConfig:
                 or '\xa0' <= ch <= '\ud7ff' or '\ue000' <= ch <= '\ufffd'
             )
             data = yaml.safe_load(text) or {}
-            
-            # API
+
+            # API — env vars take priority over values in settings.yaml
             api_keys = data.get("api_keys", {})
             config.gemini_api_key = os.getenv("GEMINI_API_KEY", api_keys.get("gemini", ""))
             config.groq_api_key = os.getenv("GROQ_API_KEY", api_keys.get("groq", ""))
@@ -632,11 +640,6 @@ class InterruptibleTTS:
             return self._mixer.music.get_busy()
         return self.is_speaking
     
-    def is_playing(self) -> bool:
-        """Check if currently playing audio"""
-        if self._mixer:
-            return self._mixer.music.get_busy()
-        return False
 
 
 # ============================================================================
@@ -1071,23 +1074,7 @@ class CommandParser:
         elif action == "stop_speaking":
             return None  # Handled by interruption system
         
-        elif action == "set_voice":
-            voice = params["voice"]
-            if voice in self.config.voice_presets:
-                old_voice = self.config.current_voice
-                self.config.current_voice = voice
-                self.config.tts_voice = self.config.voice_presets[voice]
-                # Save to settings.yaml for persistence
-                self._save_voice_setting(voice)
-                
-                # Update runtime TTS
-                if self.tts:
-                    self.tts.set_voice(self.config.tts_voice)
-                    
-                return f"Switched from {old_voice.title()} to {voice.title()} voice!"
-            return f"I don't know that voice. Try: {', '.join(self.config.voice_presets.keys())}"
-        
-        elif action == "list_voices":
+        if action == "list_voices":
             voices = list(self.config.voice_presets.keys())
             current = self.config.current_voice
             return f"I can use these voices: {', '.join(voices)}. Currently using {current.title()}."
@@ -1368,11 +1355,11 @@ class SpeechToText:
         try:
             from faster_whisper import WhisperModel
             self._whisper = WhisperModel(
-                self.config.whisper_model,
+                self.config.stt_offline_model,   # BUG FIX: was 'whisper_model', correct attr is 'stt_offline_model'
                 device="cpu",
                 compute_type="int8",
             )
-            _log(f"[OK] STT offline (faster-whisper/{self.config.whisper_model}) ready")
+            _log(f"[OK] STT offline (faster-whisper/{self.config.stt_offline_model}) ready")
         except ImportError:
             _log("[WARN] faster-whisper not installed - run: pip install faster-whisper")
         except Exception as e:
