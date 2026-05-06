@@ -1123,6 +1123,108 @@
             width: 0%;
         }
 
+        /* ── D-PAD CONTROL ── */
+        .dpad-container {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            display: grid;
+            grid-template-columns: 56px 56px 56px;
+            grid-template-rows: 56px 56px 56px;
+            gap: 6px;
+            user-select: none;
+            touch-action: none;
+        }
+
+        .dpad-btn {
+            width: 56px;
+            height: 56px;
+            border: none;
+            border-radius: 14px;
+            background: rgba(10, 20, 40, 0.82);
+            backdrop-filter: blur(12px);
+            color: rgba(255,255,255,0.75);
+            font-size: 1.3rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.12s cubic-bezier(0.22,1,0.36,1);
+            border: 1.5px solid rgba(0,212,255,0.15);
+            box-shadow: 0 4px 14px rgba(0,0,0,0.45);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .dpad-btn svg {
+            width: 22px;
+            height: 22px;
+            stroke: rgba(255,255,255,0.75);
+            stroke-width: 2.2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            pointer-events: none;
+        }
+
+        .dpad-btn:hover {
+            background: rgba(0,180,216,0.22);
+            border-color: rgba(0,212,255,0.45);
+            color: #fff;
+            transform: scale(1.06);
+            box-shadow: 0 0 18px rgba(0,212,255,0.28);
+        }
+
+        .dpad-btn.pressed,
+        .dpad-btn:active {
+            background: var(--accent) !important;
+            border-color: transparent !important;
+            color: #000 !important;
+            transform: scale(0.92) !important;
+            box-shadow: 0 0 28px rgba(0,212,255,0.55) !important;
+        }
+
+        .dpad-btn.pressed svg,
+        .dpad-btn:active svg {
+            stroke: #000;
+        }
+
+        /* Center stop button */
+        .dpad-stop {
+            border-radius: 50%;
+            background: rgba(220,38,38,0.75) !important;
+            border-color: rgba(239,68,68,0.4) !important;
+        }
+
+        .dpad-stop:hover {
+            background: rgba(239,68,68,0.9) !important;
+            border-color: rgba(239,68,68,0.7) !important;
+            box-shadow: 0 0 18px rgba(239,68,68,0.5) !important;
+        }
+
+        .dpad-stop.pressed,
+        .dpad-stop:active {
+            background: #ef4444 !important;
+        }
+
+        .dpad-empty {
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        /* Direction label under dpad */
+        .dpad-dir-label {
+            position: absolute;
+            bottom: 205px;
+            left: 30px;
+            width: 180px;
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: rgba(255,255,255,0.5);
+            letter-spacing: 0.04em;
+            pointer-events: none;
+        }
+
         .hud-actions {
             position: absolute;
             bottom: 30px;
@@ -3594,15 +3696,47 @@
                 <div style="font-size:0.8rem;color:rgba(255,255,255,0.6);">Speed: <span id="tp-speed-display">0%</span>
                 </div>
             </div>
-            <div class="joystick-container">
-                <div class="joystick-base" id="tp-joy-base">
-                    <div class="joystick-handle" id="tp-joy-handle"></div>
-                </div>
-            </div>
-            <div class="speed-meter">
-                <div class="speed-bar-bg">
-                    <div class="speed-bar-fill" id="tp-speed-bar"></div>
-                </div>
+            <!-- D-PAD: W=Forward A=Left S=Backward D=Right (matches motor_test.py) -->
+            <div class="dpad-dir-label" id="tp-dpad-dir">WASD / D-PAD</div>
+            <div class="dpad-container" id="tp-dpad">
+                <!-- Row 1: empty | Forward (W) | empty -->
+                <div class="dpad-empty"></div>
+                <button class="dpad-btn" id="dpad-fwd" title="W — Forward"
+                    data-dir="F"
+                    onmousedown="dpadPress('F')" onmouseup="dpadRelease()" onmouseleave="dpadRelease()"
+                    ontouchstart="dpadPress('F');event.preventDefault()" ontouchend="dpadRelease();event.preventDefault()">
+                    <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+                </button>
+                <div class="dpad-empty"></div>
+
+                <!-- Row 2: Left (A) | Stop (X) | Right (D) -->
+                <button class="dpad-btn" id="dpad-left" title="A — Left"
+                    data-dir="L"
+                    onmousedown="dpadPress('L')" onmouseup="dpadRelease()" onmouseleave="dpadRelease()"
+                    ontouchstart="dpadPress('L');event.preventDefault()" ontouchend="dpadRelease();event.preventDefault()">
+                    <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <button class="dpad-btn dpad-stop" id="dpad-stop" title="X — Stop"
+                    onmousedown="dpadPress('S')" onmouseup="dpadRelease()" onmouseleave="dpadRelease()"
+                    ontouchstart="dpadPress('S');event.preventDefault()" ontouchend="dpadRelease();event.preventDefault()">
+                    <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>
+                </button>
+                <button class="dpad-btn" id="dpad-right" title="D — Right"
+                    data-dir="R"
+                    onmousedown="dpadPress('R')" onmouseup="dpadRelease()" onmouseleave="dpadRelease()"
+                    ontouchstart="dpadPress('R');event.preventDefault()" ontouchend="dpadRelease();event.preventDefault()">
+                    <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+
+                <!-- Row 3: empty | Backward (S) | empty -->
+                <div class="dpad-empty"></div>
+                <button class="dpad-btn" id="dpad-bwd" title="S — Backward"
+                    data-dir="B"
+                    onmousedown="dpadPress('B')" onmouseup="dpadRelease()" onmouseleave="dpadRelease()"
+                    ontouchstart="dpadPress('B');event.preventDefault()" ontouchend="dpadRelease();event.preventDefault()">
+                    <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="dpad-empty"></div>
             </div>
         </div>
 
@@ -4752,17 +4886,49 @@
             sendMotorCommand('S');
         });
 
+        // ===== D-PAD BUTTON HANDLERS (matches motor_test.py W/A/S/D logic) =====
+        // W → Forward  (IN1=0 IN2=1 IN3=1 IN4=0)
+        // A → Left     (IN1=0 IN2=1 IN3=0 IN4=1)
+        // S → Backward (IN1=1 IN2=0 IN3=0 IN4=1)
+        // D → Right    (IN1=1 IN2=0 IN3=1 IN4=0)
+        // X → Stop     (IN1=0 IN2=0 IN3=0 IN4=0)
+        let dpadActive = false;
+
+        function dpadPress(dir) {
+            dpadActive = true;
+            // Highlight the pressed button
+            document.querySelectorAll('.dpad-btn').forEach(b => b.classList.remove('pressed'));
+            const idMap = { F: 'dpad-fwd', B: 'dpad-bwd', L: 'dpad-left', R: 'dpad-right', S: 'dpad-stop' };
+            const btn = document.getElementById(idMap[dir]);
+            if (btn) btn.classList.add('pressed');
+            // Update direction label
+            const nameMap = { F: 'FORWARD', B: 'BACKWARD', L: 'LEFT', R: 'RIGHT', S: 'STOP' };
+            const lbl = document.getElementById('tp-dpad-dir');
+            if (lbl) lbl.textContent = nameMap[dir] || 'STOP';
+            sendMotorCommand(dir);
+        }
+
+        function dpadRelease() {
+            if (!dpadActive) return;
+            dpadActive = false;
+            document.querySelectorAll('.dpad-btn').forEach(b => b.classList.remove('pressed'));
+            const lbl = document.getElementById('tp-dpad-dir');
+            if (lbl) lbl.textContent = 'WASD / D-PAD';
+            sendMotorCommand('S');
+        }
+
         // ===== KEYBOARD SUPPORT (WASD / Arrows) =====
+        // Matches motor_test.py: W=Forward, S=Backward, A=Left, D=Right, X/Space=Stop
         const keyState = {};
 
         document.addEventListener('keydown', (e) => {
             // Ignore if typing in input
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-            // Ignore if key already pressed
+            // Ignore if key already pressed (hold)
             if (keyState[e.key]) return;
 
             // Only work in remote view or active call view
-            const remoteView = document.getElementById('view-remote-pilot'); // Updated ID
+            const remoteView = document.getElementById('view-remote-pilot');
             const callOverlay = document.getElementById('ov-call');
             const isRemoteActive = remoteView && !remoteView.classList.contains('hidden');
             const isCallActive = callOverlay && callOverlay.classList.contains('visible');
@@ -4770,17 +4936,28 @@
             if (isRemoteActive || isCallActive) {
                 keyState[e.key] = true;
 
+                // motor_test.py direction mapping
                 let dir = null;
                 switch (e.key) {
-                    case 'ArrowUp': case 'w': case 'W': dir = 'F'; break;
-                    case 'ArrowDown': case 's': case 'S': dir = 'B'; break;
-                    case 'ArrowLeft': case 'a': case 'A': dir = 'L'; break;
-                    case 'ArrowRight': case 'd': case 'D': dir = 'R'; break;
-                    case ' ': sendMotorCommand('S'); e.preventDefault(); return;
+                    case 'ArrowUp':    case 'w': case 'W': dir = 'F'; break;  // forward()
+                    case 'ArrowDown':  case 's': case 'S': dir = 'B'; break;  // backward()
+                    case 'ArrowLeft':  case 'a': case 'A': dir = 'L'; break;  // left()
+                    case 'ArrowRight': case 'd': case 'D': dir = 'R'; break;  // right()
+                    case 'x': case 'X': case ' ':                              // stop()
+                        sendMotorCommand('S'); e.preventDefault(); return;
                 }
 
                 if (dir) {
                     e.preventDefault();
+                    // Reflect on D-pad UI
+                    dpadActive = true;
+                    document.querySelectorAll('.dpad-btn').forEach(b => b.classList.remove('pressed'));
+                    const idMap = { F: 'dpad-fwd', B: 'dpad-bwd', L: 'dpad-left', R: 'dpad-right' };
+                    const btn = document.getElementById(idMap[dir]);
+                    if (btn) btn.classList.add('pressed');
+                    const nameMap = { F: 'FORWARD', B: 'BACKWARD', L: 'LEFT', R: 'RIGHT' };
+                    const lbl = document.getElementById('tp-dpad-dir');
+                    if (lbl) lbl.textContent = nameMap[dir];
                     sendMotorCommand(dir);
                 }
             }
@@ -4790,11 +4967,15 @@
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
             keyState[e.key] = false;
 
-            const moveKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd', 'W', 'A', 'S', 'D'];
+            const moveKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+                              'w', 'a', 's', 'd', 'W', 'A', 'S', 'D'];
             if (moveKeys.includes(e.key)) {
-                // Check if any movement key is still held
                 const stillPressed = moveKeys.some(k => keyState[k]);
                 if (!stillPressed) {
+                    dpadActive = false;
+                    document.querySelectorAll('.dpad-btn').forEach(b => b.classList.remove('pressed'));
+                    const lbl = document.getElementById('tp-dpad-dir');
+                    if (lbl) lbl.textContent = 'WASD / D-PAD';
                     sendMotorCommand('S');
                 }
             }
